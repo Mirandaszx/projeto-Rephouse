@@ -1,0 +1,499 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage[margin=0.76in,top=0.68in,bottom=0.62in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[portuguese]{babel}
+\usepackage[table]{xcolor}
+\usepackage{array,tabularx}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage[most]{tcolorbox}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{ideaorange}{HTML}{C45400}
+\definecolor{browntext}{HTML}{713B19}
+\definecolor{darkgray}{HTML}{373737}
+\definecolor{softgray}{HTML}{F1F3F5}
+\definecolor{cream}{HTML}{FFF2E6}
+\definecolor{personacell}{HTML}{F5E5D7}
+\definecolor{headergray}{HTML}{777777}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[R]{\small\color{headergray}RepHouse\quad|\quad Ideação do Projeto}
+\fancyfoot[C]{\small\color{headergray}Página \textcolor{black}{\thepage}}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\setlength{\headheight}{14pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\raggedbottom
+
+\newcommand{\ideasection}[1]{%
+  \vspace{4pt}{\color{ideaorange}\sffamily\bfseries\fontsize{17}{20}\selectfont #1\par}\vspace{7pt}}
+\newcommand{\ideasub}[1]{%
+  \vspace{5pt}{\color{browntext}\sffamily\bfseries\fontsize{12}{14}\selectfont #1\par}\vspace{2pt}}
+\newcommand{\minisub}[1]{%
+  \vspace{4pt}{\color{darkgray}\sffamily\bfseries\fontsize{10.5}{12}\selectfont #1\par}\vspace{1pt}}
+\newcommand{\tightlist}{\begin{itemize}[leftmargin=1.55em,itemsep=0pt,topsep=1pt,parsep=0pt]}
+\newcommand{\tightlistend}{\end{itemize}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+\tcbset{
+  ideabox/.style={sharp corners,boxrule=0pt,left=8pt,right=8pt,top=6pt,bottom=6pt,
+    before skip=5pt,after skip=8pt},
+  graybox/.style={ideabox,colback=softgray,colframe=softgray},
+  creambox/.style={ideabox,colback=cream,colframe=cream}
+}
+
+\begin{document}
+\fontsize{10.8}{13}\selectfont
+
+% Página 1
+\vspace*{1.45in}
+\begin{center}
+  {\color{ideaorange}\bfseries\fontsize{31}{35}\selectfont RepHouse\par}
+  \vspace{20pt}
+  {\color{darkgray}\bfseries\fontsize{26}{30}\selectfont Ideação do Sistema\par}
+  \vspace{12pt}
+  {\color{headergray}\fontsize{15}{19}\selectfont Planejamento do projeto do zero - Itens 1 a 12\par}
+\end{center}
+\vspace{55pt}
+\begin{tcolorbox}[creambox]
+  \textcolor{ideaorange}{\textbf{Objetivo:}} Estruturar a ideia do RepHouse antes do desenvolvimento, partindo do problema,
+  público-alvo, dores, brainstorming, proposta de solução, MVP e funcionalidades futuras.
+\end{tcolorbox}
+\vspace{32pt}
+\begin{center}
+  {\color{headergray}\itshape Documento de ideação e definição inicial do produto}
+\end{center}
+
+\newpage
+% Página 2
+\ideasection{1. Introdução}
+O RepHouse é uma proposta de sistema web voltado para a organização e administração de
+repúblicas estudantis e residências compartilhadas.
+
+A ideia surgiu a partir da percepção de que pessoas que dividem uma residência frequentemente
+precisam controlar despesas, tarefas domésticas, moradores, responsabilidades e informações da
+casa utilizando diferentes ferramentas, como grupos de mensagens, planilhas, anotações e
+aplicativos separados.
+
+Essa descentralização pode gerar dificuldades de organização, conflitos entre moradores,
+esquecimentos e falta de transparência.
+
+Diante desse cenário, surgiu a proposta de desenvolver uma plataforma que concentre as
+principais necessidades de gestão de uma república em um único ambiente digital.
+
+\ideasection{2. Problema}
+Pessoas que moram em repúblicas ou residências compartilhadas precisam organizar diferentes
+aspectos do dia a dia, entre eles:
+\tightlist
+  \item despesas
+  \item divisão de contas
+  \item tarefas domésticas
+  \item moradores
+  \item responsabilidades
+  \item informações importantes da residência
+  \item organização financeira
+  \item comunicação
+\tightlistend
+Normalmente essas atividades são realizadas utilizando diferentes meios. Por exemplo:
+\begin{tcolorbox}[graybox]
+WhatsApp -> comunicação\\
+Planilha -> despesas\\
+Papel -> tarefas\\
+Aplicativo bancário -> pagamentos\\
+Calendário -> compromissos
+\end{tcolorbox}
+Isso pode provocar:
+\tightlist
+  \item informações espalhadas
+  \item contas esquecidas
+  \item dificuldade para saber quem pagou
+  \item divisão incorreta de despesas
+  \item tarefas domésticas esquecidas
+  \item conflitos entre moradores
+  \item dificuldade de acompanhar responsabilidades
+  \item falta de histórico
+  \item ausência de uma visão geral da situação da residência
+\tightlistend
+
+\newpage
+% Página 3
+\ideasection{3. Pergunta norteadora}
+\begin{tcolorbox}[creambox]
+\textcolor{ideaorange}{\textbf{Pergunta central:}} Como podemos criar uma plataforma simples e centralizada que facilite a
+organização de uma república e reduza conflitos relacionados a despesas, tarefas e
+responsabilidades entre os moradores?
+\end{tcolorbox}
+
+\ideasection{4. Público-alvo}
+O sistema será destinado principalmente a:
+\tightlist
+  \item estudantes que moram em repúblicas
+  \item jovens que dividem apartamentos
+  \item moradores de residências compartilhadas
+  \item administradores de repúblicas
+  \item grupos de pessoas que compartilham despesas e responsabilidades domésticas
+\tightlistend
+
+\ideasection{5. Personas}
+Para compreender melhor os possíveis usuários do sistema, foram criadas personas fictícias que
+representam perfis recorrentes do público-alvo.
+
+\ideasub{Persona 1 - Administrador da República}
+\begin{tabularx}{\textwidth}{|>{\bfseries\columncolor{personacell}}p{0.48\textwidth}|Y|}
+\hline
+Nome & Lucas \\
+\hline
+Idade & 24 anos \\
+\hline
+Perfil & Estudante universitário responsável por organizar a república. \\
+\hline
+\end{tabularx}
+
+\minisub{Necessidades}
+\tightlist
+  \item cadastrar moradores
+  \item controlar despesas
+  \item acompanhar pagamentos
+  \item distribuir tarefas
+  \item visualizar a situação geral da casa
+  \item remover moradores que saíram
+  \item manter as informações organizadas
+\tightlistend
+
+\minisub{Problemas}
+Atualmente Lucas utiliza:
+\begin{tcolorbox}[graybox]
+WhatsApp + Excel + anotações
+\end{tcolorbox}
+
+\newpage
+% Página 4
+Isso gera informações espalhadas e dificulta o controle.
+
+\ideasub{Persona 2 - Morador}
+\begin{tabularx}{\textwidth}{|>{\bfseries\columncolor{personacell}}p{0.48\textwidth}|Y|}
+\hline
+Nome & Gabriel \\
+\hline
+Idade & 21 anos \\
+\hline
+Perfil & Estudante que divide uma residência com outras pessoas. \\
+\hline
+\end{tabularx}
+
+\minisub{Necessidades}
+\tightlist
+  \item saber quanto precisa pagar
+  \item consultar despesas
+  \item verificar suas tarefas
+  \item acompanhar prazos
+  \item saber quem mora na residência
+  \item evitar cobranças incorretas
+\tightlistend
+
+\minisub{Problemas}
+Gabriel muitas vezes não sabe:
+\begin{tcolorbox}[graybox]
+Quanto deve?\\
+Quando precisa pagar?\\
+Quem já pagou?\\
+Qual tarefa precisa realizar?
+\end{tcolorbox}
+
+\ideasection{6. Levantamento das dores}
+Durante a ideação foram identificadas algumas dores principais que a solução deverá tratar.
+
+\ideasub{Gestão financeira}
+Moradores precisam controlar contas como:
+\tightlist
+  \item aluguel
+  \item energia
+  \item água
+  \item internet
+  \item gás
+  \item compras coletivas
+  \item manutenção
+  \item produtos de limpeza
+\tightlistend
+O problema ocorre quando essas informações são controladas manualmente ou ficam espalhadas
+em diferentes ferramentas.
+
+\newpage
+% Página 5
+\ideasub{Divisão de despesas}
+Nem todas as despesas necessariamente precisam ser divididas igualmente. Por exemplo:
+\begin{tcolorbox}[graybox]
+Conta de energia: R\$ 400\\
+4 moradores\\
+R\$ 100 para cada
+\end{tcolorbox}
+
+Mas também podem existir situações específicas:
+\begin{tcolorbox}[graybox]
+Compra realizada somente por 3 moradores
+\end{tcolorbox}
+
+Portanto, o sistema deverá permitir diferentes formas de divisão.
+
+\ideasub{Organização de tarefas}
+Atividades como:
+\tightlist
+  \item limpar cozinha
+  \item limpar banheiro
+  \item retirar lixo
+  \item comprar produtos
+  \item organizar área comum
+\tightlistend
+podem ser esquecidas ou realizadas repetidamente pelas mesmas pessoas.
+
+\ideasub{Gestão de moradores}
+Também é necessário manter informações como:
+\tightlist
+  \item quem mora atualmente
+  \item quem é administrador
+  \item quando uma pessoa entrou
+  \item quando saiu
+  \item qual residência ela pertence
+\tightlistend
+
+\ideasection{7. Brainstorming}
+A partir dos problemas identificados, foi realizada uma geração livre de ideias. O objetivo desta
+etapa é explorar possibilidades antes de decidir o que realmente será desenvolvido.
+\tightlist
+  \item Cadastro de usuários
+  \item Criação de república
+  \item Convite de moradores
+  \item Gestão de moradores
+  \item Cadastro de despesas
+  \item Divisão automática de despesas
+  \item Controle de pagamentos
+  \item Tarefas domésticas
+  \item Calendário
+\tightlistend
+
+\newpage
+% Página 6
+\tightlist
+  \item Notificações
+  \item Dashboard
+  \item Relatórios financeiros
+  \item Ranking de tarefas
+  \item Chat interno
+  \item Mural de avisos
+  \item Lista de compras
+  \item Reserva de espaços
+  \item Controle de patrimônio
+  \item Histórico da república
+  \item Integração PIX
+  \item Notificação por e-mail
+  \item Aplicativo mobile
+\tightlistend
+Nesse momento da ideação, o objetivo não é implementar todas as funcionalidades, mas
+identificar possibilidades e organizar uma visão ampla do produto.
+
+\ideasection{8. Agrupamento das ideias}
+Após o brainstorming, as funcionalidades foram organizadas por áreas para facilitar o
+entendimento e a priorização.
+
+\ideasub{Usuários}
+\tightlist
+  \item Cadastro
+  \item Login
+  \item Perfil
+  \item Recuperação de senha
+\tightlistend
+
+\ideasub{República}
+\tightlist
+  \item Criar república
+  \item Editar informações
+  \item Convidar moradores
+  \item Remover moradores
+  \item Definir administrador
+\tightlistend
+
+\ideasub{Financeiro}
+\tightlist
+  \item Cadastrar despesas
+  \item Dividir despesas
+  \item Registrar pagamentos
+  \item Consultar pendências
+  \item Visualizar histórico
+\tightlistend
+
+\ideasub{Tarefas}
+\tightlist
+  \item Criar tarefa
+  \item Definir responsável
+  \item Definir prazo
+\tightlistend
+
+\newpage
+% Página 7
+\tightlist
+  \item Marcar como concluída
+  \item Visualizar tarefas pendentes
+\tightlistend
+
+\ideasub{Comunicação}
+\tightlist
+  \item Mural de avisos
+  \item Notificações
+  \item Chat
+\tightlistend
+
+\ideasub{Gestão}
+\tightlist
+  \item Dashboard
+  \item Relatórios
+  \item Indicadores
+  \item Histórico
+\tightlistend
+
+\ideasection{9. Proposta de solução}
+A solução proposta é desenvolver uma aplicação web chamada RepHouse, responsável por
+centralizar a gestão de uma residência compartilhada.
+
+A plataforma permitiria que cada república possuísse seu próprio ambiente, com informações
+separadas das demais.
+\begin{tcolorbox}[graybox]
+\begin{verbatim}
+RepHouse
+|
++-- República A
+|   +-- Moradores
+|   +-- Despesas
+|   +-- Tarefas
+|
++-- República B
+|   +-- Moradores
+|   +-- Despesas
+|   +-- Tarefas
+|
++-- República C
+    +-- Moradores
+    +-- Despesas
+    +-- Tarefas
+\end{verbatim}
+\end{tcolorbox}
+Os dados de uma república deverão permanecer separados dos dados das demais, garantindo
+organização e privacidade.
+
+\ideasection{10. Proposta de valor}
+\begin{tcolorbox}[creambox]
+\textcolor{ideaorange}{\textbf{Proposta de valor:}} Centralizar a administração de uma república em uma única plataforma
+simples, organizada e acessível.
+\end{tcolorbox}
+
+\newpage
+% Página 8
+Em vez de utilizar várias ferramentas independentes:
+\begin{tcolorbox}[graybox]
+WhatsApp + Excel + papel + aplicativos diferentes
+\end{tcolorbox}
+
+o usuário poderá utilizar:
+\begin{tcolorbox}[graybox]
+RepHouse
+\end{tcolorbox}
+
+como ponto central da organização da residência.
+
+\ideasection{11. MVP - Produto Mínimo Viável}
+Não é recomendado desenvolver todas as ideias inicialmente. O primeiro lançamento deverá
+conter somente as funcionalidades consideradas essenciais para validar a proposta.
+
+\ideasub{MVP 1.0}
+\minisub{Autenticação}
+\tightlist
+  \item criar conta
+  \item fazer login
+  \item logout
+\tightlistend
+
+\minisub{República}
+\tightlist
+  \item criar república
+  \item editar informações
+  \item visualizar república
+\tightlistend
+
+\minisub{Moradores}
+\tightlist
+  \item adicionar morador
+  \item listar moradores
+  \item remover morador
+\tightlistend
+
+\minisub{Despesas}
+\tightlist
+  \item cadastrar despesa
+  \item informar valor
+  \item informar vencimento
+  \item dividir entre moradores
+  \item visualizar despesas
+  \item registrar pagamento
+\tightlistend
+
+\minisub{Tarefas}
+\tightlist
+  \item cadastrar tarefa
+  \item selecionar responsável
+  \item definir prazo
+  \item concluir tarefa
+\tightlistend
+
+\newpage
+% Página 9
+\minisub{Dashboard}
+\tightlist
+  \item mostrar quantidade de moradores
+  \item mostrar despesas pendentes
+  \item mostrar valor total pendente
+  \item mostrar próximos vencimentos
+  \item mostrar tarefas pendentes
+\tightlistend
+
+\ideasection{12. Funcionalidades futuras}
+Depois que o MVP estiver funcionando e validado com usuários, novas funcionalidades poderão
+ser adicionadas de forma incremental.
+
+\ideasub{Versão 2}
+\tightlist
+  \item Notificações
+  \item Mural de avisos
+  \item Lista de compras
+  \item Relatórios financeiros
+  \item Histórico de despesas
+\tightlistend
+
+\ideasub{Versão 3}
+\tightlist
+  \item Chat
+  \item PIX
+  \item Calendário
+  \item Sistema de votação
+  \item Reserva de áreas
+\tightlistend
+
+\ideasub{Versão 4}
+\tightlist
+  \item Aplicativo mobile
+  \item Integrações bancárias
+  \item Automação financeira
+  \item Inteligência artificial
+\tightlistend
+
+\begin{tcolorbox}[creambox]
+\textcolor{ideaorange}{\textbf{Encerramento desta etapa:}} Os itens 1 a 12 estabelecem a base da ideação do RepHouse. A partir
+daqui, o projeto pode avançar para priorização, fluxos, prototipação, arquitetura e requisitos
+detalhados.
+\end{tcolorbox}
+
+\end{document}
