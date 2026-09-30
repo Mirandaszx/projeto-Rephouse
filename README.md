@@ -1,33 +1,39 @@
 # RepHouse
 
-Sistema web simples para gestão e organização de repúblicas e residências compartilhadas.
+Aplicação web para organização de repúblicas e residências compartilhadas.
 
----
+## Stack
 
-## Ideia do Projeto
+- Frontend: React, TypeScript, Vite, Tailwind CSS e ESLint
+- Backend: Node.js e Express
+- Banco de dados: PostgreSQL
+- ORM planejado: Prisma (ainda não instalado)
+- Ambiente local: Docker Compose
 
-O RepHouse é uma aplicação para ajudar moradores de repúblicas a organizar a rotina da casa. A versão inicial (MVP) focará no básico:
+## Rodar com Docker
 
-- Cadastro e login de moradores.
-- Criação e gestão da república.
-- Lista de moradores e administradores.
-- Divisão de contas e despesas.
-- Quadro de tarefas domésticas com prazos.
-- Dashboard com resumo dos vencimentos.
+Com Docker Desktop aberto, na raiz do repositório:
 
----
+```bash
+docker compose up
+```
 
-## Tecnologias Planejadas
+Na primeira execução, o Compose baixa a imagem do Node e instala as dependências usando os arquivos de lock. A aplicação fica disponível em:
 
-- Frontend: React + TypeScript + Vite + Tailwind CSS
-- Backend: Node.js (API REST)
-- Banco de Dados: PostgreSQL
-- ORM: Prisma
+- Frontend: http://localhost:5173
+- API: http://localhost:3000/api/health
+- PostgreSQL: localhost:5432
 
----
+O frontend encaminha chamadas `/api` para a API pelo proxy do Vite. Dentro da rede do Compose, a API encontra o banco pelo nome do serviço `postgres`.
 
-## Status do Projeto
+Para parar os serviços sem apagar os dados do banco:
 
-Em fase de planejamento inicial / Configuração do repositório.
+```bash
+docker compose down
+```
 
-Os arquivos e a estrutura de código serão adicionados em breve.
+As credenciais têm valores padrão para desenvolvimento local e podem ser substituídas por variáveis em um arquivo `.env` na raiz. Não use esses valores padrão em produção.
+
+O Compose atual é para desenvolvimento. Antes de publicar, será necessário preparar imagens de produção, remover os volumes de código e configurar credenciais e segredos próprios do ambiente.
+
+Os arquivos `.dockerignore` estão prontos para quando forem adicionados Dockerfiles. No modo atual, o Compose usa a imagem oficial do Node e volumes de desenvolvimento, então eles não alteram a execução local.
