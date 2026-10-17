@@ -17,7 +17,7 @@ export class ErroResposta extends Error {
   }
 }
 // Exemplo de leitura do erro público. Não registra corpo, token nem conteúdo do arquivo.
-async function conferir(response:Response){
+export async function conferir(response:Response){
   if(response.ok)return
   const body=await response.json().catch(()=>null) as {error?:{code?:string;message?:string}}|null
   throw new ErroResposta(response.status,body?.error?.code??'HTTP_ERROR',body?.error?.message??'Requisição não concluída.',response.headers.get('X-Request-Id'),response.headers.get('Retry-After'))

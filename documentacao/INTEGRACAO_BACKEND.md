@@ -1,5 +1,7 @@
 # Integração e validação do backend
 
+O roteiro atual de integração para conta, repúblicas, moradores, tarefas e MASTER está em [JORNADAS_INTEGRACAO.md](JORNADAS_INTEGRACAO.md), com coleção Insomnia, exemplos tipados e ambiente isolado. Pagamentos e comprovantes descritos neste guia pertencem à entrega anterior; não são ampliados nesta etapa.
+
 Esta entrega prepara a API para quem desenvolve o frontend. O contrato OpenAPI inclui rotas, perfis, corpos de entrada, schemas e exemplos de resposta, erros, idempotência e download de arquivos. A interface permanece com seu responsável.
 
 ## Contrato 2.0.1

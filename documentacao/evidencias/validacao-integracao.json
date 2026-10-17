@@ -1,0 +1,71 @@
+{
+  "registradoEm": "2026-10-17T21:06:07.916Z",
+  "versaoContrato": "2.0.1",
+  "ambiente": "Local; API HTTP e PostgreSQL 18 de testes; sem telas ou CI remota",
+  "revisaoBase": "13835390c7576bda145be793f2b399744f8b501c",
+  "verificacao": {
+    "comando": "npm run verificar",
+    "resultado": "passed",
+    "testes": 112,
+    "semBanco": 34,
+    "comPostgreSQL": 78,
+    "falhas": 0,
+    "ignorados": 0,
+    "novosTestesIncluindoPai": 12,
+    "logLocal": ".devops-local/integracao-regressao.log"
+  },
+  "colecao": {
+    "arquivo": "integracao/insomnia-jornadas.json",
+    "formato": "Insomnia JSON v4",
+    "requisicoes": 56,
+    "todasExecutadasPorHttp": true,
+    "respostasValidadasPeloOpenAPI": true,
+    "sha256": "629b8bd104bc890918dbd072e2a3344afb025c5b2180c73162903660f1f30253",
+    "importacaoManualNoAplicativo": "não executada"
+  },
+  "contrato": {
+    "openapiSemDiferencas": true,
+    "tiposGeradosSemDiferencas": true,
+    "exemplosCompiladosParaNavegador": true,
+    "apisAlteradas": false,
+    "migrationsNovas": 0
+  },
+  "demonstracao": {
+    "entrypoint": "ferramentas/integracao/demo.ts",
+    "comando": "npm run integracao:demo",
+    "execucaoValidada": "node --import tsx ferramentas/integracao/demo.ts",
+    "url": "http://127.0.0.1:3402",
+    "health": 200,
+    "ready": 200,
+    "encerramento": "Ctrl+C; schema exclusivo removido",
+    "schemasRestantes": [],
+    "contasFicticiasIniciais": 7,
+    "seedFinanceira": false
+  },
+  "preservacao": {
+    "principal": {
+      "usuarios": 0,
+      "republicas": 0,
+      "pagamentos": 0
+    },
+    "testesPublic": {
+      "usuarios": 0,
+      "republicas": 0,
+      "pagamentos": 0
+    },
+    "pagamentosAlterados": false,
+    "cargaFinanceiraExecutada": false,
+    "evidenciasAnterioresPreservadas": true
+  },
+  "limites": {
+    "indisponibilidade": "Falha controlada da dependência de readiness; o PostgreSQL não foi desligado neste ensaio.",
+    "frontendReal": "não executado",
+    "ciRemota": "não executada",
+    "push": false,
+    "pullRequest": false
+  },
+  "git": {
+    "branch": "feat/consolidacao-backend",
+    "publicacao": "somente commit local"
+  }
+}

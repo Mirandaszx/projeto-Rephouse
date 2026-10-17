@@ -1,0 +1,1606 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-10-17T00:00:00.000Z",
+  "__export_source": "rephouse.integracao",
+  "resources": [
+    {
+      "_id": "__WORKSPACE_ID__",
+      "parentId": null,
+      "_type": "workspace",
+      "name": "RepHouse — jornadas sem financeiro",
+      "description": "Siga documentacao/JORNADAS_INTEGRACAO.md; use somente a demonstração isolada.",
+      "scope": "collection"
+    },
+    {
+      "_id": "__BASE_ENVIRONMENT_ID__",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "environment",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://127.0.0.1:3402",
+        "senha": "",
+        "tokenNovo": "",
+        "usuarioNovoId": "",
+        "tarefaId": "",
+        "tokenAdminAurora": "",
+        "membroAdminAuroraId": "",
+        "usuarioAdminAuroraId": "",
+        "tokenAdminHorizonte": "",
+        "membroAdminHorizonteId": "",
+        "usuarioAdminHorizonteId": "",
+        "tokenAna": "",
+        "membroAnaId": "",
+        "usuarioAnaId": "",
+        "tokenBruno": "",
+        "membroBrunoId": "",
+        "usuarioBrunoId": "",
+        "tokenCarla": "",
+        "membroCarlaId": "",
+        "usuarioCarlaId": "",
+        "tokenExcluir": "",
+        "membroExcluirId": "",
+        "usuarioExcluirId": "",
+        "tokenMaster": "",
+        "membroMasterId": "",
+        "usuarioMasterId": "",
+        "republicaAuroraId": "",
+        "republicaHorizonteId": "",
+        "codigoAurora": "",
+        "codigoHorizonte": ""
+      },
+      "dataPropertyOrder": null,
+      "color": null,
+      "isPrivate": true
+    },
+    {
+      "_id": "req_cadastro",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "01 Cadastrar conta sem república",
+      "description": "Esperado HTTP 201. Guarde usuario.id em usuarioNovoId e token em tokenNovo.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/auth/register",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nome\": \"Novo Morador\",\n  \"email\": \"novo@integracao.rephouse.test\",\n  \"senha\": \"{{ _.senha }}\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_loginNovo",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "02 Login da conta nova",
+      "description": "Esperado HTTP 200. Atualize tokenNovo.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/auth/login",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"novo@integracao.rephouse.test\",\n  \"senha\": \"{{ _.senha }}\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_meNovo",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "03 Consultar conta nova",
+      "description": "Esperado HTTP 200. membro=null. Após editar, o nome deve ser Novo Nome.",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/me",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenNovo }}"
+        }
+      ],
+      "body": {},
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_editarPerfil",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "04 Editar nome",
+      "description": "Esperado HTTP 200. ",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/me",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenNovo }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nome\": \"Novo Nome\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_semRepublica",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "05 Consultar contexto ausente",
+      "description": "Esperado HTTP 409. error.code=NO_REPUBLIC.",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/republicas/atual",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenNovo }}"
+        }
+      ],
+      "body": {},
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_loginAdminAurora",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "06 Login admin.aurora",
+      "description": "Esperado HTTP 200. Guarde token em tokenAdminAurora. Guarde usuario.id quando solicitado pelo guia.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/auth/login",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"admin.aurora@integracao.rephouse.test\",\n  \"senha\": \"{{ _.senha }}\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_criarAurora",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "07 Criar Aurora",
+      "description": "Esperado HTTP 201. Guarde id em republicaAuroraId e codigoEntrada em codigoAurora. O criador passa a ADMIN.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/republicas",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenAdminAurora }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nome\": \"República Aurora\",\n  \"endereco\": \"Rua de demonstração\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_meAdminAurora",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "08 Atualizar perfil admin.aurora",
+      "description": "Esperado HTTP 200. tipoUsuario=USUARIO_ADMIN. Guarde membro.id em membroAdminAuroraId.",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/me",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenAdminAurora }}"
+        }
+      ],
+      "body": {},
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_loginAdminHorizonte",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "09 Login admin.horizonte",
+      "description": "Esperado HTTP 200. Guarde token em tokenAdminHorizonte. Guarde usuario.id quando solicitado pelo guia.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/auth/login",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"admin.horizonte@integracao.rephouse.test\",\n  \"senha\": \"{{ _.senha }}\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_criarHorizonte",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "10 Criar Horizonte",
+      "description": "Esperado HTTP 201. Guarde id em republicaHorizonteId e codigoEntrada em codigoHorizonte. O criador passa a ADMIN.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/republicas",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenAdminHorizonte }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nome\": \"República Horizonte\",\n  \"endereco\": \"Rua de demonstração\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_meAdminHorizonte",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "11 Atualizar perfil admin.horizonte",
+      "description": "Esperado HTTP 200. tipoUsuario=USUARIO_ADMIN. Guarde membro.id em membroAdminHorizonteId.",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/me",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenAdminHorizonte }}"
+        }
+      ],
+      "body": {},
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_loginAna",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "12 Login ana",
+      "description": "Esperado HTTP 200. Guarde token em tokenAna. Guarde usuario.id quando solicitado pelo guia.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/auth/login",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"ana@integracao.rephouse.test\",\n  \"senha\": \"{{ _.senha }}\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_entrarAna",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "13 Entrar ana na Aurora",
+      "description": "Esperado HTTP 201. Guarde id em membroAnaId e usuarioId em usuarioAnaId.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/republicas/entrar",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenAna }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"codigoEntrada\": \"{{ _.codigoAurora }}\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_loginBruno",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "14 Login bruno",
+      "description": "Esperado HTTP 200. Guarde token em tokenBruno. Guarde usuario.id quando solicitado pelo guia.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/auth/login",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"bruno@integracao.rephouse.test\",\n  \"senha\": \"{{ _.senha }}\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_entrarBruno",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "15 Entrar bruno na Aurora",
+      "description": "Esperado HTTP 201. Guarde id em membroBrunoId e usuarioId em usuarioBrunoId.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/republicas/entrar",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenBruno }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"codigoEntrada\": \"{{ _.codigoAurora }}\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_loginCarla",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "16 Login carla",
+      "description": "Esperado HTTP 200. Guarde token em tokenCarla. Guarde usuario.id quando solicitado pelo guia.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/auth/login",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"carla@integracao.rephouse.test\",\n  \"senha\": \"{{ _.senha }}\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_entrarCarla",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "17 Entrar carla na Horizonte",
+      "description": "Esperado HTTP 201. Guarde id em membroCarlaId e usuarioId em usuarioCarlaId.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/republicas/entrar",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenCarla }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"codigoEntrada\": \"{{ _.codigoHorizonte }}\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_loginExcluir",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "18 Login excluir",
+      "description": "Esperado HTTP 200. Guarde token em tokenExcluir. Guarde usuario.id quando solicitado pelo guia.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/auth/login",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"excluir@integracao.rephouse.test\",\n  \"senha\": \"{{ _.senha }}\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_entrarExcluir",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "19 Entrar excluir na Aurora",
+      "description": "Esperado HTTP 201. Guarde id em membroExcluirId e usuarioId em usuarioExcluirId.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/republicas/entrar",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenExcluir }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"codigoEntrada\": \"{{ _.codigoAurora }}\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_loginMaster",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "20 Login master",
+      "description": "Esperado HTTP 200. Guarde token em tokenMaster. Guarde usuario.id quando solicitado pelo guia.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/auth/login",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"master@integracao.rephouse.test\",\n  \"senha\": \"{{ _.senha }}\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_editarRepublica",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "21 Editar república Aurora",
+      "description": "Esperado HTTP 200. ",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/republicas/atual",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenAdminAurora }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"endereco\": null\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_moradores",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "22 Listar moradores ativos",
+      "description": "Esperado HTTP 200. dados contém somente vínculos ativos da Aurora; inativos=true inclui ambos os estados.",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/membros?pagina=1&limite=20",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenAdminAurora }}"
+        }
+      ],
+      "body": {},
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_inativosNegado",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "23 NORMAL tenta listar inativos",
+      "description": "Esperado HTTP 403. ",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/membros?inativos=true",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenAna }}"
+        }
+      ],
+      "body": {},
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_criarTarefa",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "24 ADMIN atribui tarefa à Ana",
+      "description": "Esperado HTTP 201. Guarde id em tarefaId. Banco: ABERTA, prazo 2030-01-15.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/tarefas",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenAdminAurora }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"titulo\": \"Limpar cozinha\",\n  \"responsavelId\": \"{{ _.membroAnaId }}\",\n  \"prazo\": \"2030-01-15\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_listarTarefas",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "25 Ana lista tarefas",
+      "description": "Esperado HTTP 200. ",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/tarefas?pagina=1&limite=20",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenAna }}"
+        }
+      ],
+      "body": {},
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_concluirOutraPessoa",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "26 Bruno tenta concluir tarefa da Ana",
+      "description": "Esperado HTTP 403. Estado permanece ABERTA.",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/tarefas/{{ _.tarefaId }}",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenBruno }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"status\": \"CONCLUIDA\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_concluirOutraRepublica",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "27 Carla tenta concluir tarefa da Aurora",
+      "description": "Esperado HTTP 404. Estado permanece ABERTA.",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/tarefas/{{ _.tarefaId }}",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenCarla }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"status\": \"CONCLUIDA\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_responsavelExterno",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "28 ADMIN tenta atribuir tarefa à outra casa",
+      "description": "Esperado HTTP 400. error.code=INVALID_RESPONSIBLE; nenhuma tarefa criada.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/tarefas",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenAdminAurora }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"titulo\": \"Inválida\",\n  \"responsavelId\": \"{{ _.membroCarlaId }}\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_normalCriar",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "29 NORMAL tenta criar tarefa",
+      "description": "Esperado HTTP 403. ",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/tarefas",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenAna }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"titulo\": \"Sem permissão\",\n  \"responsavelId\": \"{{ _.membroAnaId }}\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_concluir",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "30 Ana conclui a própria tarefa",
+      "description": "Esperado HTTP 200. ",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/tarefas/{{ _.tarefaId }}",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenAna }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"status\": \"CONCLUIDA\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_normalEditar",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "31 Ana tenta editar título",
+      "description": "Esperado HTTP 403. ",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/tarefas/{{ _.tarefaId }}",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenAna }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"titulo\": \"Não autorizado\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_trocaInvalida",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "32 Trocar com código inválido",
+      "description": "Esperado HTTP 404. Vínculo Aurora continua ativo.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/republicas/trocar",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenAna }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"codigoEntrada\": \"INEXISTENTE\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_trocar",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "33 Ana troca para Horizonte",
+      "description": "Esperado HTTP 200. Vínculo Aurora inativo; Horizonte ativo.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/republicas/trocar",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenAna }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"codigoEntrada\": \"{{ _.codigoHorizonte }}\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_meAna",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "34 Atualizar contexto da Ana",
+      "description": "Esperado HTTP 200. Execute após entrar, trocar, sair ou transferir; use o contexto atual da resposta.",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/me",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenAna }}"
+        }
+      ],
+      "body": {},
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_inativos",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "35 ADMIN lista vínculos ativos e inativos",
+      "description": "Esperado HTTP 200. Após troca, Ana aparece com ativo=false.",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/membros?inativos=true&pagina=1&limite=20",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenAdminAurora }}"
+        }
+      ],
+      "body": {},
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_sair",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "36 Ana sai da Horizonte",
+      "description": "Esperado HTTP 204. Sem corpo; depois GET /api/me retorna membro=null.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/republicas/sair",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenAna }}"
+        }
+      ],
+      "body": {},
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_transferir",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "37 Transferir Aurora para Bruno",
+      "description": "Esperado HTTP 200. Mesmo token antigo: administrador anterior vira NORMAL; Bruno vira ADMIN.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/republicas/transferir-admin",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenAdminAurora }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"membroId\": \"{{ _.membroBrunoId }}\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_adminAntigo",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "38 Antigo ADMIN tenta criar tarefa",
+      "description": "Esperado HTTP 403. ",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/tarefas",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenAdminAurora }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"titulo\": \"Não autorizado\",\n  \"responsavelId\": \"{{ _.membroAnaId }}\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_meBruno",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "39 Atualizar perfil de Bruno",
+      "description": "Esperado HTTP 200. tipoUsuario=USUARIO_ADMIN.",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/me",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenBruno }}"
+        }
+      ],
+      "body": {},
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_masterUsuarios",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "40 MASTER lista usuários",
+      "description": "Esperado HTTP 200. ",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/master/usuarios?pagina=1&limite=20",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenMaster }}"
+        }
+      ],
+      "body": {},
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_masterRepublicas",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "41 MASTER lista repúblicas",
+      "description": "Esperado HTTP 200. ",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/master/republicas?pagina=1&limite=20",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenMaster }}"
+        }
+      ],
+      "body": {},
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_masterNegado",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "42 NORMAL tenta acessar MASTER",
+      "description": "Esperado HTTP 403. ADMIN também não pode; repita com tokenBruno.",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/master/usuarios",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenAna }}"
+        }
+      ],
+      "body": {},
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_bloquearRepublica",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "43 MASTER bloqueia Horizonte",
+      "description": "Esperado HTTP 200. ",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/master/republicas/{{ _.republicaHorizonteId }}/status",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenMaster }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"ativa\": false\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_tarefasBloqueadas",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "44 Carla consulta república bloqueada",
+      "description": "Esperado HTTP 403. error.code=REPUBLIC_BLOCKED.",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/tarefas",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenCarla }}"
+        }
+      ],
+      "body": {},
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_desbloquearRepublica",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "45 MASTER desbloqueia Horizonte",
+      "description": "Esperado HTTP 200. ",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/master/republicas/{{ _.republicaHorizonteId }}/status",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenMaster }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"ativa\": true\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_tarefasCarla",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "46 Carla consulta contexto recuperado",
+      "description": "Esperado HTTP 200. ",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/tarefas",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenCarla }}"
+        }
+      ],
+      "body": {},
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_bloquearUsuario",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "47 MASTER bloqueia Ana",
+      "description": "Esperado HTTP 200. Token da Ana revogado.",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/master/usuarios/{{ _.usuarioAnaId }}/status",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenMaster }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"ativo\": false\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_sessaoRevogada",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "48 Ana usa token revogado",
+      "description": "Esperado HTTP 401. Mesmo após desbloquear, token antigo continua inválido.",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/me",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenAna }}"
+        }
+      ],
+      "body": {},
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_desbloquearUsuario",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "49 MASTER desbloqueia Ana",
+      "description": "Esperado HTTP 200. Faça novo login após testar o token antigo.",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/master/usuarios/{{ _.usuarioAnaId }}/status",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenMaster }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"ativo\": true\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_logout",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "50 Logout de Ana",
+      "description": "Esperado HTTP 204. Sem corpo. Em seguida, sessãoRevogada deve retornar 401.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/auth/logout",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenAna }}"
+        }
+      ],
+      "body": {},
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_excluir",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "51 Excluir conta fictícia sem dívida",
+      "description": "Esperado HTTP 204. Conta e vínculo são desativados; excluidoEm preenchido. Guarde usuário obtido em entrarExcluir.",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/api/me",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenExcluir }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"senha\": \"{{ _.senha }}\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_excluidaMe",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "52 Token de conta excluída",
+      "description": "Esperado HTTP 401. ",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/me",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenExcluir }}"
+        }
+      ],
+      "body": {},
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_excluidaLogin",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "53 Login da conta excluída",
+      "description": "Esperado HTTP 401. ",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/auth/login",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"excluir@integracao.rephouse.test\",\n  \"senha\": \"{{ _.senha }}\"\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_excluidaReativar",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "54 MASTER tenta reativar excluída",
+      "description": "Esperado HTTP 409. error.code=ACCOUNT_DELETED.",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/master/usuarios/{{ _.usuarioExcluirId }}/status",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenMaster }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"ativo\": true\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_paginaInvalida",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "55 Paginação inválida",
+      "description": "Esperado HTTP 400. ",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/membros?limite=101",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenBruno }}"
+        }
+      ],
+      "body": {},
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_paginaVazia",
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "name": "56 Página além dos resultados",
+      "description": "Esperado HTTP 200. dados=[]; totais continuam corretos.",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/membros?pagina=999&limite=20",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.tokenBruno }}"
+        }
+      ],
+      "body": {},
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": false,
+      "settingSendCookies": false,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    }
+  ]
+}

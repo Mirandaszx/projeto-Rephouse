@@ -4,6 +4,6 @@
     "rootDir": ".",
     "noEmit": true
   },
-  "include": ["codigo/**/*.ts", "testes/**/*.ts", "prisma.config.ts"],
+  "include": ["codigo/**/*.ts", "testes/**/*.ts", "ferramentas/integracao/**/*.ts", "prisma.config.ts"],
   "exclude":["testes/carga"]
 }

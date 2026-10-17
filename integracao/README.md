@@ -1,5 +1,7 @@
 # Integração TypeScript — API 2.0.1
 
+Para a entrega de conta, repúblicas, moradores, tarefas e MASTER, siga [as jornadas sem operações financeiras](../documentacao/JORNADAS_INTEGRACAO.md). Há uma coleção Insomnia em `insomnia-jornadas.json`, exemplos em `jornadas.ts` e uma demonstração isolada por `npm run integracao:demo`. Os exemplos financeiros abaixo pertencem à entrega anterior e ficam preservados.
+
 `api.d.ts` é gerado do OpenAPI e exporta `paths`, `components` e `operations`. Campos binários são representados como `Blob` para uso no navegador. Copie este arquivo e os exemplos para o projeto consumidor; não importe Prisma nem código interno do backend. São tipos sem dependência de runtime. Eles não substituem validação do servidor nem validam automaticamente JSON recebido.
 
 ```powershell

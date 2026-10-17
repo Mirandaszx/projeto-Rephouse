@@ -137,3 +137,9 @@ Resultado atual: **100 testes aprovados, zero ignorados**, inclusive em instala�
 | Contrato e tipos | OpenAPI 2.0.1, tipos gerados e exemplos compilados para navegador, sem validações ignoradas |
 | Carga com arquivos | Resultado próprio em validacao-comprovantes.json; não reutiliza a medição sem arquivos da etapa anterior |
 | GitHub | Não executado; commits somente locais, por decisão do usuário |
+
+## Preparação para integração sem operações financeiras
+
+As evidências das etapas anteriores permanecem históricas. A nova validação de conta, repúblicas, moradores, tarefas e MASTER está em [EVIDENCIAS_INTEGRACAO.md](EVIDENCIAS_INTEGRACAO.md), com matriz por jornada e [resultado estruturado](evidencias/validacao-integracao.json). O [roteiro reproduzível](JORNADAS_INTEGRACAO.md) usa exclusivamente o banco de testes e um schema por sessão, sem seed financeira.
+
+Esta etapa preserva o contrato 2.0.1 e os testes financeiros existentes, sem implementar Pix, alterar uploads ou repetir carga financeira. Execução de telas, importação manual no aplicativo Insomnia e CI remota são atividades distintas das evidências HTTP e TypeScript locais.
