@@ -80,6 +80,25 @@ test('JWT precisa de exp, iat, sub UUID e versão não negativa',async()=>{
     await assert.rejects(service.verifyToken(token))
   }
 })
+
+test('desconectar o cliente não libera o slot enquanto o processamento segue ativo',async()=>{
+  let release!:()=>void,entered!:()=>void,finished!:()=>void,closed!:()=>void
+  const gate=new Promise<void>(resolve=>{release=resolve}),started=new Promise<void>(resolve=>{entered=resolve}),done=new Promise<void>(resolve=>{finished=resolve})
+  const disconnected=new Promise<void>(resolve=>{closed=resolve})
+  const app=express();app.post('/',createUploadLimit(1),async(_req,res)=>{
+    res.locals.uploadInProgress=true;res.once('close',closed);entered()
+    try{await gate;if(!res.destroyed)res.sendStatus(200)}finally{res.locals.releaseUpload();finished()}
+  });app.use(errorHandler)
+  const server=app.listen(0,'127.0.0.1');await once(server,'listening')
+  const abort=new AbortController()
+  try{
+    const addr=server.address();assert.ok(addr&&typeof addr!=='string')
+    const send=(signal?:AbortSignal)=>fetch('http://127.0.0.1:'+addr.port,{method:'POST',headers:{'Content-Type':'multipart/form-data; boundary=x'},body:'--x--',signal})
+    const first=send(abort.signal).catch(()=>undefined);await started;abort.abort();await first;await disconnected
+    assert.equal((await send()).status,429)
+    release();await done;assert.equal((await send()).status,200)
+  }finally{release();server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()))}
+})
 test('HTTP protege conteúdo com headers Helmet',async()=>{
   const server=createApp({log:()=>{}}).listen(0,'127.0.0.1');await once(server,'listening')
   try {

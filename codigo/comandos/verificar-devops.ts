@@ -223,6 +223,12 @@ try {
   const legacyState=await snapshot(legacyTarget)
   assert.equal(legacyState.versoes,before.versoes);assert.equal(legacyState.comprovantes,1);assert.equal(legacyState.saldosInvalidos,0)
   evidence('Formato 1 restaurado: sete migrations antigas, oitava aplicada, arquivo importado e download com hash original; formato 2 contém apenas o dump.')
+  const protectedTarget=await stack(`rephouse-restauracao-protegida-${suffix}`,envFile)
+  const protectedVolume=protectedTarget.project+'_banco'
+  assert.equal(await command(['volume','ls','-q','--filter','name=^'+protectedVolume+'$']),'')
+  await command(['volume','create',protectedVolume])
+  try{await assert.rejects(restore(protectedTarget,backupDir),/Destino já possui recursos/)}finally{await command(['volume','rm',protectedVolume])}
+  evidence('Restauração recusou volume de destino preexistente mesmo sem rótulos Compose; nenhum volume existente é reutilizado.')
   await writeFile(join(directory,'resultado.json'),JSON.stringify({at:new Date().toISOString(),result:'passed',events,snapshot:before,backup:backupDir,remoteCI:'não executada'},null,2))
   console.log(`Evidência local: ${join(directory,'resultado.json')}`)
 } catch(error) {

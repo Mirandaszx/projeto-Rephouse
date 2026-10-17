@@ -10,7 +10,6 @@ const environmentSchema = z.object({
   HOST: z.string().min(1).default('0.0.0.0'),
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   JWT_SECRET: z.string().min(32),
-  UPLOAD_DIR: z.string().min(1).default('armazenamento/comprovantes'),
   CORS_ORIGINS: z.string().default('').transform(value => value.split(',').map(origin => origin.trim()).filter(Boolean))
     .pipe(z.array(z.url().refine(value => {
       const url = new URL(value)

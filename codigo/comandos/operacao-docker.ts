@@ -84,6 +84,10 @@ async function restoreBackup(s:Stack,directory:string):Promise<void>{
   for (const kind of ['container', 'volume']) {
     if (await command([kind, 'ls', ...(kind === 'container' ? ['-a'] : []), '-q', '--filter', `label=com.docker.compose.project=${s.project}`], { env: s.env })) throw new Error('Destino já possui recursos; escolha outro nome de projeto.')
   }
+  // Volumes criados manualmente podem ter o nome esperado sem os rótulos do Compose.
+  for(const volume of [s.project+'_banco',s.project+'_comprovantes_legados']){
+    if(await command(['volume','ls','-q','--filter','name=^'+volume+'$'],{env:s.env}))throw new Error('Destino já possui recursos; escolha outro nome de projeto.')
+  }
   const source = resolve(directory)
   const parsed=manifestSchema.safeParse(JSON.parse(await readFile(join(source,'manifesto.json'),'utf8')))
   if(!parsed.success)throw new Error('Manifesto inválido.')

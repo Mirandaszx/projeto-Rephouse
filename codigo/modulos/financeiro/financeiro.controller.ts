@@ -12,13 +12,16 @@ const expenseSchema = z.object({ titulo: z.string().trim().min(1).max(160), cate
 export function createFinanceiroController(service: FinanceiroService, master = false) {
   const scope = (req: Parameters<typeof idParam>[0]) => master ? idParam(req, 'republicaId') : undefined
   const pay: RequestHandler = async (req, res) => {
-    const input = z.object({ rateioId: uuid, valor: money }).strict().parse(req.body)
-    const chaveIdempotencia = uuid.parse(req.get('Idempotency-Key'))
-    const comprovante = req.file ? await prepareReceipt(req.file.buffer) : undefined
-    const payment = await service.pay(res.locals.actor as Actor, { ...input, chaveIdempotencia, comprovante })
+    res.locals.uploadInProgress=true
+    try{
+      const input = z.object({ rateioId: uuid, valor: money }).strict().parse(req.body)
+      const chaveIdempotencia = uuid.parse(req.get('Idempotency-Key'))
+      const comprovante = req.file ? await prepareReceipt(req.file.buffer) : undefined
+      const payment = await service.pay(res.locals.actor as Actor, { ...input, chaveIdempotencia, comprovante })
       res.status(201).json({ id: payment.id, rateioId: payment.rateioId, membroId: payment.membroId,
         valor: payment.valor.toFixed(2), dataPagamento: payment.dataPagamento,
         comprovanteUrl: paymentPublic(payment).comprovanteUrl })
+    }finally{res.locals.releaseUpload?.()}
   }
   const receipt: RequestHandler = async (req, res) => {
     const file = await service.receipt(res.locals.actor as Actor, idParam(req))

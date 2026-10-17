@@ -9,7 +9,9 @@ export function createUploadLimit(max=2):RequestHandler {
     active++
     let released=false
     const release=()=>{if(!released){released=true;active--}}
-    res.once('finish',release);res.once('close',release)
+    res.locals.releaseUpload=release
+    // Desconectar o cliente não cancela uma transação já iniciada no PostgreSQL.
+    res.once('finish',release);res.once('close',()=>{if(!res.locals.uploadInProgress)release()})
     next()
   }
 }
