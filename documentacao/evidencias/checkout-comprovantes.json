@@ -1,0 +1,12 @@
+{
+  "registradoEm": "2026-10-17T20:35:07.286Z",
+  "resultado": "passed",
+  "origem": "git archive",
+  "revisao": "6ffeebba12b7b625e3dcf078466a47b040139e8f",
+  "instalacao": "npm ci",
+  "verificacao": "npm run verificar",
+  "testes": 100,
+  "ignorados": 0,
+  "contratoSincronizado": true,
+  "ambiente": "Variáveis fornecidas apenas ao processo; nenhuma cópia do .env."
+}

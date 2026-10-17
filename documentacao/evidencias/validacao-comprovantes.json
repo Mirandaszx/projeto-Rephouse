@@ -1,5 +1,5 @@
 {
-  "registradoEm": "2026-10-17T20:33:48.050Z",
+  "registradoEm": "2026-10-17T20:36:22.405Z",
   "versao": "2.0.1",
   "ambiente": "Docker local; uma API; sem CI remota",
   "verificacao": {
@@ -161,6 +161,54 @@
     "backup": "2001bb4",
     "publicacao": "Não realizada; commits somente locais por decisão do usuário",
     "pullRequest": "Não aberto",
-    "CIremota": "Não executada"
+    "CIremota": "Não executada",
+    "protecoes": "6c6e33e",
+    "integracao": "6ffeebb"
+  },
+  "checkoutLimpo": {
+    "registradoEm": "2026-10-17T20:35:07.286Z",
+    "resultado": "passed",
+    "origem": "git archive",
+    "revisao": "6ffeebba12b7b625e3dcf078466a47b040139e8f",
+    "instalacao": "npm ci",
+    "verificacao": "npm run verificar",
+    "testes": 100,
+    "ignorados": 0,
+    "contratoSincronizado": true,
+    "ambiente": "Variáveis fornecidas apenas ao processo; nenhuma cópia do .env."
+  },
+  "estadoFinal": {
+    "desenvolvimento": {
+      "counts": [
+        {
+          "usuarios": 0,
+          "pagamentos": 0,
+          "comprovantes": 0,
+          "migrations": 8
+        }
+      ],
+      "schemasTemporarios": []
+    },
+    "testes": {
+      "counts": [
+        {
+          "usuarios": 0,
+          "pagamentos": 0,
+          "comprovantes": 0,
+          "migrations": 8
+        }
+      ],
+      "schemasTemporarios": []
+    },
+    "health": {
+      "status": 200,
+      "requestIdPresente": true
+    },
+    "ready": {
+      "status": 200,
+      "requestIdPresente": true
+    },
+    "volumePostgreSQLPreservado": "projeto-rephouse_postgres_data",
+    "volumeLegadoPreservado": "projeto-rephouse_comprovantes_data"
   }
 }

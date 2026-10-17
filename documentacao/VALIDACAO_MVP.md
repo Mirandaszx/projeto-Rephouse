@@ -125,6 +125,8 @@ Não foram identificadas falhas remanescentes de autorização, isolamento ou in
 
 ## Entrega 2.0.1
 
+Resultado atual: **100 testes aprovados, zero ignorados**, inclusive em instalação limpa; carga curta e recuperação Docker aprovadas. Carga completa registrada como **meta não atingida**, por 145 respostas 429 e pela exigência adicional de 100% das verificações aprovadas, sem falhas financeiras ou HTTP 500.
+
 | Item | Evidência |
 | --- | --- |
 | Pagamento e comprovante atômicos | comprovantes.test.ts: rollback de pagamento e saldo quando o comprovante é inválido |
