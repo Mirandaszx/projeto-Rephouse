@@ -2,9 +2,11 @@
 
 Aplicação web para organização de repúblicas e residências compartilhadas.
 
-O backend está na versão **2.0.1**: listagens retornam `{dados,paginacao}`, com `pagina=1` e `limite=20` por padrão. Veja o [guia de integração](documentacao/INTEGRACAO_BACKEND.md) e a [consolidação do backend](documentacao/CONSOLIDACAO_BACKEND.md) para segurança, contratos e ensaios de carga. Os commits desta etapa permanecem locais, conforme solicitado.
+O backend está na versão **2.0.1**: listagens retornam `{dados,paginacao}`, com `pagina=1` e `limite=20` por padrão. Veja o [guia de integração](documentacao/INTEGRACAO_BACKEND.md) e a [consolidação do backend](documentacao/CONSOLIDACAO_BACKEND.md) para segurança, contratos e ensaios de carga. A versão validada foi publicada em `homologacao`; essa branch reúne a integração antes de promover alterações para `main` por PR.
 
 Para integrar conta, repúblicas, moradores, tarefas e MASTER, siga o [roteiro sem operações financeiras](documentacao/JORNADAS_INTEGRACAO.md). Ele inclui coleção Insomnia, exemplos fetch e demonstração isolada por `npm run integracao:demo`.
+
+Para executar a API compilada em ambiente local persistente da equipe e entender os testes do GitHub, siga [HOMOLOGACAO_BACKEND.md](documentacao/HOMOLOGACAO_BACKEND.md).
 
 ## Stack
 

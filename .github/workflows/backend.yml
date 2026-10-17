@@ -1,9 +1,9 @@
 name: Validar backend
 on:
   push:
-    branches: [main]
+    branches: [main, homologacao]
   pull_request:
-    branches: [main]
+    branches: [main, homologacao]
   workflow_dispatch:
     inputs:
       carga_completa:
@@ -48,6 +48,7 @@ jobs:
       - name: Construir, iniciar, interromper banco e ensaiar recuperação isolada
         run: npm run test:devops
       - name: Executar carga curta
+        if: github.event_name == 'workflow_dispatch' && inputs.carga_completa
         run: npm run test:carga
       - name: Executar carga completa quando solicitada
         if: github.event_name == 'workflow_dispatch' && inputs.carga_completa

@@ -143,3 +143,18 @@ Resultado atual: **100 testes aprovados, zero ignorados**, inclusive em instala�
 As evidências das etapas anteriores permanecem históricas. A nova validação de conta, repúblicas, moradores, tarefas e MASTER está em [EVIDENCIAS_INTEGRACAO.md](EVIDENCIAS_INTEGRACAO.md), com matriz por jornada e [resultado estruturado](evidencias/validacao-integracao.json). O [roteiro reproduzível](JORNADAS_INTEGRACAO.md) usa exclusivamente o banco de testes e um schema por sessão, sem seed financeira.
 
 Esta etapa preserva o contrato 2.0.1 e os testes financeiros existentes, sem implementar Pix, alterar uploads ou repetir carga financeira. Execução de telas, importação manual no aplicativo Insomnia e CI remota são atividades distintas das evidências HTTP e TypeScript locais.
+
+## Homologação com execução real no GitHub
+
+O código validado foi publicado em `homologacao`. A entrega seguinte está no [PR #1](https://github.com/Mirandaszx/projeto-Rephouse/pull/1), de `chore/homologacao-ci` para `homologacao`, sem merge. O [guia de operação da equipe](HOMOLOGACAO_BACKEND.md) e o [resultado estruturado](evidencias/validacao-homologacao.json) separam os novos resultados locais e remotos dos registros históricos acima.
+
+| Item | Evidência desta etapa | Resultado |
+| --- | --- | --- |
+| Regressão local completa | 112 testes: 34 sem banco e 78 com PostgreSQL, zero falhas/ignorados; contrato e tipos sem diferenças | Aprovado local |
+| Backend compilado para a equipe | Projeto `rephouse-homologacao`, API 3403, usuário node, sem bind mount; oito migrations, banco sem porta publicada | Aprovado local |
+| Jornadas sem operações financeiras | Cadastro e perfil, duas repúblicas, moradores, tarefas, transferência, MASTER, bloqueios, logout e exclusão; HTTP/OpenAPI e estado SQL conferidos | Aprovado local |
+| CORS da integração | Duas origens locais permitidas, origem parecida recusada e headers de diagnóstico expostos | Aprovado local |
+| Persistência e isolamento operacional | Reinício e down/up mantiveram oito contas, duas repúblicas, sete vínculos e uma tarefa concluída; volumes e bancos anteriores preservados | Aprovado local |
+| CI por PR para homologacao | Instalação limpa, migrations, 112 testes, contrato/tipos e ensaio Docker real de queda, reinício, backup e restauração | Execução remota aprovada; link/commit no resultado estruturado |
+| Carga financeira | Duas etapas restritas a workflow_dispatch com carga_completa=true; desabilitadas nos PRs desta entrega | Não executada |
+| Interface, publicação e merge | Telas não alteradas; backend somente local; main e configurações de proteção preservadas | Fora do escopo; PR aberto para revisão |

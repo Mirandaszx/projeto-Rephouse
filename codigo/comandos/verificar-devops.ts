@@ -229,8 +229,8 @@ try {
   await command(['volume','create',protectedVolume])
   try{await assert.rejects(restore(protectedTarget,backupDir),/Destino já possui recursos/)}finally{await command(['volume','rm',protectedVolume])}
   evidence('Restauração recusou volume de destino preexistente mesmo sem rótulos Compose; nenhum volume existente é reutilizado.')
-  await writeFile(join(directory,'resultado.json'),JSON.stringify({at:new Date().toISOString(),result:'passed',events,snapshot:before,backup:backupDir,remoteCI:'não executada'},null,2))
-  console.log(`Evidência local: ${join(directory,'resultado.json')}`)
+  await writeFile(join(directory,'resultado.json'),JSON.stringify({at:new Date().toISOString(),result:'passed',events,snapshot:before,backup:backupDir,remoteCI:process.env.GITHUB_ACTIONS==='true'?'executada neste workflow':'não executada'},null,2))
+  console.log(`Evidência ${process.env.GITHUB_ACTIONS==='true'?'do GitHub Actions':'local'}: ${join(directory,'resultado.json')}`)
 } catch(error) {
   console.error(error instanceof Error ? error.message : 'Validação DevOps falhou.')
   process.exitCode=1

@@ -1,0 +1,206 @@
+{
+  "registradoEm": "2026-10-17T22:00:14.416Z",
+  "contrato": "2.0.1",
+  "local": {
+    "resultado": "passed",
+    "revisao": "8628228dae2c4a322e3ba16e511aa76ea0fc9e8e",
+    "verificacao": {
+      "comando": "npm run verificar",
+      "testes": 112,
+      "semBanco": 34,
+      "comPostgreSQL": 78,
+      "falhas": 0,
+      "ignorados": 0,
+      "logPrivado": ".devops-local/homologacao-regressao.log"
+    },
+    "compilacaoExemplosNavegador": true,
+    "contratoETiposSemDiferencas": true,
+    "runtime": {
+      "concluidoEm": "2026-10-17T21:54:50.892Z",
+      "projeto": "rephouse-homologacao",
+      "api": "http://127.0.0.1:3403",
+      "volume": "rephouse-homologacao_banco",
+      "jornadasHttpComSchemaValidado": 47,
+      "exemplosFetch": true,
+      "cors": {
+        "origens": [
+          "http://localhost:5173",
+          "http://127.0.0.1:5173"
+        ],
+        "origemSemelhanteRecusada": true,
+        "headersExpostos": true
+      },
+      "health": 200,
+      "ready": 200,
+      "usuario": "node",
+      "bindMount": false,
+      "portaPostgreSQLPublicada": false,
+      "antes": {
+        "usuarios": 8,
+        "republicas": 2,
+        "membros": 7,
+        "tarefas": 1,
+        "despesas": 0,
+        "pagamentos": 0,
+        "versoes": 8,
+        "nomes": [
+          "República Aurora",
+          "República Horizonte"
+        ],
+        "concluidas": 1,
+        "inativos": 2,
+        "excluidos": 1
+      },
+      "depois": {
+        "usuarios": 8,
+        "republicas": 2,
+        "membros": 7,
+        "tarefas": 1,
+        "despesas": 0,
+        "pagamentos": 0,
+        "versoes": 8,
+        "nomes": [
+          "República Aurora",
+          "República Horizonte"
+        ],
+        "concluidas": 1,
+        "inativos": 2,
+        "excluidos": 1
+      },
+      "restartPreservou": true,
+      "downUpPreservou": true,
+      "volumesOriginaisPreservados": true
+    },
+    "bancosAnteriores": {
+      "principal": {
+        "usuarios": 0,
+        "republicas": 0,
+        "pagamentos": 0
+      },
+      "testesPublic": {
+        "usuarios": 0,
+        "republicas": 0,
+        "pagamentos": 0
+      },
+      "schemasTemporariosRestantes": []
+    }
+  },
+  "github": {
+    "resultado": "success",
+    "evento": "pull_request",
+    "runId": 39073009780,
+    "url": "https://github.com/Mirandaszx/projeto-Rephouse/actions/runs/39073009780",
+    "commit": "5f756c70090dfe4a057d301d2ee5f1403fdb35e6",
+    "iniciadoEm": "2026-10-17T21:56:26Z",
+    "concluidoEm": "2026-10-17T21:58:55Z",
+    "verificacao": {
+      "instalacao": "npm ci",
+      "postgres": 18,
+      "node": 24,
+      "migrations": "passed",
+      "testes": 112,
+      "falhas": 0,
+      "ignorados": 0,
+      "contratoETipos": "passed"
+    },
+    "recuperacaoDocker": {
+      "resultado": "passed",
+      "artefato": "resultados-backend",
+      "remoteCI": "executada neste workflow",
+      "cenarios": [
+        "startup sem root ou bind mount",
+        "SIGTERM com drenagem",
+        "queda e retorno do PostgreSQL",
+        "logs sem credenciais",
+        "backup concorrente e recuperação após falha",
+        "restauração de formatos 1 e 2",
+        "recusa de volumes preexistentes"
+      ]
+    },
+    "etapas": [
+      {
+        "nome": "Set up job",
+        "resultado": "success"
+      },
+      {
+        "nome": "Initialize containers",
+        "resultado": "success"
+      },
+      {
+        "nome": "Run actions/checkout@v7",
+        "resultado": "success"
+      },
+      {
+        "nome": "Run actions/setup-node@v7",
+        "resultado": "success"
+      },
+      {
+        "nome": "Run npm ci",
+        "resultado": "success"
+      },
+      {
+        "nome": "Run npm run db:deploy",
+        "resultado": "success"
+      },
+      {
+        "nome": "Run npm run verificar",
+        "resultado": "success"
+      },
+      {
+        "nome": "Conferir contrato versionado",
+        "resultado": "success"
+      },
+      {
+        "nome": "Construir, iniciar, interromper banco e ensaiar recuperação isolada",
+        "resultado": "success"
+      },
+      {
+        "nome": "Executar carga curta",
+        "resultado": "skipped"
+      },
+      {
+        "nome": "Executar carga completa quando solicitada",
+        "resultado": "skipped"
+      },
+      {
+        "nome": "Guardar somente os resultados dos ensaios",
+        "resultado": "success"
+      },
+      {
+        "nome": "Stop containers",
+        "resultado": "success"
+      },
+      {
+        "nome": "Complete job",
+        "resultado": "success"
+      }
+    ],
+    "primeiraExecucao": {
+      "runId": 39072713562,
+      "url": "https://github.com/Mirandaszx/projeto-Rephouse/actions/runs/39072713562",
+      "commit": "8628228dae2c4a322e3ba16e511aa76ea0fc9e8e",
+      "resultado": "success"
+    },
+    "ajusteDiagnostico": "O artefato inicial tinha remoteCI fixo como não executada. O commit 5f756c7 identifica GITHUB_ACTIONS; a execução aqui registrada confirmou o novo identificador."
+  },
+  "git": {
+    "branch": "chore/homologacao-ci",
+    "base": "homologacao",
+    "pr": "https://github.com/Mirandaszx/projeto-Rephouse/pull/1",
+    "estado": "OPEN",
+    "mergeRealizado": false,
+    "mainPreservada": "343ca22381ebf658bcd6b0cc09d8482fe90c95bc",
+    "homologacaoPreservada": "1770d0ddcd67324d5fade3e93927985418332c62"
+  },
+  "limites": {
+    "cargaFinanceiraExecutada": false,
+    "apisAlteradas": false,
+    "migrationsNovas": 0,
+    "interfaceAlterada": false,
+    "telasReaisExecutadas": false,
+    "deploy": false,
+    "protecaoBranchesAlterada": false,
+    "segredosVersionados": false
+  },
+  "nota": "Evidências identificam o commit efetivamente executado. O commit posterior de documentação registra estes resultados; os checks do PR indicam a validação mais recente."
+}
