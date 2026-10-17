@@ -2,6 +2,8 @@
 
 Aplicação web para organização de repúblicas e residências compartilhadas.
 
+O backend está na versão **2.0.0**: listagens retornam `{dados,paginacao}`, com `pagina=1` e `limite=20` por padrão. Veja o [guia de integração](documentacao/INTEGRACAO_BACKEND.md) e a [consolidação do backend](documentacao/CONSOLIDACAO_BACKEND.md) para segurança, contratos e ensaios de carga. Os commits desta etapa permanecem locais, conforme solicitado.
+
 ## Stack
 
 - Frontend: React, TypeScript, Vite, Tailwind CSS e ESLint

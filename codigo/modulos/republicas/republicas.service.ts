@@ -4,6 +4,7 @@ import { withActor, republicContext, requireAdmin, type Actor } from '../../comp
 import { AppError } from '../../compartilhado/http/app-error.js'
 import { RepublicasRepository } from './republicas.repository.js'
 import type { CriarRepublicaInput } from './republicas.types.js'
+import {pageResult,type PageInput} from '../../compartilhado/http/pagination.js'
 
 export function createRepublicasService(db: PrismaClient) {
   const repository = new RepublicasRepository()
@@ -45,10 +46,10 @@ export function createRepublicasService(db: PrismaClient) {
       await sair(tx, user)
       return entrar(tx, user, codigo)
     }),
-    members: (actor: Actor, inativos: boolean, scope?: string) => withActor(db, actor, async (tx, user) => {
+    members: (actor: Actor, inativos: boolean,page:PageInput, scope?: string) => withActor(db, actor, async (tx, user) => {
       const republic = await republicContext(tx, user, scope)
       if (inativos) requireAdmin(user, republic)
-      return repository.listar(tx, republic.id, inativos)
+      return pageResult(await repository.listar(tx,republic.id,inativos,page),await repository.contar(tx,republic.id,inativos),page)
     }),
     deactivate: (actor: Actor, id: string, scope?: string) => withActor(db, actor, async (tx, user) => {
       const republic = await republicContext(tx, user, scope)

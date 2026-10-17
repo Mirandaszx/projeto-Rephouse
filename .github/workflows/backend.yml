@@ -5,12 +5,17 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      carga_completa:
+        description: Executar ensaio de 1000 contas e 50 usuarios simultaneos
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
   verificar:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     services:
       postgres:
         image: postgres:18
@@ -42,3 +47,20 @@ jobs:
         run: git diff --exit-code -- documentacao/openapi.json
       - name: Construir, iniciar, interromper banco e ensaiar recuperação isolada
         run: npm run test:devops
+      - name: Executar carga curta
+        run: npm run test:carga
+      - name: Executar carga completa quando solicitada
+        if: github.event_name == 'workflow_dispatch' && inputs.carga_completa
+        run: npm run test:carga:completo
+      - name: Guardar somente os resultados dos ensaios
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: resultados-backend
+          # A pasta também contém tokens e ambiente: selecionar apenas estes JSONs.
+          path: |
+            .devops-local/**/resultado.json
+            .devops-local/**/resumo-k6.json
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14

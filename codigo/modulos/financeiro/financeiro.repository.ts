@@ -1,6 +1,7 @@
 import type { Prisma } from '../../gerado/prisma/client.js'
 import type { ParcelaRateio } from './dominio/rateio.js'
 import type { CriarDespesaInput, RegistrarPagamentoInput } from './financeiro.types.js'
+import {pageArgs,type PageInput} from '../../compartilhado/http/pagination.js'
 
 // Recebe a transação do service; não cria conexão nem abre transação própria.
 export class FinanceiroRepository {
@@ -10,9 +11,11 @@ export class FinanceiroRepository {
   pagamentoPorChave(tx: Prisma.TransactionClient, chaveIdempotencia: string) {
     return tx.pagamento.findUnique({ where: { chaveIdempotencia } })
   }
-  listarDespesas(tx: Prisma.TransactionClient, republicaId: string) {
-    return tx.despesa.findMany({ where: { republicaId }, include: { rateios: true }, orderBy: { vencimento: 'asc' } })
+  listarDespesas(tx: Prisma.TransactionClient, republicaId: string, page:PageInput) {
+    return tx.despesa.findMany({ ...pageArgs(page),where: { republicaId }, include: { rateios: true }, orderBy: [{ vencimento: 'asc' },{id:'asc'}] })
   }
+  contarDespesas(tx:Prisma.TransactionClient,republicaId:string){return tx.despesa.count({where:{republicaId}})}
+  contarPessoal(tx:Prisma.TransactionClient,usuarioId:string){return tx.rateioDespesa.count({where:{membro:{usuarioId}}})}
   detalharDespesa(tx: Prisma.TransactionClient, id: string, republicaId: string) {
     return tx.despesa.findFirst({ where: { id, republicaId }, include: { rateios: { include: { pagamentos: true } } } })
   }
@@ -23,8 +26,8 @@ export class FinanceiroRepository {
   editarDespesa(tx: Prisma.TransactionClient, id: string, data: Prisma.DespesaUncheckedUpdateInput) {
     return tx.despesa.update({ where: { id }, data })
   }
-  pessoal(tx: Prisma.TransactionClient, usuarioId: string, id?: string) {
-    return tx.rateioDespesa.findMany({ where: { ...(id ? { id } : {}), membro: { usuarioId } }, include: {
+  pessoal(tx: Prisma.TransactionClient, usuarioId: string, id?: string, page?:PageInput) {
+    return tx.rateioDespesa.findMany({ ...(page?pageArgs(page):{skip:0,take:1}),orderBy:[{despesa:{vencimento:'asc'}},{id:'asc'}],where: { ...(id ? { id } : {}), membro: { usuarioId } }, include: {
       pagamentos: true, despesa: { select: { id: true, titulo: true, categoria: true, vencimento: true,
         republica: { select: { id: true, nome: true } } } },
     } })

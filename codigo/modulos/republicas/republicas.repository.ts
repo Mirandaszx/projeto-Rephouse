@@ -1,4 +1,5 @@
 import type { Prisma } from '../../gerado/prisma/client.js'
+import {pageArgs,type PageInput} from '../../compartilhado/http/pagination.js'
 
 export class RepublicasRepository {
   editar(tx: Prisma.TransactionClient, id: string, data: Prisma.RepublicaUncheckedUpdateInput) {
@@ -32,8 +33,9 @@ export class RepublicasRepository {
     return tx.membroRepublica.upsert({ where: { usuarioId_republicaId: { usuarioId, republicaId } },
       create: { usuarioId, republicaId }, update: { ativo: true } })
   }
-  listar(tx: Prisma.TransactionClient, republicaId: string, inativos: boolean) {
-    return tx.membroRepublica.findMany({ where: { republicaId, ...(inativos ? {} : { ativo: true }) },
-      include: { usuario: { select: { id: true, nome: true, email: true } } }, orderBy: { entrouEm: 'asc' } })
+  contar(tx:Prisma.TransactionClient,republicaId:string,inativos:boolean){return tx.membroRepublica.count({where:{republicaId,...(inativos?{}:{ativo:true})}})}
+  listar(tx: Prisma.TransactionClient, republicaId: string, inativos: boolean,page:PageInput) {
+    return tx.membroRepublica.findMany({ ...pageArgs(page),where: { republicaId, ...(inativos ? {} : { ativo: true }) },
+      include: { usuario: { select: { id: true, nome: true, email: true } } }, orderBy: [{ entrouEm: 'asc' },{id:'asc'}] })
   }
 }

@@ -53,8 +53,9 @@ test('migração: jornada HTTP, privacidade, exclusão e concorrência', { skip:
       assert.match(res.headers.get('x-request-id') ?? '',/^[a-f0-9-]{36}$/)
       const content = await res.text()
       const body = content ? JSON.parse(content) : {}
-      validarResposta(method, path, res.status, body)
-      return { status: res.status, body: body as T }
+      validarResposta(method, path.split('?')[0]!, res.status, body)
+      // Valida o envelope real antes de adaptar os helpers de negócio da jornada.
+      return { status: res.status, body: (method==='GET'&&Array.isArray(body.dados)?body.dados:body) as T, json:body,headers:res.headers }
     }
     const senha = 'Senha-forte-de-testes123!'
     async function register(nome: string) {
@@ -208,7 +209,7 @@ test('migração: jornada HTTP, privacidade, exclusão e concorrência', { skip:
       // O helper de contrato usa caminho sem query, pois os parâmetros não mudam a operação.
       const history = await fetch(`${base}/api/membros?inativos=true`,{headers:{Authorization:`Bearer ${admin.token}`}})
       assert.equal(history.status,200)
-      assert.ok((await history.json() as Member[]).some(m=>m.id===membro.id&&!m.ativo))
+      assert.ok((await history.json() as {dados:Member[]}).dados.some(m=>m.id===membro.id&&!m.ativo))
       assert.equal((await fetch(`${base}/api/membros?inativos=true`,{headers:{Authorization:`Bearer ${morador.token}`}})).status,403)
     })
     await t.test('pagamentos simultâneos nunca ultrapassam o saldo', async () => {
@@ -294,6 +295,10 @@ test('migração: jornada HTTP, privacidade, exclusão e concorrência', { skip:
       assert.equal((await request('DELETE','/api/me',morador.token,{senha:'errada123'})).status,401)
       assert.equal((await request('DELETE','/api/me',morador.token,{senha})).status,204)
       assert.equal((await request('GET','/api/me',morador.token)).status,401)
+      const filesBefore=await readdir(directory)
+      const deniedUpload=new FormData();deniedUpload.set('rateioId',ownRateio().id);deniedUpload.set('valor','1.00');deniedUpload.set('comprovante',new Blob([new Uint8Array(5*1024*1024+1)]),'grande.pdf')
+      assert.equal((await request('POST','/api/pagamentos',morador.token,deniedUpload,randomUUID())).status,401)
+      assert.deepEqual(await readdir(directory),filesBefore)
       assert.equal((await request('POST','/api/auth/login',undefined,{email:morador.usuario.email,senha})).status,401)
       const deleted = await db.usuario.findUniqueOrThrow({where:{id:morador.usuario.id}})
       assert.equal(deleted.ativo,false)
@@ -372,6 +377,59 @@ test('migração: jornada HTTP, privacidade, exclusão e concorrência', { skip:
       assert.ok(upcoming.body.proximasContas.every(item=>item.status==='PENDENTE'))
       const dates=upcoming.body.proximasContas.map(item=>item.vencimento)
       assert.deepEqual(dates,[...dates].sort())
+    })
+    await t.test('paginação usa totais do contexto, ordenação estável e rejeita consultas inválidas',async()=>{
+      for(let index=0;index<5;index++){
+        assert.equal((await request('POST','/api/despesas',admin.token,{titulo:`Página ${index}`,categoria:'OUTROS',valorTotal:'10.00',vencimento:'2035-01-01',membroIds:[adminMember.id]})).status,201)
+        assert.equal((await request('POST','/api/tarefas',admin.token,{titulo:`Página ${index}`,responsavelId:adminMember.id})).status,201)
+      }
+      const countExpenses=await db.despesa.count({where:{republicaId:republicA.body.id}})
+      const seen:string[]=[]
+      for(let page=1;page<=Math.ceil(countExpenses/2);page++){
+        const result=await request<Expense[]>('GET',`/api/despesas?pagina=${page}&limite=2`,admin.token)
+        assert.equal(result.status,200);assert.equal(result.json.paginacao.totalItens,countExpenses)
+        seen.push(...result.body.map(row=>row.id))
+      }
+      assert.equal(seen.length,countExpenses);assert.equal(new Set(seen).size,countExpenses)
+      const again=await request<Expense[]>('GET','/api/despesas?pagina=1&limite=2',admin.token)
+      assert.deepEqual(again.body.map(row=>row.id),seen.slice(0,2))
+      const beyond=await request('GET','/api/despesas?pagina=999&limite=2',admin.token)
+      assert.deepEqual(beyond.json.dados,[]);assert.equal(beyond.json.paginacao.totalItens,countExpenses)
+      for(const query of ['pagina=0','pagina=-1','pagina=1.5','pagina=1e2','pagina=','pagina=1000001','limite=0','limite=101','pagina=1&pagina=2','estranho=1'])assert.equal((await request('GET',`/api/despesas?${query}`,admin.token)).status,400)
+      const scope=`/api/master/republicas/${republicA.body.id}`
+      const lists:[string,string,number][]=[['/api/membros',admin.token,1],['/api/despesas',admin.token,countExpenses],['/api/tarefas',admin.token,5],['/api/me/financeiro',admin.token,countExpenses],['/api/master/usuarios',master.token,await db.usuario.count()],['/api/master/republicas',master.token,await db.republica.count()],[`${scope}/membros`,master.token,1],[`${scope}/despesas`,master.token,countExpenses],[`${scope}/tarefas`,master.token,5]]
+      for(const [path,token,total]of lists){
+        const result=await request('GET',`${path}?limite=1`,token)
+        assert.equal(result.status,200,path);assert.equal(result.json.paginacao.totalItens,total,path)
+        assert.equal(result.json.paginacao.limite,1);assert.equal(result.json.dados.length,1)
+      }
+      assert.equal((await request('GET','/api/membros?inativos=true',admin.token)).json.paginacao.totalItens,2)
+    })
+    await t.test('pagamento concorrente com edição conserva o histórico ou invalida o rateio antigo',async()=>{
+      const created=await request<Expense>('POST','/api/despesas',admin.token,{titulo:'Concorrência',categoria:'OUTROS',valorTotal:'100.00',vencimento:'2035-01-01',membroIds:[adminMember.id]})
+      const [paid,edited]=await Promise.all([request('POST','/api/pagamentos',admin.token,{rateioId:created.body.rateios[0]!.id,valor:'40.00'},randomUUID()),request('PATCH',`/api/despesas/${created.body.id}`,admin.token,{valorTotal:'120.00'})])
+      assert.ok((paid.status===201&&edited.status===409)||(paid.status===404&&edited.status===200),JSON.stringify([paid,edited]))
+      const item=await db.despesa.findUniqueOrThrow({where:{id:created.body.id},include:{rateios:{include:{pagamentos:true}}}})
+      assert.equal(item.rateios.length,1)
+      assert.equal(item.rateios[0]!.valorDevido.toFixed(2),item.valorTotal.toFixed(2))
+      assert.equal(item.rateios[0]!.valorPago.toFixed(2),paid.status===201?'40.00':'0.00')
+    })
+    await t.test('excluir conta concorrente com nova dívida não deixa usuário excluído devedor',async()=>{
+      const user=await register('Concorrência de conta')
+      const joined=await request<Member>('POST','/api/republicas/entrar',user.token,{codigoEntrada:republicA.body.codigoEntrada})
+      const [deleted,created]=await Promise.all([request('DELETE','/api/me',user.token,{senha}),request('POST','/api/despesas',admin.token,{titulo:'Nova dívida',categoria:'OUTROS',valorTotal:'10.00',vencimento:'2035-01-01',membroIds:[joined.body.id]})])
+      assert.ok((deleted.status===204&&[400,409].includes(created.status))||(deleted.status===409&&created.status===201),JSON.stringify([deleted,created]))
+      const stored=await db.usuario.findUniqueOrThrow({where:{id:user.usuario.id}})
+      if(stored.excluidoEm)assert.equal(await db.rateioDespesa.count({where:{membro:{usuarioId:stored.id}}}),0)
+    })
+    await t.test('bloqueios concorrentes preservam pelo menos um MASTER ativo',async()=>{
+      const second=await register('Segundo Master concorrente')
+      await db.usuario.update({where:{id:second.usuario.id},data:{tipoUsuario:'USUARIO_MASTER'}})
+      await db.usuario.update({where:{id:demonstracao.contas[0]!.id},data:{ativo:false}})
+      assert.equal(await db.usuario.count({where:{tipoUsuario:'USUARIO_MASTER',ativo:true}}),2)
+      const results=await Promise.all([request('PATCH',`/api/master/usuarios/${master.usuario.id}/status`,master.token,{ativo:false}),request('PATCH',`/api/master/usuarios/${second.usuario.id}/status`,second.token,{ativo:false})])
+      assert.deepEqual(results.map(result=>result.status).sort(),[200,409])
+      assert.equal(await db.usuario.count({where:{tipoUsuario:'USUARIO_MASTER',ativo:true}}),1)
     })
   } finally {
     if (server) { server.closeAllConnections(); await new Promise<void>(done=>server!.close(()=>done())) }

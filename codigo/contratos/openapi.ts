@@ -116,7 +116,7 @@ const taskInput = { titulo: 'Limpar cozinha', responsavelId: membro.id, prazo: '
 add('/api/health', 'get', 'Verificar o processo HTTP', { public: true, tag: 'Documentação', response: object({ status: { const: 'ok' } }), output: { status: 'ok' } })
 const ready = add('/api/ready', 'get', 'Verificar conexão ao PostgreSQL', { public: true, tag: 'Documentação', description: 'Consulta SELECT 1; responde em até dois segundos, sem detalhes da conexão.', response: object({ status: { const: 'ok' } }), output: { status: 'ok' } })
 ready.responses['503'] = { description: 'PostgreSQL indisponível.', content: { 'application/json': { schema: object({ status: { const: 'unavailable' } }), example: { status: 'unavailable' } } } }
-add('/api/openapi.json', 'get', 'Obter o contrato OpenAPI', { public: true, tag: 'Documentação', response: { type: 'object', required: ['openapi', 'info', 'paths', 'components'] }, output: { openapi: '3.1.0', info: { title: 'RepHouse API', version: '1.1.0' }, paths: {}, components: {} } })
+add('/api/openapi.json', 'get', 'Obter o contrato OpenAPI', { public: true, tag: 'Documentação', response: { type: 'object', required: ['openapi', 'info', 'paths', 'components'] }, output: { openapi: '3.1.0', info: { title: 'RepHouse API', version: '2.0.0' }, paths: {}, components: {} } })
 const cadastro = add('/api/auth/register', 'post', 'Cadastrar conta independente', { public: true, tag: 'Autenticação', status: 201, body: ref('Cadastro'), input: { nome: usuario.nome, email: usuario.email, senha: 'SuaSenhaDeTeste123!' }, response: ref('Sessao'), output: { token: 'JWT_RECEBIDO_DA_API', usuario }, description: 'Sempre cria NORMAL; campos de privilégio são rejeitados. O e-mail é normalizado. E-mail já utilizado, inclusive por conta excluída, retorna 409.' })
 const login = add('/api/auth/login', 'post', 'Autenticar por e-mail e senha', { public: true, tag: 'Autenticação', body: ref('Login'), input: { email: usuario.email, senha: 'SuaSenhaDeTeste123!' }, response: ref('Sessao'), output: { token: 'JWT_RECEBIDO_DA_API', usuario }, description: 'Token de uma hora. Contas bloqueadas ou excluídas não autenticam. Ao expirar, faça login novamente; não há refresh token.' })
 login.responses['401'] = { description: 'Credenciais incorretas ou conta indisponível.', content: { 'application/json': { schema: ref('Error'), example: { error: { code: 'INVALID_CREDENTIALS', message: 'E-mail ou senha inválidos.' } } } } }
@@ -138,7 +138,7 @@ members.parameters = [{ name: 'inativos', in: 'query', schema: { type: 'boolean'
 add('/api/membros/{id}', 'patch', 'Desativar vínculo de morador', { admin: true, body: object({ ativo: { const: false } }), input: { ativo: false }, response: ref('Membro'), output: { ...membro, ativo: false }, description: 'Não apaga o histórico. O administrador atual precisa transferir sua responsabilidade antes.' })
 for (const prefix of ['/api', '/api/master/republicas/{republicaId}']) {
   const tag = prefix === '/api' ? 'Financeiro' : 'MASTER'
-  add(`${prefix}/despesas`, 'get', 'Listar despesas e rateios', { tag, response: array(ref('Despesa')), output: [{ ...despesa, rateios }], description: 'Escopo da república autorizada. Lista simples, sem paginação nesta entrega.' })
+  add(`${prefix}/despesas`, 'get', 'Listar despesas e rateios', { tag, response: array(ref('Despesa')), output: [{ ...despesa, rateios }], description: 'Escopo da república autorizada. Listagem paginada.' })
   add(`${prefix}/despesas`, 'post', 'Criar despesa com rateio igual entre selecionados', { tag, admin: true, status: 201, body: ref('CriarDespesa'), input: expenseInput, response: ref('Despesa'), output: { ...despesa, rateios: rateios.map(r => ({ ...r, valorPago: '0.00', status: 'PENDENTE' })) }, description: 'Participantes ativos da mesma república. Sobra de centavos distribuída por ordem dos IDs. Um participante assume o valor inteiro.' })
   add(`${prefix}/despesas/{id}`, 'get', 'Consultar despesa com pagamentos dos rateios', { tag, response: ref('Despesa'), output: { ...despesa, rateios: rateios.map(r => ({ ...r, pagamentos: r.id === rateio.id ? [pagamento] : r.status === 'PAGO' ? [{ ...pagamento, id: id(6, 1), rateioId: r.id, membroId: r.membroId, valor: r.valorPago }] : [] })) } })
   add(`${prefix}/despesas/{id}`, 'patch', 'Editar despesa', { tag, admin: true, body: ref('EditarDespesa'), input: { titulo: 'Internet atualizada' }, response: ref('Despesa'), output: { ...despesa, titulo: 'Internet atualizada', rateios }, description: 'Valor e participantes ficam bloqueados após o primeiro pagamento (409 FINANCIAL_HISTORY_LOCKED). Título, categoria e vencimento podem ser editados.' })
@@ -151,6 +151,7 @@ const payment = add('/api/pagamentos', 'post', 'Registrar pagamento parcial ou i
 payment.parameters = [{ name: 'Idempotency-Key', in: 'header', required: true, schema: uuid, example: id(9, 1), description: 'Uma chave por operação; reutilize-a ao repetir a mesma solicitação.' }]
 payment.requestBody!.content['multipart/form-data'] = { schema: object({ rateioId: uuid, valor: positiveMoney, comprovante: { type: 'string', format: 'binary', description: 'PDF, PNG, JPEG ou WEBP, até 5 MiB. O conteúdo determina o tipo.' } }, ['rateioId', 'valor']) }
 payment.responses['413'] = { description: 'Arquivo acima de 5 MiB ou JSON acima de 1 MiB.', content: { 'application/json': { schema: ref('Error'), example: { error: { code: 'LIMIT_FILE_SIZE', message: 'O comprovante deve ter no máximo 5 MB.' } } } } }
+payment.responses['429']={description:'Dois uploads já estão em processamento.',headers:{'Retry-After':{schema:{type:'string'},example:'1'}},content:{'application/json':{schema:ref('Error'),example:{error:{code:'UPLOAD_BUSY',message:'Há muitos uploads em andamento. Tente novamente.'}}}}}
 const receipt = add('/api/pagamentos/{id}/comprovante', 'get', 'Baixar comprovante privado', { tag: 'Financeiro', description: 'Proprietário do pagamento, administrador da república de origem ou MASTER. Ausência de arquivo ou falta de acesso retorna 404.' })
 receipt.responses['200'] = { description: 'Conteúdo binário do arquivo.', headers: { 'Content-Disposition': { schema: { type: 'string' }, example: 'attachment; filename="comprovante.pdf"' } }, content: Object.fromEntries(['application/pdf', 'image/png', 'image/jpeg', 'image/webp'].map(type => [type, { schema: { type: 'string', format: 'binary' } }])) }
 add('/api/master/usuarios', 'get', 'Listar usuários globalmente', { response: array(ref('UsuarioMaster')), output: [{ ...usuario, excluidoEm: null }] })
@@ -166,6 +167,19 @@ masterMembers.parameters!.push({ name: 'inativos', in: 'query', schema: { type: 
 add(`${masterPrefix}/membros/{id}`, 'patch', 'Desativar vínculo pelo contexto MASTER', { body: object({ ativo: { const: false } }), input: { ativo: false }, response: ref('Membro'), output: { ...membro, ativo: false } })
 add(`${masterPrefix}/transferir-admin`, 'post', 'Transferir administração pelo contexto MASTER', { body: object({ membroId: uuid }), input: { membroId: membro.id }, response: object({ adminId: uuid }), output: { adminId: usuario.id } })
 
+const pageMetadata=object({pagina:{type:'integer',minimum:1},limite:{type:'integer',minimum:1,maximum:100},totalItens:{type:'integer',minimum:0},totalPaginas:{type:'integer',minimum:0}})
+for(const operations of Object.values(paths)){
+  const operation=operations.get
+  const media=operation?.responses['200']?.content?.['application/json']
+  if(media?.schema.type==='array'){
+    const example=media.example as unknown[]
+    media.schema=object({dados:media.schema,paginacao:pageMetadata})
+    media.example={dados:example,paginacao:{pagina:1,limite:20,totalItens:example.length,totalPaginas:example.length?1:0}}
+    operation!.parameters??=[]
+    operation!.parameters.push({name:'pagina',in:'query',schema:{type:'integer',minimum:1,maximum:1000000,default:1}},{name:'limite',in:'query',schema:{type:'integer',minimum:1,maximum:100,default:20}})
+    operation!.description+=' Resposta paginada: dados e paginacao. Página além do resultado retorna dados vazio. Parâmetros inválidos ou desconhecidos retornam 400.'
+  }
+}
 // Identificador presente inclusive em erros e downloads; nenhum segredo é registrado.
 for (const operations of Object.values(paths)) for (const operation of Object.values(operations)) {
   for (const response of Object.values(operation.responses)) {
@@ -175,7 +189,7 @@ for (const operations of Object.values(paths)) for (const operation of Object.va
 
 export const openApiDocument = {
   openapi: '3.1.0',
-  info: { title: 'RepHouse API', version: '1.1.0', description: 'Backend TypeScript. Dinheiro é string decimal. Datas de entrada usam YYYY-MM-DD; datas civis de saída usam ISO à meia-noite UTC. Relatórios e vencimentos seguem APP_TIME_ZONE, padrão horário de Brasília (America/Sao_Paulo). Exemplos são ilustrativos. Endpoints protegidos usam Authorization: Bearer TOKEN; CORS não substitui autorização.' },
+  info: { title: 'RepHouse API', version: '2.0.0', description: 'Backend TypeScript. Listagens retornam {dados,paginacao}. Dinheiro é string decimal. Datas de entrada usam YYYY-MM-DD; datas civis de saída usam ISO à meia-noite UTC. Relatórios e vencimentos seguem APP_TIME_ZONE, padrão horário de Brasília (America/Sao_Paulo). Exemplos são ilustrativos. Endpoints protegidos usam Authorization: Bearer TOKEN; CORS não substitui autorização.' },
   servers: [{ url: 'http://localhost:3000', description: 'Desenvolvimento local; ajuste ao ambiente da equipe.' }],
   tags: ['Documentação', 'Autenticação', 'Conta', 'Repúblicas', 'Financeiro', 'Tarefas', 'Painel', 'MASTER'].map(name => ({ name })),
   security: [{ bearerAuth: [] }],

@@ -6,6 +6,7 @@ import { FinanceiroRepository } from './financeiro.repository.js'
 import type { CriarDespesaInput, DespesaComRateios, RegistrarPagamentoInput } from './financeiro.types.js'
 import { withActor, republicContext, requireAdmin, type Actor } from '../../compartilhado/context.js'
 import { AppError } from '../../compartilhado/http/app-error.js'
+import {pageResult,type PageInput} from '../../compartilhado/http/pagination.js'
 
 const repository = new FinanceiroRepository()
 
@@ -65,9 +66,9 @@ export function createFinanceiroService(db: PrismaClient) {
       await repository.criarRateios(tx, expense.id, parcelas)
       return repository.buscarDespesaComRateios(tx, expense.id)
     }),
-    list: (actor: Actor, scope?: string) => withActor(db, actor, async (tx, user) => {
+    list: (actor: Actor, page:PageInput, scope?: string) => withActor(db, actor, async (tx, user) => {
       const republic = await republicContext(tx, user, scope)
-      return repository.listarDespesas(tx, republic.id)
+      return pageResult(await repository.listarDespesas(tx,republic.id,page),await repository.contarDespesas(tx,republic.id),page)
     }),
     detail: (actor: Actor, id: string, scope?: string) => withActor(db, actor, async (tx, user) => {
       const republic = await republicContext(tx, user, scope)
@@ -96,11 +97,11 @@ export function createFinanceiroService(db: PrismaClient) {
       await repository.editarDespesa(tx, id, metadata)
       return repository.buscarDespesaComRateios(tx, id)
     }),
-    personal: (actor: Actor, id?: string) => withActor(db, actor, async (tx, user) => {
+    personal: (actor: Actor, id?: string, page?:PageInput) => withActor(db, actor, async (tx, user) => {
       // Este escopo é por proprietário, sem exigir vínculo ativo na república antiga.
-      const items = await repository.pessoal(tx, user.id, id)
+      const items = await repository.pessoal(tx, user.id, id, page)
       if (id && !items.length) throw new AppError(404, 'NOT_FOUND', 'Rateio não encontrado.')
-      return id ? items[0] : items
+      return id ? items[0] : pageResult(items,await repository.contarPessoal(tx,user.id),page!)
     }),
     async pay(actor: Actor, input: { rateioId: string; valor: string; chaveIdempotencia: string; comprovanteUrl?: string; arquivoHash?: string }) {
       const hashRequisicao = createHash('sha256').update(JSON.stringify([

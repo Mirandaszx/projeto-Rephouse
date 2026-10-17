@@ -1,0 +1,5 @@
+{
+  "extends":"./tsconfig.json",
+  "compilerOptions":{"module":"ESNext","moduleResolution":"Bundler","rootDir":".","types":["k6"],"noEmit":true},
+  "include":["testes/carga/**/*.ts"]
+}

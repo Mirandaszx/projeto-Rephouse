@@ -5,6 +5,7 @@ import type { ReceiptStore } from '../../infraestrutura/armazenamento/receipts.j
 import type { Actor } from '../../compartilhado/context.js'
 import { AppError } from '../../compartilhado/http/app-error.js'
 import { dateOnly, endpoint, idParam, money, uuid } from '../../compartilhado/http/validation.js'
+import {pagination} from '../../compartilhado/http/pagination.js'
 
 const expenseSchema = z.object({ titulo: z.string().trim().min(1).max(160), categoria: z.string().trim().min(1).max(80),
   valorTotal: money, vencimento: dateOnly, membroIds: z.array(uuid).min(1) }).strict()
@@ -41,10 +42,10 @@ export function createFinanceiroController(service: FinanceiroService, receipts:
   }
   return {
     create: endpoint((req, actor) => service.create(actor, expenseSchema.parse(req.body), scope(req)), 201),
-    list: endpoint((req, actor) => service.list(actor, scope(req))),
+    list: endpoint((req, actor) => service.list(actor,pagination(req.query), scope(req))),
     detail: endpoint((req, actor) => service.detail(actor, idParam(req), scope(req))),
     edit: endpoint((req, actor) => service.edit(actor, idParam(req), expenseSchema.partial().parse(req.body), scope(req))),
-    personal: endpoint((_req, actor) => service.personal(actor)),
+    personal: endpoint((req, actor) => service.personal(actor,undefined,pagination(req.query))),
     personalDetail: endpoint((req, actor) => service.personal(actor, idParam(req))),
     pay, receipt,
   }

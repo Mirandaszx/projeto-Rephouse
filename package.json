@@ -1,6 +1,6 @@
 {
   "name": "projeto-rephouse",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Sistema web simples para gestão e organização de repúblicas e residências compartilhadas.",
   "main": "dist/server.js",
   "directories": {
@@ -10,7 +10,7 @@
     "start": "node dist/server.js",
     "dev": "tsx watch codigo/server.ts",
     "build": "npm run db:generate && tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.check.json",
+    "typecheck": "tsc -p tsconfig.check.json && tsc -p tsconfig.carga.json",
     "db:generate": "prisma generate",
     "db:validate": "prisma validate",
     "db:deploy": "prisma migrate deploy",
@@ -26,7 +26,9 @@
     "backup": "tsx codigo/comandos/backup.ts",
     "restaurar": "tsx codigo/comandos/restaurar.ts",
     "test:devops": "tsx codigo/comandos/verificar-devops.ts",
-    "comprovantes:verificar": "tsx codigo/comandos/verificar-comprovantes.ts"
+    "comprovantes:verificar": "tsx codigo/comandos/verificar-comprovantes.ts",
+    "test:carga": "tsx codigo/comandos/verificar-carga.ts curto",
+    "test:carga:completo": "tsx codigo/comandos/verificar-carga.ts completo"
   },
   "repository": {
     "type": "git",
@@ -59,6 +61,7 @@
     "@seriousme/openapi-schema-validator": "2.11.0",
     "@types/cors": "2.8.19",
     "@types/express": "5.0.6",
+    "@types/k6": "2.3.0",
     "@types/multer": "2.3.0",
     "@types/node": "24.19.2",
     "@types/pg": "8.23.1",

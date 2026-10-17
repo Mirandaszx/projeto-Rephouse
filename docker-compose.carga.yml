@@ -1,0 +1,18 @@
+services:
+  api:
+    cpus: 2
+    mem_limit: 1g
+  postgres:
+    cpus: 2
+    mem_limit: 2g
+  k6:
+    image: grafana/k6@sha256:e66db15b860113878fa74670e31f5e274830b7b6e42c8bff28b2f2d86a257603
+    profiles: [carga]
+    cpus: 1
+    mem_limit: 512m
+    environment:
+      CARGA_PERFIL: ${CARGA_PERFIL:-curto}
+    volumes:
+      - ./testes/carga:/scripts:ro
+      - ${CARGA_DIR:?Defina CARGA_DIR}:/dados
+    command: ["run", "/scripts/cenario.ts"]

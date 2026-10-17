@@ -1,0 +1,80 @@
+{
+  "registradoEm": "2026-10-17T02:15:50.607Z",
+  "ambiente": "Docker local; uma instância da API",
+  "resultado": "passed",
+  "perfil": "completo",
+  "limites": {
+    "api": {
+      "cpus": 2,
+      "memoryGiB": 1
+    },
+    "postgres": {
+      "cpus": 2,
+      "memoryGiB": 2
+    }
+  },
+  "etapas": "30s até 10 VUs, 30s até 25, 30s até 50, 5 minutos com 50 e 30s até zero",
+  "misturaConfigurada": {
+    "leiturasPercentual": 80,
+    "escritasPercentual": 20
+  },
+  "baseInicial": {
+    "usuarios": 1000,
+    "republicas": 100,
+    "despesas": 10000,
+    "tarefas": 2000,
+    "rateios": 99900,
+    "pagamentos": 69930,
+    "saldosInvalidos": 0,
+    "totaisInvalidos": 0,
+    "contextosInvalidos": 0,
+    "chavesDuplicadas": 0,
+    "statusInvalidos": 0,
+    "isolation": "serializable",
+    "sync": "on",
+    "fsync": "on",
+    "fullPageWrites": "on"
+  },
+  "baseFinal": {
+    "usuarios": 1000,
+    "republicas": 100,
+    "despesas": 10000,
+    "tarefas": 2000,
+    "rateios": 99900,
+    "pagamentos": 71233,
+    "saldosInvalidos": 0,
+    "totaisInvalidos": 0,
+    "contextosInvalidos": 0,
+    "chavesDuplicadas": 0,
+    "statusInvalidos": 0,
+    "isolation": "serializable",
+    "sync": "on",
+    "fsync": "on",
+    "fullPageWrites": "on"
+  },
+  "metricas": {
+    "requisicoes": 16499,
+    "requisicoesPorSegundo": 39.25464588428027,
+    "leituraP95Ms": 177.46124685,
+    "escritaP95Ms": 219.471973,
+    "proporcaoFalhasInesperadas": 0,
+    "errosHTTP500": 0,
+    "violacoesIsolamento": 0,
+    "pagamentosConfirmados": 1303
+  },
+  "recursos": {
+    "api": {
+      "amostras": 37,
+      "cpuMaximaPercentualDocker": 99.41,
+      "memoriaMaximaMiB": 532
+    },
+    "postgres": {
+      "amostras": 37,
+      "cpuMaximaPercentualDocker": 18.39,
+      "memoriaMaximaMiB": 146
+    }
+  },
+  "observacaoRecursos": "Amostragem aproximadamente a cada 10 segundos; CPU Docker: 100% equivale a um núcleo. Picos entre amostras podem não aparecer.",
+  "limitesDaConclusao": "Metas aprovadas neste cenário local; não é garantia para outra infraestrutura ou distribuição de tráfego.",
+  "remoto": "Não executado: commits somente locais, por decisão do usuário."
+}

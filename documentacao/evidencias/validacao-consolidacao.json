@@ -1,0 +1,74 @@
+{
+  "registradoEm": "2026-10-17T19:46:45.465Z",
+  "versao": "2.0.0",
+  "branch": "feat/consolidacao-backend",
+  "commitsAnteriores": {
+    "base": "7781cfb",
+    "seguranca": "89c376c"
+  },
+  "verificacao": {
+    "comando": "npm run verificar",
+    "resultado": "passed",
+    "testes": 93,
+    "semBanco": 33,
+    "comPostgreSQL": 60,
+    "falhas": 0,
+    "ignorados": 0
+  },
+  "contrato": {
+    "versao": "2.0.0",
+    "listagensPaginadas": 9,
+    "exportacaoSincronizada": true
+  },
+  "devops": {
+    "comando": "npm run test:devops",
+    "concluidoEm": "2026-10-17T19:46:16.971Z",
+    "resultado": "passed",
+    "checagens": [
+      "Construindo imagens de runtime e migrations a partir do lockfile.",
+      "SIGTERM drenou requisição em andamento; replay após reinício preservou o mesmo pagamento sem duplicação.",
+      "Imagem compilada sem bind mount, usuário 1000, 7 migrations, registros e comprovante preservados após restart.",
+      "Banco desligado: readiness 503 em menos de dois segundos; health 200; recuperação automática após retorno.",
+      "Logs JSON correlacionados por requestId sem senha, token, DSN ou conteúdo do comprovante.",
+      "Backup concorrente recusado; falha de captura após parada real reiniciou a API e preservou banco/comprovante.",
+      "Backup customizado e comprovantes restaurados em cluster/volumes novos: registros, triggers, ACID, login, download e bloqueio de sobrepagamento conferidos."
+    ],
+    "estadoAntesEDepois": {
+      "usuarios": 7,
+      "republicas": 3,
+      "membros": 7,
+      "despesas": 3,
+      "rateios": 6,
+      "pagamentos": 5,
+      "tarefas": 3,
+      "versoes": 7,
+      "vinculosInativos": 1,
+      "extensaoCrypto": 0,
+      "pago": 140,
+      "saldosInvalidos": 0,
+      "totaisInvalidos": 0,
+      "isolation": "serializable",
+      "sync": "on",
+      "fsync": "on",
+      "fullPageWrites": "on",
+      "triggers": 16,
+      "unlogged": 0
+    }
+  },
+  "comprovantesDesenvolvimento": {
+    "referencias": 0,
+    "arquivos": 0,
+    "ausentes": 0,
+    "orfaos": 0,
+    "inspecaoSomenteLeitura": true
+  },
+  "desempenho": {
+    "arquivo": "carga-consolidacao.json",
+    "resultado": "passed"
+  },
+  "repositorio": {
+    "publicacao": "Não realizada: usuário escolheu manter os commits somente locais.",
+    "pullRequest": "Não aberto.",
+    "CIremota": "Não executada; workflow preparado localmente."
+  }
+}

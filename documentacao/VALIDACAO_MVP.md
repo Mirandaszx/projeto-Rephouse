@@ -14,6 +14,8 @@ Escopo auditado: API TypeScript, PostgreSQL e operação local. Frontend, hosped
 | C | `testes/integracao-http.test.ts`, `testes/auxiliares/contrato.ts`: schema oficial OpenAPI, exemplos, respostas reais, exportação e CORS |
 | O | `testes/operacao-http.test.ts`: saúde, timeout/readiness, correlação e ausência de dados privados nos logs |
 | F | `testes/backup.test.ts`: recuperação da API após falha de captura e datas no horário de Brasília |
+| R | `testes/robustez.test.ts`: erros estruturados, JWT obrigatório, headers, uploads, falhas de armazenamento, commit incerto e trava exclusiva |
+| L | `testes/carga/cenario.ts`, `codigo/comandos/verificar-carga.ts`: carga k6, limites Docker, latências, recursos e integridade depois do ensaio |
 | D | `codigo/comandos/verificar-devops.ts`: imagens Linux, migrations separadas, startup, usuário, volumes, interrupção do PostgreSQL, backup e restauração |
 
 Os nomes dos cenários abaixo permitem localizar as asserções. `OK local` significa execução local aprovada ou inspeção identificada explicitamente; execução no GitHub tem status separado ao final.
@@ -58,7 +60,7 @@ Os nomes dos cenários abaixo permitem localizar as asserções. `OK local` sign
 | RNF-MVP-02 Privacidade | Middleware autentica; autorização MASTER e contexto são revalidados nos services, na mesma transação das consultas; H testa todas as famílias restritas | OK local; autorização de perfil fica no service, conforme arquitetura adotada |
 | RNF-MVP-03 Atomicidade | `infraestrutura/banco/transaction.ts` e migrations; A/B comprovam rollback e conflitos | OK local |
 | RNF-MVP-04 Configuração | `.env*` ignorados, exemplos sem segredos reais; imagem recebe ambiente no runtime; O/D conferem logs; CI usa credenciais descartáveis próprias | OK local por inspeção e testes; exemplos/fixtures não são credenciais de produção |
-| RNF-MVP-05 PostgreSQL/migrations | Prisma 7, PostgreSQL 18, seis migrations aplicadas do zero em H/D, sem modificar as aplicadas | OK local |
+| RNF-MVP-05 PostgreSQL/migrations | Prisma 7, PostgreSQL 18, sete migrations aplicadas do zero em H/D, sem modificar as anteriores | OK local |
 | RNF-MVP-06 Camadas | Routes → controllers → services → repositories, domínio e infraestrutura separados; inspeção em `codigo/` | OK local por inspeção |
 | RNF-MVP-07 Testes | `npm run verificar` exige banco dedicado e executa build/contrato/tipos/testes; CI declara a mesma verificação | OK local; remoto pendente |
 
@@ -79,6 +81,23 @@ Os nomes dos cenários abaixo permitem localizar as asserções. `OK local` sign
 | Backup e restauração | `npm run backup`, `npm run restaurar` | F: API reiniciada após falha; D: hashes, histórico, tarefas, configurações ACID e comprovante recuperados em volumes novos; OK local |
 | CI | `.github/workflows/backend.yml` | Push main, PR main e manual; Linux/Node24/PG18, verificação, OpenAPI e ensaio Docker; arquivo criado, execução remota pendente |
 
+## Consolidação e crescimento
+
+| Item aprovado | Evidência | Resultado |
+| --- | --- | --- |
+| Erros previsíveis sem SQL ou mensagem interna | R: códigos estruturados aninhados; H: conflitos financeiros; O/D: logs privados correlacionados | OK local |
+| Sessão ativa antes do upload e autorização transacional | R: JWT incompleto recusado; H: sessão excluída recusa multipart acima do limite antes de processar o arquivo; contexto revalidado dentro da transação | OK local |
+| Headers e limites HTTP | R: Helmet; O: respostas privadas; inspeção de `server.ts`: 10s headers/30s requisição | OK local; tempos de recebimento conferidos por configuração |
+| Dois uploads por instância, falha de escrita e commit incerto | R: terceiro recebe 429/Retry-After, liberação dos slots, falhas EACCES/escrita e preservação após conexão incerta | OK local |
+| Paginação das nove listagens | H: totais e autorização, filtros, página vazia, valores inválidos, ordenação e páginas sem sobreposição; C: contrato 2.0.0 sincronizado | OK local |
+| Pagamento concorrente com edição e exclusão com nova dívida | H: respostas HTTP e saldos/histórico finais | OK local |
+| Transferência com desativação e último MASTER | B: transferência concorrente; H: dois bloqueios concorrentes preservam um MASTER ativo | OK local |
+| Drenagem e idempotência após reinício | D: requisição de pagamento aguardando trava SQL durante SIGTERM conclui; replay retorna mesmo ID e snapshot permanece igual | OK local |
+| Backup concorrente e recuperação após falha real | D: segunda captura recusada pela trava; primeira falha depois de parar a API, que reinicia e mantém download e snapshot | OK local |
+| Banco indisponível e retorno | D: PostgreSQL parado, ready 503 em menos de 2s, health 200 e recuperação automática | OK local |
+| Meta de 1.000 contas/100 repúblicas/50 simultâneos | L: 10.000 despesas, 2.000 tarefas, cinco minutos com 50 VUs; p95 leitura 177,46ms/escrita 219,47ms; zero falhas inesperadas/500/violações | Meta aprovada no cenário local; [medição](evidencias/carga-consolidacao.json) |
+| Inventário manual de comprovantes | `npm run comprovantes:verificar`: modo somente leitura; desenvolvimento sem referências/arquivos ausentes ou órfãos | OK local |
+
 ## Falha reproduzida e correção
 
 `GET /api/pagamentos/{id}/comprovante` respondia **500** quando o registro existia, mas o arquivo havia desaparecido do armazenamento. O teste `arquivo físico ausente retorna 404 conforme o contrato, preservando o pagamento` reproduziu a divergência antes da correção (`500 !== 404`). O controller agora traduz ENOENT para `404 NOT_FOUND`, mantendo o pagamento. O teste restaura sua fixture de arquivo em `finally`; toda a regressão passou depois da correção. O contrato já previa 404 nesse caso e ganhou documentação de readiness e `X-Request-Id` nesta etapa.
@@ -87,7 +106,7 @@ Uma asserção inicial do ensaio Docker esperava extensão `pgcrypto`, mas as mi
 
 ## Resultado local e pendências
 
-Resultados detalhados e horários estão em [evidencias/validacao-local.json](evidencias/validacao-local.json). A verificação completa passou com **81 testes: 25 sem banco e 56 com PostgreSQL, zero falhas e zero ignorados**. A contagem inclui os testes-pai da jornada do runner Node.
+Os resultados atuais estão em [evidencias/validacao-consolidacao.json](evidencias/validacao-consolidacao.json) e [evidencias/carga-consolidacao.json](evidencias/carga-consolidacao.json). A verificação completa passou com **93 testes: 33 sem banco e 60 com PostgreSQL, zero falhas e zero ignorados**. A contagem inclui os testes-pai da jornada do runner Node. O registro anterior de 81 testes continua em [evidencias/validacao-local.json](evidencias/validacao-local.json), como histórico da etapa anterior.
 
 Não foram identificadas falhas remanescentes de autorização, isolamento ou integridade financeira nos cenários acima. Isso não inclui frontend nem uma auditoria de segurança externa. O [roteiro de demonstração](ROTEIRO_DEMONSTRACAO_BACKEND.md) e o [guia operacional](OPERACAO_BACKEND.md) permitem repetir a validação.
 
@@ -95,7 +114,7 @@ Não foram identificadas falhas remanescentes de autorização, isolamento ou in
 | --- | --- |
 | Backend, PostgreSQL e contrato locais | Aprovados na execução registrada |
 | Build/startup/restart/indisponibilidade/backup/restauração Docker | Aprovados na execução registrada |
-| Execução real do GitHub Actions | **Pendente**: requer commit/push e execução no repositório; não foi declarada como realizada |
-| Stack antigo de desenvolvimento | Containers existentes ainda apontam para `Desktop/RepHouse/projeto-Rephouse`, cujo `package.json` não existe mais; API/frontend observados reiniciando. Não foram recriados nem tiveram volumes alterados. A configuração compilada nova foi validada separadamente |
+| Execução real do GitHub Actions | **Pendente por decisão do usuário**: commits somente locais; sem push ou PR e sem execução remota |
+| Desenvolvimento | API recuperada na pasta atual, sete migrations e health/ready 200. Dumps preventivos preservados; PostgreSQL e volume original mantidos. Frontend antigo não foi recriado e permanece fora do escopo |
 | Bloqueio de merge por status obrigatório | Configuração administrativa futura do GitHub; o job falha ao encontrar erro, mas branch protection não foi alterada |
 | Frontend e deploy online | Fora do escopo desta etapa |

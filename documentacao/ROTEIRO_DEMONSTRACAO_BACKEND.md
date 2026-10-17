@@ -1,5 +1,7 @@
 # Demonstração do backend
 
+Na versão 2.0.0, as respostas das listagens são paginadas: leia os registros em `dados` e os totais em `paginacao`. Use `?pagina=1&limite=20`; obtenha IDs de moradores em `dados`, mantendo as demais etapas abaixo.
+
 Execute em ambiente local de demonstração separado dos dados da equipe. Não é necessário frontend. Importe `documentacao/openapi.json` no Insomnia e configure `baseUrl` para `http://localhost:3000` no desenvolvimento ou `http://localhost:3001` no Compose compilado. Use o [guia operacional](OPERACAO_BACKEND.md) para iniciar a imagem compilada e ensaiar recuperação.
 
 ## Preparar dados e variáveis

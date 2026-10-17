@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, writeFile, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
 import { command, compose, stack, backup, restore, root, assertInsideRoot, type Stack } from './operacao-docker.js'
@@ -53,9 +53,10 @@ async function snapshot(s: Stack): Promise<Record<string, unknown>> {
   return JSON.parse(await compose(s,['exec','-T','postgres','sh','-c','exec psql -X -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d rabbu_mvp -At'],{input:snapshotSql})) as Record<string, unknown>
 }
 async function fixture(base: string) {
+  const paymentKey=randomUUID()
   async function request(method: string, path: string, token?: string, data?: unknown) {
     const form = data instanceof FormData
-    const result = await fetch(`${base}${path}`,{method,headers:{...(token?{Authorization:`Bearer ${token}`} : {}),...(!form&&data?{'Content-Type':'application/json'}:{}),...(path==='/api/pagamentos'?{'Idempotency-Key':randomUUID()}: {})},body:data?form?data:JSON.stringify(data):undefined})
+    const result = await fetch(`${base}${path}`,{method,headers:{...(token?{Authorization:`Bearer ${token}`} : {}),...(!form&&data?{'Content-Type':'application/json'}:{}),...(path==='/api/pagamentos'?{'Idempotency-Key':paymentKey}: {})},body:data?form?data:JSON.stringify(data):undefined})
     assert.ok(result.ok, `${method} ${path}: ${result.status}`)
     return await result.json() as Record<string, unknown>
   }
@@ -64,7 +65,7 @@ async function fixture(base: string) {
   await request('POST','/api/republicas',token,{nome:'República Docker'})
   const membersRes = await fetch(`${base}/api/membros`,{headers:{Authorization:`Bearer ${token}`}})
   assert.equal(membersRes.status,200)
-  const members = await membersRes.json() as {id:string}[]
+  const members = (await membersRes.json() as {dados:{id:string}[]}).dados
   const expense = await request('POST','/api/despesas',token,{titulo:'Conta preservada',categoria:'OUTROS',valorTotal:'120.00',vencimento:'2030-01-01',membroIds:[members[0]!.id]})
   const rateio = (expense.rateios as {id:string}[])[0]!
   const content = '%PDF-1.4\nComprovante privado da auditoria Docker\n%%EOF'
@@ -72,7 +73,7 @@ async function fixture(base: string) {
   data.set('rateioId',rateio.id); data.set('valor','40.00')
   data.set('comprovante',new Blob([content],{type:'application/pdf'}),'conta.pdf')
   const payment = await request('POST','/api/pagamentos',token,data)
-  return { token, paymentId: payment.id as string, rateioId: rateio.id, hash:createHash('sha256').update(content).digest('hex') }
+  return { token, paymentId: payment.id as string, rateioId: rateio.id, hash:createHash('sha256').update(content).digest('hex'),paymentKey,content }
 }
 async function verifyReceipt(base: string, token: string, paymentId: string, hash: string) {
   const path = `${base}/api/pagamentos/${paymentId}/comprovante`
@@ -110,13 +111,44 @@ try {
   assert.equal(before.isolation,'serializable'); assert.equal(before.sync,'on')
   assert.equal(before.fsync,'on'); assert.equal(before.fullPageWrites,'on')
   assert.equal(before.unlogged,0); assert.equal(before.saldosInvalidos,0); assert.equal(before.totaisInvalidos,0)
-  assert.equal(before.pago,140); assert.equal(before.versoes,6); assert.ok(Number(before.triggers)>0)
+  assert.equal(before.pago,140); assert.equal(before.versoes,(await readdir('prisma/migracoes')).filter(name=>/^\d/.test(name)).length); assert.ok(Number(before.triggers)>0)
   assert.equal(before.vinculosInativos,1); assert.equal(before.tarefas,3)
   await compose(source,['restart','postgres','api'])
   await ready(base)
   assert.deepEqual(await snapshot(source),before)
   await verifyReceipt(base,data.token,data.paymentId,data.hash)
-  evidence('Imagem compilada sem bind mount, usuário 1000, seis migrations, registros e comprovante preservados após restart.')
+  const replay=new FormData();replay.set('rateioId',data.rateioId);replay.set('valor','40.00');replay.set('comprovante',new Blob([data.content],{type:'application/pdf'}),'conta.pdf')
+  const replayResponse=await fetch(`${base}/api/pagamentos`,{method:'POST',headers:{Authorization:`Bearer ${data.token}`,'Idempotency-Key':data.paymentKey},body:replay})
+  assert.equal(replayResponse.status,201);assert.equal((await replayResponse.json() as {id:string}).id,data.paymentId)
+  assert.deepEqual(await snapshot(source),before)
+  // Mantém uma requisição real aguardando PostgreSQL durante SIGTERM.
+  const sql=(input:string)=>compose(source!,['exec','-T','postgres','sh','-c','exec psql -X -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At'],{input})
+  const hold=sql('BEGIN; LOCK TABLE usuarios IN ACCESS EXCLUSIVE MODE; SELECT pg_sleep(8); COMMIT;')
+  let inFlight:Promise<Response>|undefined
+  try{
+    let locked=false
+    for(let attempt=0;attempt<20;attempt++){
+      if(await sql("SELECT count(*) FROM pg_locks l JOIN pg_class c ON c.oid=l.relation WHERE c.relname='usuarios' AND mode='AccessExclusiveLock' AND granted;")==='1'){locked=true;break}
+      await delay(50)
+    }
+    assert.ok(locked,'Trava de teste precisa estar ativa antes do SIGTERM.')
+    const form=new FormData();form.set('rateioId',data.rateioId);form.set('valor','40.00');form.set('comprovante',new Blob([data.content],{type:'application/pdf'}),'conta.pdf')
+    inFlight=fetch(`${base}/api/pagamentos`,{method:'POST',headers:{Authorization:`Bearer ${data.token}`,'Idempotency-Key':data.paymentKey},body:form})
+    let waiting=false
+    for(let attempt=0;attempt<20;attempt++){
+      if(Number(await sql("SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE '%usuarios%';"))>0){waiting=true;break}
+      await delay(50)
+    }
+    assert.ok(waiting,'Requisição deve estar em andamento antes de parar a API.')
+    const stopping=compose(source,['stop','-t','20','api'])
+    const completed=await inFlight
+    assert.equal(completed.status,201);assert.equal((await completed.json() as {id:string}).id,data.paymentId)
+    await stopping
+  }finally{await hold;await inFlight?.catch(()=>{})}
+  await compose(source,['start','api']);await ready(base)
+  assert.deepEqual(await snapshot(source),before)
+  evidence('SIGTERM drenou requisição em andamento; replay após reinício preservou o mesmo pagamento sem duplicação.')
+  evidence(`Imagem compilada sem bind mount, usuário 1000, ${before.versoes} migrations, registros e comprovante preservados após restart.`)
 
   await compose(source,['stop','postgres'])
   const start = performance.now()
@@ -130,6 +162,27 @@ try {
   const httpLogs = logs.split('\n').filter(line=>line.startsWith('{')).map(line=>JSON.parse(line) as Record<string,unknown>).filter(event=>event.event==='http')
   assert.ok(httpLogs.length>0 && httpLogs.every(event=>event.requestId&&typeof event.durationMs==='number'))
   evidence('Logs JSON correlacionados por requestId sem senha, token, DSN ou conteúdo do comprovante.')
+
+  // Falha após a parada real da API: verifica trava concorrente e recuperação no finally.
+  let releaseCapture!:()=>void,notifyCapture!:()=>void
+  const captureGate=new Promise<void>(resolve=>{releaseCapture=resolve})
+  const captureStarted=new Promise<void>(resolve=>{notifyCapture=resolve})
+  const failedCapture=backup(source,async(selected,args,opts)=>{
+    if(opts?.output?.endsWith('banco.dump')){
+      notifyCapture();await captureGate
+      throw new Error('Falha de captura deliberada para validar recuperação.')
+    }
+    return compose(selected,args,opts)
+  })
+  try{
+    await Promise.race([captureStarted,failedCapture])
+    await assert.rejects(backup(source),/Já existe uma operação/)
+  }finally{releaseCapture()}
+  await assert.rejects(failedCapture,/Falha de captura deliberada/)
+  await ready(base)
+  await verifyReceipt(base,data.token,data.paymentId,data.hash)
+  assert.deepEqual(await snapshot(source),before)
+  evidence('Backup concorrente recusado; falha de captura após parada real reiniciou a API e preservou banco/comprovante.')
 
   const backupDir = await backup(source)
   await ready(base)

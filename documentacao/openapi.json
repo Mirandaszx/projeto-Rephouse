@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "RepHouse API",
-    "version": "1.1.0",
-    "description": "Backend TypeScript. Dinheiro é string decimal. Datas de entrada usam YYYY-MM-DD; datas civis de saída usam ISO à meia-noite UTC. Relatórios e vencimentos seguem APP_TIME_ZONE, padrão horário de Brasília (America/Sao_Paulo). Exemplos são ilustrativos. Endpoints protegidos usam Authorization: Bearer TOKEN; CORS não substitui autorização."
+    "version": "2.0.0",
+    "description": "Backend TypeScript. Listagens retornam {dados,paginacao}. Dinheiro é string decimal. Datas de entrada usam YYYY-MM-DD; datas civis de saída usam ISO à meia-noite UTC. Relatórios e vencimentos seguem APP_TIME_ZONE, padrão horário de Brasília (America/Sao_Paulo). Exemplos são ilustrativos. Endpoints protegidos usam Authorization: Bearer TOKEN; CORS não substitui autorização."
   },
   "servers": [
     {
@@ -1554,7 +1554,7 @@
                   "openapi": "3.1.0",
                   "info": {
                     "title": "RepHouse API",
-                    "version": "1.1.0"
+                    "version": "2.0.0"
                   },
                   "paths": {},
                   "components": {}
@@ -3155,7 +3155,7 @@
         "tags": [
           "Financeiro"
         ],
-        "description": "Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. A saída da república mantém acesso somente ao próprio histórico, sem consultar os demais moradores.",
+        "description": "Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. A saída da república mantém acesso somente ao próprio histórico, sem consultar os demais moradores. Resposta paginada: dados e paginacao. Página além do resultado retorna dados vazio. Parâmetros inválidos ou desconhecidos retornam 400.",
         "x-perfis": [
           "USUARIO_NORMAL",
           "USUARIO_ADMIN",
@@ -3167,41 +3167,88 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/RateioPessoal"
-                  }
-                },
-                "example": [
-                  {
-                    "id": "de000000-0000-4000-8000-000500000002",
-                    "despesaId": "de000000-0000-4000-8000-000400000001",
-                    "membroId": "de000000-0000-4000-8000-000300000002",
-                    "valorDevido": "30.00",
-                    "valorPago": "10.00",
-                    "status": "PARCIAL",
-                    "pagamentos": [
-                      {
-                        "id": "de000000-0000-4000-8000-000600000002",
-                        "rateioId": "de000000-0000-4000-8000-000500000002",
-                        "membroId": "de000000-0000-4000-8000-000300000002",
-                        "valor": "10.00",
-                        "comprovanteUrl": null,
-                        "dataPagamento": "2026-10-16T12:00:00.000Z"
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "dados": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RateioPessoal"
                       }
-                    ],
-                    "despesa": {
-                      "id": "de000000-0000-4000-8000-000400000001",
-                      "titulo": "Internet — Demonstração",
-                      "categoria": "INTERNET",
-                      "vencimento": "2026-10-26T00:00:00.000Z",
-                      "republica": {
-                        "id": "de000000-0000-4000-8000-000200000001",
-                        "nome": "República Aurora — Demonstração"
+                    },
+                    "paginacao": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "pagina": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "limite": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 100
+                        },
+                        "totalItens": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "totalPaginas": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "pagina",
+                        "limite",
+                        "totalItens",
+                        "totalPaginas"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "dados",
+                    "paginacao"
+                  ]
+                },
+                "example": {
+                  "dados": [
+                    {
+                      "id": "de000000-0000-4000-8000-000500000002",
+                      "despesaId": "de000000-0000-4000-8000-000400000001",
+                      "membroId": "de000000-0000-4000-8000-000300000002",
+                      "valorDevido": "30.00",
+                      "valorPago": "10.00",
+                      "status": "PARCIAL",
+                      "pagamentos": [
+                        {
+                          "id": "de000000-0000-4000-8000-000600000002",
+                          "rateioId": "de000000-0000-4000-8000-000500000002",
+                          "membroId": "de000000-0000-4000-8000-000300000002",
+                          "valor": "10.00",
+                          "comprovanteUrl": null,
+                          "dataPagamento": "2026-10-16T12:00:00.000Z"
+                        }
+                      ],
+                      "despesa": {
+                        "id": "de000000-0000-4000-8000-000400000001",
+                        "titulo": "Internet — Demonstração",
+                        "categoria": "INTERNET",
+                        "vencimento": "2026-10-26T00:00:00.000Z",
+                        "republica": {
+                          "id": "de000000-0000-4000-8000-000200000001",
+                          "nome": "República Aurora — Demonstração"
+                        }
                       }
                     }
+                  ],
+                  "paginacao": {
+                    "pagina": 1,
+                    "limite": 20,
+                    "totalItens": 1,
+                    "totalPaginas": 1
                   }
-                ]
+                }
               }
             },
             "headers": {
@@ -3414,7 +3461,29 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "pagina",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ]
       }
     },
     "/api/me/financeiro/{id}": {
@@ -5471,7 +5540,7 @@
         "tags": [
           "Repúblicas"
         ],
-        "description": "Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. inativos=true inclui vínculos históricos e exige administrador da república ou MASTER.",
+        "description": "Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. inativos=true inclui vínculos históricos e exige administrador da república ou MASTER. Resposta paginada: dados e paginacao. Página além do resultado retorna dados vazio. Parâmetros inválidos ou desconhecidos retornam 400.",
         "x-perfis": [
           "USUARIO_NORMAL",
           "USUARIO_ADMIN",
@@ -5483,25 +5552,72 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/MembroListado"
-                  }
-                },
-                "example": [
-                  {
-                    "id": "de000000-0000-4000-8000-000300000002",
-                    "usuarioId": "de000000-0000-4000-8000-000100000004",
-                    "republicaId": "de000000-0000-4000-8000-000200000001",
-                    "ativo": true,
-                    "entrouEm": "2026-10-16T12:00:00.000Z",
-                    "usuario": {
-                      "id": "de000000-0000-4000-8000-000100000004",
-                      "nome": "Ana Moradora",
-                      "email": "ana@demo.rephouse.test"
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "dados": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/MembroListado"
+                      }
+                    },
+                    "paginacao": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "pagina": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "limite": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 100
+                        },
+                        "totalItens": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "totalPaginas": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "pagina",
+                        "limite",
+                        "totalItens",
+                        "totalPaginas"
+                      ]
                     }
+                  },
+                  "required": [
+                    "dados",
+                    "paginacao"
+                  ]
+                },
+                "example": {
+                  "dados": [
+                    {
+                      "id": "de000000-0000-4000-8000-000300000002",
+                      "usuarioId": "de000000-0000-4000-8000-000100000004",
+                      "republicaId": "de000000-0000-4000-8000-000200000001",
+                      "ativo": true,
+                      "entrouEm": "2026-10-16T12:00:00.000Z",
+                      "usuario": {
+                        "id": "de000000-0000-4000-8000-000100000004",
+                        "nome": "Ana Moradora",
+                        "email": "ana@demo.rephouse.test"
+                      }
+                    }
+                  ],
+                  "paginacao": {
+                    "pagina": 1,
+                    "limite": 20,
+                    "totalItens": 1,
+                    "totalPaginas": 1
                   }
-                ]
+                }
               }
             },
             "headers": {
@@ -5724,6 +5840,26 @@
               "default": false
             },
             "example": false
+          },
+          {
+            "name": "pagina",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
           }
         ]
       }
@@ -6010,7 +6146,7 @@
         "tags": [
           "Financeiro"
         ],
-        "description": "Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Escopo da república autorizada. Lista simples, sem paginação nesta entrega.",
+        "description": "Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Escopo da república autorizada. Listagem paginada. Resposta paginada: dados e paginacao. Página além do resultado retorna dados vazio. Parâmetros inválidos ou desconhecidos retornam 400.",
         "x-perfis": [
           "USUARIO_NORMAL",
           "USUARIO_ADMIN",
@@ -6022,51 +6158,98 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Despesa"
-                  }
-                },
-                "example": [
-                  {
-                    "id": "de000000-0000-4000-8000-000400000001",
-                    "republicaId": "de000000-0000-4000-8000-000200000001",
-                    "criadaPorId": "de000000-0000-4000-8000-000100000002",
-                    "titulo": "Internet — Demonstração",
-                    "categoria": "INTERNET",
-                    "valorTotal": "90.00",
-                    "vencimento": "2026-10-26T00:00:00.000Z",
-                    "status": "PENDENTE",
-                    "criadaEm": "2026-10-16T12:00:00.000Z",
-                    "statusCalculado": "PENDENTE",
-                    "rateios": [
-                      {
-                        "id": "de000000-0000-4000-8000-000500000001",
-                        "despesaId": "de000000-0000-4000-8000-000400000001",
-                        "membroId": "de000000-0000-4000-8000-000300000001",
-                        "valorDevido": "30.00",
-                        "valorPago": "30.00",
-                        "status": "PAGO"
-                      },
-                      {
-                        "id": "de000000-0000-4000-8000-000500000002",
-                        "despesaId": "de000000-0000-4000-8000-000400000001",
-                        "membroId": "de000000-0000-4000-8000-000300000002",
-                        "valorDevido": "30.00",
-                        "valorPago": "10.00",
-                        "status": "PARCIAL"
-                      },
-                      {
-                        "id": "de000000-0000-4000-8000-000500000003",
-                        "despesaId": "de000000-0000-4000-8000-000400000001",
-                        "membroId": "de000000-0000-4000-8000-000300000003",
-                        "valorDevido": "30.00",
-                        "valorPago": "0.00",
-                        "status": "PENDENTE"
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "dados": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Despesa"
                       }
-                    ]
+                    },
+                    "paginacao": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "pagina": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "limite": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 100
+                        },
+                        "totalItens": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "totalPaginas": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "pagina",
+                        "limite",
+                        "totalItens",
+                        "totalPaginas"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "dados",
+                    "paginacao"
+                  ]
+                },
+                "example": {
+                  "dados": [
+                    {
+                      "id": "de000000-0000-4000-8000-000400000001",
+                      "republicaId": "de000000-0000-4000-8000-000200000001",
+                      "criadaPorId": "de000000-0000-4000-8000-000100000002",
+                      "titulo": "Internet — Demonstração",
+                      "categoria": "INTERNET",
+                      "valorTotal": "90.00",
+                      "vencimento": "2026-10-26T00:00:00.000Z",
+                      "status": "PENDENTE",
+                      "criadaEm": "2026-10-16T12:00:00.000Z",
+                      "statusCalculado": "PENDENTE",
+                      "rateios": [
+                        {
+                          "id": "de000000-0000-4000-8000-000500000001",
+                          "despesaId": "de000000-0000-4000-8000-000400000001",
+                          "membroId": "de000000-0000-4000-8000-000300000001",
+                          "valorDevido": "30.00",
+                          "valorPago": "30.00",
+                          "status": "PAGO"
+                        },
+                        {
+                          "id": "de000000-0000-4000-8000-000500000002",
+                          "despesaId": "de000000-0000-4000-8000-000400000001",
+                          "membroId": "de000000-0000-4000-8000-000300000002",
+                          "valorDevido": "30.00",
+                          "valorPago": "10.00",
+                          "status": "PARCIAL"
+                        },
+                        {
+                          "id": "de000000-0000-4000-8000-000500000003",
+                          "despesaId": "de000000-0000-4000-8000-000400000001",
+                          "membroId": "de000000-0000-4000-8000-000300000003",
+                          "valorDevido": "30.00",
+                          "valorPago": "0.00",
+                          "status": "PENDENTE"
+                        }
+                      ]
+                    }
+                  ],
+                  "paginacao": {
+                    "pagina": 1,
+                    "limite": 20,
+                    "totalItens": 1,
+                    "totalPaginas": 1
                   }
-                ]
+                }
               }
             },
             "headers": {
@@ -6279,7 +6462,29 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "pagina",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ]
       },
       "post": {
         "operationId": "post__api_despesas",
@@ -7182,7 +7387,7 @@
         "tags": [
           "Tarefas"
         ],
-        "description": "Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios.",
+        "description": "Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Resposta paginada: dados e paginacao. Página além do resultado retorna dados vazio. Parâmetros inválidos ou desconhecidos retornam 400.",
         "x-perfis": [
           "USUARIO_NORMAL",
           "USUARIO_ADMIN",
@@ -7194,23 +7399,70 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Tarefa"
-                  }
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "dados": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Tarefa"
+                      }
+                    },
+                    "paginacao": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "pagina": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "limite": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 100
+                        },
+                        "totalItens": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "totalPaginas": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "pagina",
+                        "limite",
+                        "totalItens",
+                        "totalPaginas"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "dados",
+                    "paginacao"
+                  ]
                 },
-                "example": [
-                  {
-                    "id": "de000000-0000-4000-8000-000700000001",
-                    "republicaId": "de000000-0000-4000-8000-000200000001",
-                    "responsavelId": "de000000-0000-4000-8000-000300000002",
-                    "titulo": "Limpar cozinha",
-                    "descricao": null,
-                    "prazo": "2026-10-26T00:00:00.000Z",
-                    "status": "ABERTA",
-                    "criadaEm": "2026-10-16T12:00:00.000Z"
+                "example": {
+                  "dados": [
+                    {
+                      "id": "de000000-0000-4000-8000-000700000001",
+                      "republicaId": "de000000-0000-4000-8000-000200000001",
+                      "responsavelId": "de000000-0000-4000-8000-000300000002",
+                      "titulo": "Limpar cozinha",
+                      "descricao": null,
+                      "prazo": "2026-10-26T00:00:00.000Z",
+                      "status": "ABERTA",
+                      "criadaEm": "2026-10-16T12:00:00.000Z"
+                    }
+                  ],
+                  "paginacao": {
+                    "pagina": 1,
+                    "limite": 20,
+                    "totalItens": 1,
+                    "totalPaginas": 1
                   }
-                ]
+                }
               }
             },
             "headers": {
@@ -7423,7 +7675,29 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "pagina",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ]
       },
       "post": {
         "operationId": "post__api_tarefas",
@@ -8217,7 +8491,7 @@
         "tags": [
           "MASTER"
         ],
-        "description": "Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Escopo da república autorizada. Lista simples, sem paginação nesta entrega.",
+        "description": "Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Escopo da república autorizada. Listagem paginada. Resposta paginada: dados e paginacao. Página além do resultado retorna dados vazio. Parâmetros inválidos ou desconhecidos retornam 400.",
         "x-perfis": [
           "USUARIO_MASTER"
         ],
@@ -8227,51 +8501,98 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Despesa"
-                  }
-                },
-                "example": [
-                  {
-                    "id": "de000000-0000-4000-8000-000400000001",
-                    "republicaId": "de000000-0000-4000-8000-000200000001",
-                    "criadaPorId": "de000000-0000-4000-8000-000100000002",
-                    "titulo": "Internet — Demonstração",
-                    "categoria": "INTERNET",
-                    "valorTotal": "90.00",
-                    "vencimento": "2026-10-26T00:00:00.000Z",
-                    "status": "PENDENTE",
-                    "criadaEm": "2026-10-16T12:00:00.000Z",
-                    "statusCalculado": "PENDENTE",
-                    "rateios": [
-                      {
-                        "id": "de000000-0000-4000-8000-000500000001",
-                        "despesaId": "de000000-0000-4000-8000-000400000001",
-                        "membroId": "de000000-0000-4000-8000-000300000001",
-                        "valorDevido": "30.00",
-                        "valorPago": "30.00",
-                        "status": "PAGO"
-                      },
-                      {
-                        "id": "de000000-0000-4000-8000-000500000002",
-                        "despesaId": "de000000-0000-4000-8000-000400000001",
-                        "membroId": "de000000-0000-4000-8000-000300000002",
-                        "valorDevido": "30.00",
-                        "valorPago": "10.00",
-                        "status": "PARCIAL"
-                      },
-                      {
-                        "id": "de000000-0000-4000-8000-000500000003",
-                        "despesaId": "de000000-0000-4000-8000-000400000001",
-                        "membroId": "de000000-0000-4000-8000-000300000003",
-                        "valorDevido": "30.00",
-                        "valorPago": "0.00",
-                        "status": "PENDENTE"
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "dados": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Despesa"
                       }
-                    ]
+                    },
+                    "paginacao": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "pagina": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "limite": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 100
+                        },
+                        "totalItens": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "totalPaginas": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "pagina",
+                        "limite",
+                        "totalItens",
+                        "totalPaginas"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "dados",
+                    "paginacao"
+                  ]
+                },
+                "example": {
+                  "dados": [
+                    {
+                      "id": "de000000-0000-4000-8000-000400000001",
+                      "republicaId": "de000000-0000-4000-8000-000200000001",
+                      "criadaPorId": "de000000-0000-4000-8000-000100000002",
+                      "titulo": "Internet — Demonstração",
+                      "categoria": "INTERNET",
+                      "valorTotal": "90.00",
+                      "vencimento": "2026-10-26T00:00:00.000Z",
+                      "status": "PENDENTE",
+                      "criadaEm": "2026-10-16T12:00:00.000Z",
+                      "statusCalculado": "PENDENTE",
+                      "rateios": [
+                        {
+                          "id": "de000000-0000-4000-8000-000500000001",
+                          "despesaId": "de000000-0000-4000-8000-000400000001",
+                          "membroId": "de000000-0000-4000-8000-000300000001",
+                          "valorDevido": "30.00",
+                          "valorPago": "30.00",
+                          "status": "PAGO"
+                        },
+                        {
+                          "id": "de000000-0000-4000-8000-000500000002",
+                          "despesaId": "de000000-0000-4000-8000-000400000001",
+                          "membroId": "de000000-0000-4000-8000-000300000002",
+                          "valorDevido": "30.00",
+                          "valorPago": "10.00",
+                          "status": "PARCIAL"
+                        },
+                        {
+                          "id": "de000000-0000-4000-8000-000500000003",
+                          "despesaId": "de000000-0000-4000-8000-000400000001",
+                          "membroId": "de000000-0000-4000-8000-000300000003",
+                          "valorDevido": "30.00",
+                          "valorPago": "0.00",
+                          "status": "PENDENTE"
+                        }
+                      ]
+                    }
+                  ],
+                  "paginacao": {
+                    "pagina": 1,
+                    "limite": 20,
+                    "totalItens": 1,
+                    "totalPaginas": 1
                   }
-                ]
+                }
               }
             },
             "headers": {
@@ -8493,6 +8814,26 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "pagina",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
             }
           }
         ]
@@ -9423,7 +9764,7 @@
         "tags": [
           "MASTER"
         ],
-        "description": "Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios.",
+        "description": "Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Resposta paginada: dados e paginacao. Página além do resultado retorna dados vazio. Parâmetros inválidos ou desconhecidos retornam 400.",
         "x-perfis": [
           "USUARIO_MASTER"
         ],
@@ -9433,23 +9774,70 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Tarefa"
-                  }
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "dados": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Tarefa"
+                      }
+                    },
+                    "paginacao": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "pagina": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "limite": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 100
+                        },
+                        "totalItens": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "totalPaginas": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "pagina",
+                        "limite",
+                        "totalItens",
+                        "totalPaginas"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "dados",
+                    "paginacao"
+                  ]
                 },
-                "example": [
-                  {
-                    "id": "de000000-0000-4000-8000-000700000001",
-                    "republicaId": "de000000-0000-4000-8000-000200000001",
-                    "responsavelId": "de000000-0000-4000-8000-000300000002",
-                    "titulo": "Limpar cozinha",
-                    "descricao": null,
-                    "prazo": "2026-10-26T00:00:00.000Z",
-                    "status": "ABERTA",
-                    "criadaEm": "2026-10-16T12:00:00.000Z"
+                "example": {
+                  "dados": [
+                    {
+                      "id": "de000000-0000-4000-8000-000700000001",
+                      "republicaId": "de000000-0000-4000-8000-000200000001",
+                      "responsavelId": "de000000-0000-4000-8000-000300000002",
+                      "titulo": "Limpar cozinha",
+                      "descricao": null,
+                      "prazo": "2026-10-26T00:00:00.000Z",
+                      "status": "ABERTA",
+                      "criadaEm": "2026-10-16T12:00:00.000Z"
+                    }
+                  ],
+                  "paginacao": {
+                    "pagina": 1,
+                    "limite": 20,
+                    "totalItens": 1,
+                    "totalPaginas": 1
                   }
-                ]
+                }
               }
             },
             "headers": {
@@ -9671,6 +10059,26 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "pagina",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
             }
           }
         ]
@@ -10677,6 +11085,37 @@
               }
             }
           },
+          "429": {
+            "description": "Dois uploads já estão em processamento.",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "1"
+              },
+              "X-Request-Id": {
+                "description": "UUID gerado pelo servidor para correlação com os logs.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "UPLOAD_BUSY",
+                    "message": "Há muitos uploads em andamento. Tente novamente."
+                  }
+                }
+              }
+            }
+          },
           "500": {
             "description": "Erro interno do servidor.",
             "content": {
@@ -11065,7 +11504,7 @@
         "tags": [
           "MASTER"
         ],
-        "description": "Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios.",
+        "description": "Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Resposta paginada: dados e paginacao. Página além do resultado retorna dados vazio. Parâmetros inválidos ou desconhecidos retornam 400.",
         "x-perfis": [
           "USUARIO_MASTER"
         ],
@@ -11075,22 +11514,69 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/UsuarioMaster"
-                  }
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "dados": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/UsuarioMaster"
+                      }
+                    },
+                    "paginacao": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "pagina": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "limite": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 100
+                        },
+                        "totalItens": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "totalPaginas": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "pagina",
+                        "limite",
+                        "totalItens",
+                        "totalPaginas"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "dados",
+                    "paginacao"
+                  ]
                 },
-                "example": [
-                  {
-                    "id": "de000000-0000-4000-8000-000100000004",
-                    "nome": "Ana Moradora",
-                    "email": "ana@demo.rephouse.test",
-                    "tipoUsuario": "USUARIO_NORMAL",
-                    "ativo": true,
-                    "criadoEm": "2026-10-16T12:00:00.000Z",
-                    "excluidoEm": null
+                "example": {
+                  "dados": [
+                    {
+                      "id": "de000000-0000-4000-8000-000100000004",
+                      "nome": "Ana Moradora",
+                      "email": "ana@demo.rephouse.test",
+                      "tipoUsuario": "USUARIO_NORMAL",
+                      "ativo": true,
+                      "criadoEm": "2026-10-16T12:00:00.000Z",
+                      "excluidoEm": null
+                    }
+                  ],
+                  "paginacao": {
+                    "pagina": 1,
+                    "limite": 20,
+                    "totalItens": 1,
+                    "totalPaginas": 1
                   }
-                ]
+                }
               }
             },
             "headers": {
@@ -11303,7 +11789,29 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "pagina",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ]
       }
     },
     "/api/master/republicas": {
@@ -11313,7 +11821,7 @@
         "tags": [
           "MASTER"
         ],
-        "description": "Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios.",
+        "description": "Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Resposta paginada: dados e paginacao. Página além do resultado retorna dados vazio. Parâmetros inválidos ou desconhecidos retornam 400.",
         "x-perfis": [
           "USUARIO_MASTER"
         ],
@@ -11323,22 +11831,69 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Republica"
-                  }
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "dados": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Republica"
+                      }
+                    },
+                    "paginacao": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "pagina": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "limite": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 100
+                        },
+                        "totalItens": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "totalPaginas": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "pagina",
+                        "limite",
+                        "totalItens",
+                        "totalPaginas"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "dados",
+                    "paginacao"
+                  ]
                 },
-                "example": [
-                  {
-                    "id": "de000000-0000-4000-8000-000200000001",
-                    "nome": "República Aurora — Demonstração",
-                    "endereco": "Rua Aurora, 100",
-                    "codigoEntrada": "DEMOAURORA",
-                    "adminId": "de000000-0000-4000-8000-000100000002",
-                    "ativa": true,
-                    "criadaEm": "2026-10-16T12:00:00.000Z"
+                "example": {
+                  "dados": [
+                    {
+                      "id": "de000000-0000-4000-8000-000200000001",
+                      "nome": "República Aurora — Demonstração",
+                      "endereco": "Rua Aurora, 100",
+                      "codigoEntrada": "DEMOAURORA",
+                      "adminId": "de000000-0000-4000-8000-000100000002",
+                      "ativa": true,
+                      "criadaEm": "2026-10-16T12:00:00.000Z"
+                    }
+                  ],
+                  "paginacao": {
+                    "pagina": 1,
+                    "limite": 20,
+                    "totalItens": 1,
+                    "totalPaginas": 1
                   }
-                ]
+                }
               }
             },
             "headers": {
@@ -11551,7 +12106,29 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "pagina",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ]
       }
     },
     "/api/master/dashboard": {
@@ -12887,7 +13464,7 @@
         "tags": [
           "MASTER"
         ],
-        "description": "Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios.",
+        "description": "Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Resposta paginada: dados e paginacao. Página além do resultado retorna dados vazio. Parâmetros inválidos ou desconhecidos retornam 400.",
         "x-perfis": [
           "USUARIO_MASTER"
         ],
@@ -12897,25 +13474,72 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/MembroListado"
-                  }
-                },
-                "example": [
-                  {
-                    "id": "de000000-0000-4000-8000-000300000002",
-                    "usuarioId": "de000000-0000-4000-8000-000100000004",
-                    "republicaId": "de000000-0000-4000-8000-000200000001",
-                    "ativo": true,
-                    "entrouEm": "2026-10-16T12:00:00.000Z",
-                    "usuario": {
-                      "id": "de000000-0000-4000-8000-000100000004",
-                      "nome": "Ana Moradora",
-                      "email": "ana@demo.rephouse.test"
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "dados": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/MembroListado"
+                      }
+                    },
+                    "paginacao": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "pagina": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "limite": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 100
+                        },
+                        "totalItens": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "totalPaginas": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "pagina",
+                        "limite",
+                        "totalItens",
+                        "totalPaginas"
+                      ]
                     }
+                  },
+                  "required": [
+                    "dados",
+                    "paginacao"
+                  ]
+                },
+                "example": {
+                  "dados": [
+                    {
+                      "id": "de000000-0000-4000-8000-000300000002",
+                      "usuarioId": "de000000-0000-4000-8000-000100000004",
+                      "republicaId": "de000000-0000-4000-8000-000200000001",
+                      "ativo": true,
+                      "entrouEm": "2026-10-16T12:00:00.000Z",
+                      "usuario": {
+                        "id": "de000000-0000-4000-8000-000100000004",
+                        "nome": "Ana Moradora",
+                        "email": "ana@demo.rephouse.test"
+                      }
+                    }
+                  ],
+                  "paginacao": {
+                    "pagina": 1,
+                    "limite": 20,
+                    "totalItens": 1,
+                    "totalPaginas": 1
                   }
-                ]
+                }
               }
             },
             "headers": {
@@ -13147,6 +13771,26 @@
               "default": false
             },
             "example": false
+          },
+          {
+            "name": "pagina",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
           }
         ]
       }

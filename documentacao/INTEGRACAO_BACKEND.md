@@ -2,6 +2,10 @@
 
 Esta entrega prepara a API para quem desenvolve o frontend. O contrato OpenAPI inclui rotas, perfis, corpos de entrada, schemas e exemplos de resposta, erros, idempotência e download de arquivos. A interface permanece com seu responsável.
 
+## Contrato 2.0.0
+
+Todas as listagens retornam `{dados, paginacao}`. Acesse a coleção em `resposta.dados`, com parâmetros opcionais `pagina=1` e `limite=20` (máximo 100). `paginacao` informa `pagina`, `limite`, `totalItens` e `totalPaginas`. Páginas além do resultado retornam `dados: []`; parâmetros desconhecidos, duplicados ou inválidos retornam 400. `pagina` aceita até 1.000.000. O filtro `inativos` continua disponível para membros, conforme autorização. Consultas de detalhe e operações de escrita mantêm seus formatos. A mudança substitui os arrays diretos da versão anterior; importe novamente o OpenAPI no Insomnia.
+
 ## Executar a API
 
 Na raiz, com PostgreSQL disponível e `.env` configurado:

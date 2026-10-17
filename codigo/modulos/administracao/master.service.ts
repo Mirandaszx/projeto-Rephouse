@@ -3,11 +3,12 @@ import { withActor, requireMaster, type Actor } from '../../compartilhado/contex
 import { AppError } from '../../compartilhado/http/app-error.js'
 import { MasterRepository } from './master.repository.js'
 import { DashboardRepository } from '../painel/dashboard.repository.js'
+import {pageResult,type PageInput} from '../../compartilhado/http/pagination.js'
 export function createMasterService(db: PrismaClient) {
   const repository = new MasterRepository()
   return {
-    users: (actor: Actor) => withActor(db, actor, (tx, user) => { requireMaster(user); return repository.users(tx) }),
-    republics: (actor: Actor) => withActor(db, actor, (tx, user) => { requireMaster(user); return repository.republics(tx) }),
+    users: (actor: Actor,page:PageInput) => withActor(db, actor, async(tx, user) => { requireMaster(user); return pageResult(await repository.users(tx,page),await repository.contarUsuarios(tx),page) }),
+    republics: (actor: Actor,page:PageInput) => withActor(db, actor, async(tx, user) => { requireMaster(user); return pageResult(await repository.republics(tx,page),await repository.contarRepublicas(tx),page) }),
     dashboard: (actor: Actor) => withActor(db, actor, async (tx, user) => {
       requireMaster(user)
       return { ...await new DashboardRepository().resumo(tx), usuarios: await repository.contarUsuarios(tx), republicas: await repository.contarRepublicas(tx) }

@@ -18,7 +18,7 @@ Invoke-RestMethod http://localhost:3001/api/health
 Invoke-RestMethod http://localhost:3001/api/ready
 ```
 
-O build usa `npm ci`, gera o cliente Prisma e compila TypeScript. O serviço `migracoes` executa somente `prisma migrate deploy`, depois do PostgreSQL saudável e antes da API. A API executa `node dist/server.js` como UID 1000, sem instalar ou compilar no startup. A imagem usa etapas separadas para ferramentas e runtime. As seis migrations existentes permanecem intactas; não há reset.
+O build usa `npm ci`, gera o cliente Prisma e compila TypeScript. O serviço `migracoes` executa somente `prisma migrate deploy`, depois do PostgreSQL saudável e antes da API. A API executa `node dist/server.js` como UID 1000, sem instalar ou compilar no startup. A imagem usa etapas separadas para ferramentas e runtime. As seis migrations anteriores permanecem intactas; a sétima acrescenta códigos estruturados aos erros de domínio. Não há reset.
 
 `APP_TIME_ZONE` define datas civis e o mês dos indicadores; seu padrão é **horário de Brasília**, `America/Sao_Paulo`. No Compose compilado, configure `BACKEND_TIME_ZONE`; no desenvolvimento, `APP_TIME_ZONE`. Datas civis enviadas como `YYYY-MM-DD` continuam sendo datas, sem conversão pelo navegador. A escolha de referência nacional não presume que todo o Brasil tenha o mesmo fuso.
 
@@ -53,7 +53,7 @@ Para o Compose de desenvolvimento, informe explicitamente o projeto que o criou 
 npm run backup -- projeto-rephouse .env desenvolvimento
 ```
 
-O comando verifica os containers e a montagem real do volume privado, captura versão e fuso da aplicação, para a API e aguarda sua parada. Em seguida, executa `pg_dump -Fc --create` pelo PostgreSQL 18 e arquiva o volume padrão de comprovantes. Um `finally` reinicia a API, inclusive se a captura falhar. Se ela não estava em execução ou ainda usa uma configuração antiga sem o volume, o comando recusa a operação. Use um operador por vez e não faça gravações diretas no banco durante a captura. Um `UPLOAD_DIR` fora do volume padrão é recusado para evitar cópias incompletas.
+O comando verifica os containers e a montagem real do volume privado, captura versão e fuso da aplicação, para a API e aguarda sua parada. Em seguida, executa `pg_dump -Fc --create` pelo PostgreSQL 18 e arquiva o volume padrão de comprovantes. Um `finally` reinicia a API, inclusive se a captura falhar. Se ela não estava em execução ou ainda usa uma configuração antiga sem o volume, o comando recusa a operação. Uma trava exclusiva por projeto impede backup/restauração simultâneos, inclusive entre checkouts locais. Não faça gravações diretas no banco durante a captura. Um `UPLOAD_DIR` fora do volume padrão é recusado para evitar cópias incompletas.
 
 Cada pasta `copias-seguranca/<data>-<identificador>/` contém:
 
@@ -96,4 +96,6 @@ Referências técnicas: [build em múltiplas etapas do Docker](https://docs.dock
 
 `npm run verificar` exige `TEST_DATABASE_URL` para o banco dedicado e não aceita a ausência de integração como sucesso. O ensaio Docker usa seus próprios bancos e não depende do PostgreSQL do host.
 
-As [evidências e pendências](VALIDACAO_MVP.md) registram os resultados locais separadamente da execução no GitHub. Criar o workflow localmente não prova uma execução remota. Commit e push continuam sendo uma etapa separada.
+As [evidências e pendências](VALIDACAO_MVP.md) registram os resultados locais separadamente da execução no GitHub. Criar o workflow localmente não prova uma execução remota. Os commits desta consolidação permanecem locais por decisão do usuário; push, PR e CI remota estão pendentes.
+
+A [consolidação do backend](CONSOLIDACAO_BACKEND.md) documenta as proteções adicionais, a paginação 2.0.0 e os comandos `npm run test:carga` e `npm run test:carga:completo`. O workflow regular inclui a carga curta; o acionamento manual permite `carga_completa=true`. Backup/restauração agora usam trava exclusiva por projeto e validação estrita do manifesto. `npm run comprovantes:verificar` confere referências sem excluir arquivos.

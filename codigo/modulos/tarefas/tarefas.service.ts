@@ -3,13 +3,14 @@ import { withActor, republicContext, requireAdmin, type Actor } from '../../comp
 import { AppError } from '../../compartilhado/http/app-error.js'
 import { TarefasRepository } from './tarefas.repository.js'
 import type { CriarTarefaInput } from './tarefas.types.js'
+import {pageResult,type PageInput} from '../../compartilhado/http/pagination.js'
 
 export function createTarefasService(db: PrismaClient) {
   const repository = new TarefasRepository()
   return {
-    list: (actor: Actor, scope?: string) => withActor(db, actor, async (tx, user) => {
+    list: (actor: Actor,page:PageInput, scope?: string) => withActor(db, actor, async (tx, user) => {
       const republic = await republicContext(tx, user, scope)
-      return repository.listar(tx, republic.id)
+      return pageResult(await repository.listar(tx,republic.id,page),await repository.contar(tx,republic.id),page)
     }),
     create: (actor: Actor, input: CriarTarefaInput, scope?: string) => withActor(db, actor, async (tx, user) => {
       const republic = await republicContext(tx, user, scope)
