@@ -4,6 +4,7 @@ import type { PrismaClient, Usuario } from '../../gerado/prisma/client.js'
 import { executarTransacaoAcid } from '../../infraestrutura/banco/transaction.js'
 import { withActor, type Actor } from '../../compartilhado/context.js'
 import { AppError } from '../../compartilhado/http/app-error.js'
+import { z } from 'zod'
 import { AuthRepository } from './auth.repository.js'
 import type { CadastroInput, LoginInput } from './auth.types.js'
 
@@ -39,10 +40,12 @@ export function createAuthService(db: PrismaClient, secret: string) {
     async verifyToken(value: string): Promise<Actor> {
       try {
         const { payload } = await jwtVerify(value, key, { algorithms: ['HS256'], issuer: 'rephouse', audience: 'rephouse-api' })
-        if (typeof payload.sub !== 'string' || typeof payload.ver !== 'number' || !Number.isInteger(payload.ver)) throw new Error()
+        z.object({sub:z.uuid(),ver:z.number().int().nonnegative(),iat:z.number().int().nonnegative(),exp:z.number().int().positive()}).parse(payload)
+        if (typeof payload.sub !== 'string' || typeof payload.ver !== 'number') throw new Error()
         return { id: payload.sub, versaoToken: payload.ver }
       } catch { throw new AppError(401, 'UNAUTHENTICATED', 'Token inválido ou expirado.') }
     },
+    activeSession: (actor:Actor)=>withActor(db,actor,async()=>undefined),
     me: (actor: Actor) => withActor(db, actor, async (tx, user) => ({
       ...publicUser(user),
       membro: await repository.vinculoAtual(tx, user.id),

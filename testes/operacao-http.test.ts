@@ -29,7 +29,8 @@ test('saúde permanece estável; readiness detecta erro e timeout; logs omitem d
     }
     await fetch(`${base}/segredo-no-caminho`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ senha: 'segredo-body' }) })
     assert.ok(logs.some(log => log.path === '/api/health' && log.requestId === health.headers.get('x-request-id')))
-    assert.ok(logs.every(log => typeof log.durationMs === 'number' && typeof log.status === 'number'))
+    assert.ok(logs.filter(log=>log.event==='http').every(log => typeof log.durationMs === 'number' && typeof log.status === 'number'))
+    assert.ok(logs.filter(log=>log.event==='error').every(log=>typeof log.requestId==='string'&&typeof log.code==='string'))
     assert.doesNotMatch(JSON.stringify(logs), /segredo|nao-registrar|injetado|Authorization|senha/)
   } finally { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())) }
 })

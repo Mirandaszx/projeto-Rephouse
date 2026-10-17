@@ -3,15 +3,26 @@ import { ZodError } from 'zod'
 import { Prisma } from '../../gerado/prisma/client.js'
 import { MulterError } from 'multer'
 import { AppError } from './app-error.js'
+import { classifyDatabaseError } from '../../infraestrutura/banco/errors.js'
 
-export const errorHandler: ErrorRequestHandler = (error: unknown, _request, response, next) => {
+export const errorHandler: ErrorRequestHandler = (error: unknown, _request, response, _next) => {
+  const classified=classifyDatabaseError(error)
+  const code=error instanceof AppError?error.code:classified?.code??(error instanceof ZodError?'VALIDATION_ERROR':error instanceof MulterError?'INVALID_UPLOAD':'INTERNAL_SERVER_ERROR')
+  response.locals.log?.({event:'error',requestId:response.locals.requestId,category:error instanceof AppError?'application':classified?'database':'request',code})
   if (response.headersSent) {
-    next(error)
+    // Após iniciar um download não há outra resposta HTTP a enviar.
+    response.destroy()
     return
   }
 
   if (error instanceof AppError) {
     response.status(error.statusCode).json({ error: { code: error.code, message: error.message } })
+    return
+  }
+
+  if(classified){
+    if(classified.status===503)response.set('Retry-After','1')
+    response.status(classified.status).json({error:{code:classified.code,message:classified.message}})
     return
   }
 

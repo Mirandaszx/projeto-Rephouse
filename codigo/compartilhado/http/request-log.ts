@@ -12,6 +12,8 @@ export function requestLog(write: LogSink = stdoutLog): RequestHandler {
   return (req, res, next) => {
     // Gerado no servidor: o cliente não consegue injetar identificadores nos logs.
     const requestId = randomUUID()
+    res.locals.requestId=requestId
+    res.locals.log=write
     const start = performance.now()
     res.setHeader('X-Request-Id', requestId)
     let recorded = false

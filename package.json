@@ -21,11 +21,12 @@
     "api:exportar": "tsx codigo/comandos/exportar-openapi.ts",
     "auth:secret": "tsx codigo/comandos/generate-secret.ts",
     "master:provision": "tsx codigo/comandos/provision-master.ts",
-    "test": "tsx --test --test-concurrency=1 testes/rateio.test.ts testes/http.test.ts testes/integracao-http.test.ts testes/operacao-http.test.ts testes/backup.test.ts",
+    "test": "tsx --test --test-concurrency=1 testes/rateio.test.ts testes/http.test.ts testes/integracao-http.test.ts testes/operacao-http.test.ts testes/backup.test.ts testes/robustez.test.ts",
     "test:db": "tsx --test --test-concurrency=1 testes/database.test.ts testes/acid.test.ts testes/migration.test.ts",
     "backup": "tsx codigo/comandos/backup.ts",
     "restaurar": "tsx codigo/comandos/restaurar.ts",
-    "test:devops": "tsx codigo/comandos/verificar-devops.ts"
+    "test:devops": "tsx codigo/comandos/verificar-devops.ts",
+    "comprovantes:verificar": "tsx codigo/comandos/verificar-comprovantes.ts"
   },
   "repository": {
     "type": "git",
@@ -48,6 +49,7 @@
     "express": "^5.2.1",
     "express-rate-limit": "8.7.1",
     "file-type": "22.2.0",
+    "helmet": "8.3.0",
     "jose": "6.2.12",
     "multer": "2.4.0",
     "pg": "8.23.1",

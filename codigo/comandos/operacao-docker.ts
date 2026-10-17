@@ -5,6 +5,9 @@ import { pipeline } from 'node:stream/promises'
 import { createHash, randomUUID } from 'node:crypto'
 import { resolve, join, relative, isAbsolute } from 'node:path'
 import { parse } from 'dotenv'
+import { z } from 'zod'
+import { withProjectLock } from './project-lock.js'
+import { appTimeZone } from '../configuracao/time-zone.js'
 
 export const root = resolve(import.meta.dirname, '../..')
 export async function command(args: string[], options: { env?: NodeJS.ProcessEnv; input?: string; output?: string; stdinFile?: string } = {}): Promise<string> {
@@ -36,11 +39,14 @@ export async function sha256(file: string): Promise<string> {
   for await (const chunk of createReadStream(file)) hash.update(chunk)
   return hash.digest('hex')
 }
-interface Manifest {
-  format: 1; createdAt: string; applicationVersion: string; revision: string; project: string
-  database: string; user: string; timeZone: string; files: Record<string, string>
-}
+const identifier=z.string().regex(/^[a-zA-Z_][a-zA-Z0-9_]*$/)
+const hash=z.string().regex(/^[a-f0-9]{64}$/)
+export const manifestSchema=z.object({format:z.literal(1),createdAt:z.iso.datetime(),applicationVersion:z.string().min(1).max(128),revision:z.string().regex(/^sha256:[a-f0-9]{64}$/),project:z.string().regex(/^[a-z][a-z0-9-]{1,62}$/),database:identifier,user:identifier,timeZone:z.string().default('America/Sao_Paulo').refine(value=>{try{appTimeZone(value);return true}catch{return false}}),files:z.object({'banco.dump':hash,'comprovantes.tar.gz':hash}).strict()}).strict()
+type Manifest=z.infer<typeof manifestSchema>
 export async function backup(s: Stack, run: typeof compose = compose, inspect: typeof command = command): Promise<string> {
+  return withProjectLock(s.project,join(root,'.devops-local','travas'),()=>captureBackup(s,run,inspect))
+}
+async function captureBackup(s:Stack,run:typeof compose,inspect:typeof command):Promise<string>{
   const postgres = await run(s, ['ps', '-q', 'postgres'])
   const api = await run(s, ['ps', '-q', 'api'])
   if (!postgres || !api) throw new Error('Banco e API precisam estar em execução antes do backup.')
@@ -67,15 +73,19 @@ export async function backup(s: Stack, run: typeof compose = compose, inspect: t
 }
 
 export async function restore(s: Stack, directory: string): Promise<void> {
+  return withProjectLock(s.project,join(root,'.devops-local','travas'),()=>restoreBackup(s,directory))
+}
+async function restoreBackup(s:Stack,directory:string):Promise<void>{
   if (s.compose !== 'docker-compose.backend.yml' || !/^rephouse-restauracao-[a-z0-9-]+$/.test(s.project)) throw new Error('Restauração exige projeto novo rephouse-restauracao-<nome> na configuração backend.')
   // Nenhum container ou volume preexistente pode ser reutilizado como destino.
   for (const kind of ['container', 'volume']) {
     if (await command([kind, 'ls', ...(kind === 'container' ? ['-a'] : []), '-q', '--filter', `label=com.docker.compose.project=${s.project}`], { env: s.env })) throw new Error('Destino já possui recursos; escolha outro nome de projeto.')
   }
   const source = resolve(directory)
-  const manifest = JSON.parse(await readFile(join(source, 'manifesto.json'), 'utf8')) as Manifest
-  if (manifest.format !== 1 || !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(manifest.database) || !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(manifest.user)) throw new Error('Manifesto inválido.')
-  for (const name of ['banco.dump', 'comprovantes.tar.gz']) {
+  const parsed=manifestSchema.safeParse(JSON.parse(await readFile(join(source,'manifesto.json'),'utf8')))
+  if(!parsed.success)throw new Error('Manifesto inválido.')
+  const manifest=parsed.data
+  for (const name of ['banco.dump', 'comprovantes.tar.gz'] as const) {
     if (await sha256(join(source, name)) !== manifest.files[name]) throw new Error(`Hash inválido: ${name}`)
   }
   const targetUrl = new URL(s.env.BACKEND_DATABASE_URL!)

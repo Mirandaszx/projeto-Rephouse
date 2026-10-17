@@ -13,6 +13,7 @@ export function createAuthController(service: AuthService) {
   }
   return {
     authenticate,
+    activeSession: (async (_req,res,next)=>{await service.activeSession(res.locals.actor);next()}) as RequestHandler,
     register: endpoint(req => service.register(z.object({ nome: name, email, senha: password }).strict().parse(req.body)), 201),
     login: endpoint(req => service.login(z.object({ email, senha: password }).strict().parse(req.body))),
     me: endpoint((_req, actor) => service.me(actor)),

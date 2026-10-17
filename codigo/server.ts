@@ -14,11 +14,14 @@ async function startServer(): Promise<void> {
       stdoutLog({ event: 'started', port: env.PORT })
     })
     let encerrando = false
+    server.headersTimeout=10000
+    server.requestTimeout=30000
+    server.keepAliveTimeout=5000
 
     const shutdown = (): void => {
       if (encerrando) return
       encerrando = true
-      const limite = setTimeout(() => { process.exit(1) }, 10000)
+      const limite = setTimeout(() => { process.exit(1) }, 15000)
       limite.unref()
       server.close(() => {
         void Promise.all([database.$disconnect(), probe.close()]).catch(() => {

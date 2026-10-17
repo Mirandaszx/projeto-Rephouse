@@ -9,4 +9,4 @@ dist/
 codigo/gerado/
 *.tsbuildinfo
 interface/dist/
-armazenamento/
+/armazenamento/

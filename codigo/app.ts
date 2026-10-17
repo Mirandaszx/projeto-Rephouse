@@ -4,6 +4,8 @@ import { errorHandler } from './compartilhado/http/error-handler.js'
 import { notFoundHandler } from './compartilhado/http/not-found.js'
 import multer from 'multer'
 import cors from 'cors'
+import helmet from 'helmet'
+import { createUploadLimit } from './compartilhado/http/upload-limit.js'
 import type { PrismaClient } from './gerado/prisma/client.js'
 import { createAuthService } from './modulos/autenticacao/auth.service.js'
 import { createAuthController } from './modulos/autenticacao/auth.controller.js'
@@ -33,6 +35,8 @@ export function createApp(options: AppOptions = {}): Express {
   const app = express()
   app.disable('x-powered-by')
   app.use(requestLog(options.log))
+  app.use(helmet({strictTransportSecurity:false,contentSecurityPolicy:{directives:{upgradeInsecureRequests:null}}}))
+  app.use('/api',(_req,res,next)=>{res.set('Cache-Control','no-store');next()})
   // CORS regula leitura pelo navegador. Identidade e permissões continuam nas rotas.
   app.use(cors({
     origin: options.corsOrigins?.length ? options.corsOrigins : false,
@@ -69,7 +73,7 @@ export function createApp(options: AppOptions = {}): Express {
     api.use('/republicas', createRepublicasRouter(rc))
     api.get('/membros', rc.members).patch('/membros/:id', rc.deactivate)
     api.use('/despesas', createFinanceiroRouter(fc))
-    api.post('/pagamentos', upload.single('comprovante'), fc.pay)
+    api.post('/pagamentos', auth.activeSession, createUploadLimit(), upload.single('comprovante'), fc.pay)
     api.get('/pagamentos/:id/comprovante', fc.receipt)
     api.use('/tarefas', createTarefasRouter(createTarefasController(tarefas)))
     api.get('/dashboard', createDashboardController(dashboard).get)
