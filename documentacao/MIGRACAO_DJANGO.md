@@ -65,7 +65,7 @@ A chave identifica uma única solicitação, inclusive o conteúdo do arquivo. R
 
 Uploads ficam fora da callback transacional, que pode ser repetida. O arquivo é sincronizado em disco antes do registro. Falhas de negócio confirmadas removem o candidato; falhas de conexão com resultado de commit incerto preservam o arquivo para não destruir um comprovante já associado. Arquivos sem referência após tais falhas podem ser removidos em manutenção, somente depois de conferir o banco. PostgreSQL e filesystem não formam uma transação distribuída.
 
-O diretório privado é `UPLOAD_DIR`, por padrão `armazenamento/comprovantes`; não há rota estática para ele. No Compose há o volume `comprovantes_data`.
+Na versão 2.0.1, os comprovantes ficam em tabela própria no PostgreSQL, junto ao pagamento na mesma transação. `UPLOAD_DIR` é usado somente pelo importador de arquivos legados; a API não depende de volume de arquivos. Consulte [COMPROVANTES_POSTGRESQL.md](COMPROVANTES_POSTGRESQL.md).
 
 ## Saída e exclusão da conta
 

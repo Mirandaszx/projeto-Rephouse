@@ -4,6 +4,7 @@ import {randomBytes} from 'node:crypto'
 import assert from 'node:assert/strict'
 import {setTimeout as delay} from 'node:timers/promises'
 import {root,stack,compose,command,type Stack} from './operacao-docker.js'
+import {receiptFixture} from '../infraestrutura/banco/comprovante-fixture.js'
 
 const profile=process.argv[2]??'curto'
 if(!['curto','completo'].includes(profile))throw new Error('Use perfil curto ou completo.')
@@ -26,6 +27,7 @@ try{
   await compose(s,['up','-d','--wait','api'])
   const seed=JSON.parse(await compose(s,['exec','-T','-e','NODE_ENV=test','-e','CARGA_PERFIL','api','node','dist/comandos/semear-carga.js'])) as {actors:unknown[];expected:Record<string,number>}
   await writeFile(join(directory,'atores.json'),JSON.stringify(seed),{mode:0o600})
+  await writeFile(join(directory,'comprovante.png'),receiptFixture(),{mode:0o600})
   const verify=async()=>JSON.parse(await compose(s!,['exec','-T','-e','NODE_ENV=test','-e','CARGA_ACAO=verificar','api','node','dist/comandos/semear-carga.js'])) as Record<string,number|string>
   const before=await verify()
   for(const [field,expected]of Object.entries(seed.expected))assert.equal(before[field],expected,field)
@@ -46,10 +48,11 @@ try{
   finally{monitoring=false;await monitor}
   const summary=JSON.parse(await readFile(join(directory,'resumo-k6.json'),'utf8')) as {metrics:Record<string,{values:Record<string,number>;thresholds?:Record<string,{ok:boolean}>}>}
   const after=await verify()
-  for(const field of ['saldosInvalidos','totaisInvalidos','contextosInvalidos','chavesDuplicadas','statusInvalidos'])assert.equal(after[field],0,field)
+  for(const field of ['saldosInvalidos','totaisInvalidos','contextosInvalidos','chavesDuplicadas','statusInvalidos','comprovantesInvalidos'])assert.equal(after[field],0,field)
   assert.equal(after.isolation,'serializable');assert.equal(after.sync,'on');assert.equal(after.fsync,'on');assert.equal(after.fullPageWrites,'on')
   for(const [field,expected]of Object.entries(seed.expected))assert.equal(after[field],expected,field)
   assert.equal(Number(after.pagamentos)-Number(before.pagamentos),summary.metrics.pagamentos_confirmados?.values.count??0,'Todo pagamento confirmado corresponde a uma única gravação.')
+  assert.equal(Number(after.comprovantes)-Number(before.comprovantes),summary.metrics.pagamentos_confirmados?.values.count??0,'Todo upload confirmado possui um comprovante no banco.')
   const passed=!executionError&&Object.values(summary.metrics).every(metric=>Object.values(metric.thresholds??{}).every(threshold=>threshold.ok))
   const result={at:new Date().toISOString(),profile,result:passed?'passed':'target_not_met',resourceLimits:{api:{cpus:2,memoryGiB:1},postgres:{cpus:2,memoryGiB:2}},before,after,metrics:Object.fromEntries(Object.entries(summary.metrics).map(([name,metric])=>[name,{values:metric.values,thresholds:metric.thresholds}])),samples,remoteCI:'não executada; commits somente locais'}
   await writeFile(join(directory,'resultado.json'),JSON.stringify(result,null,2))

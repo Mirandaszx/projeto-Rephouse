@@ -44,7 +44,7 @@ jobs:
       - run: npm run db:deploy
       - run: npm run verificar
       - name: Conferir contrato versionado
-        run: git diff --exit-code -- documentacao/openapi.json
+        run: git diff --exit-code -- documentacao/openapi.json integracao/api.d.ts
       - name: Construir, iniciar, interromper banco e ensaiar recuperação isolada
         run: npm run test:devops
       - name: Executar carga curta

@@ -8,7 +8,7 @@ if (!testUrl || !URL.canParse(testUrl) || new URL(testUrl).pathname !== '/rabbu_
 } else {
   const npm = process.env.npm_execpath
   if (!npm) throw new Error('Execute este comando com npm run verificar.')
-  for (const script of ['build', 'api:exportar', 'typecheck', 'test', 'test:db']) {
+  for (const script of ['build', 'api:exportar', 'api:tipos:verificar', 'typecheck', 'test', 'test:db']) {
     // Invocar a CLI pelo Node evita dependência de shell e funciona também no Windows.
     const result = await new Promise<number>(resolve => {
       const child = spawn(process.execPath, [npm, 'run', script], { stdio: 'inherit', env: process.env, windowsHide: true })

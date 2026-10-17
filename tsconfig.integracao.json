@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "target": "ES2023", "module": "ESNext", "moduleResolution": "Bundler",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"], "types": [],
+    "strict": true, "noEmit": true, "skipLibCheck": true,
+    "verbatimModuleSyntax": true, "erasableSyntaxOnly": true,
+    "noUnusedLocals": true, "noUnusedParameters": true
+  },
+  "include": ["integracao/**/*.ts"]
+}

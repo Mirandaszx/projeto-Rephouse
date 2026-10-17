@@ -4,6 +4,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -
 FROM base AS dependencias
 WORKDIR /app
 COPY package.json package-lock.json ./
+COPY ferramentas/contrato/package.json ./ferramentas/contrato/package.json
 RUN npm ci
 
 FROM dependencias AS compilacao

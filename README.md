@@ -2,7 +2,7 @@
 
 Aplicação web para organização de repúblicas e residências compartilhadas.
 
-O backend está na versão **2.0.0**: listagens retornam `{dados,paginacao}`, com `pagina=1` e `limite=20` por padrão. Veja o [guia de integração](documentacao/INTEGRACAO_BACKEND.md) e a [consolidação do backend](documentacao/CONSOLIDACAO_BACKEND.md) para segurança, contratos e ensaios de carga. Os commits desta etapa permanecem locais, conforme solicitado.
+O backend está na versão **2.0.1**: listagens retornam `{dados,paginacao}`, com `pagina=1` e `limite=20` por padrão. Veja o [guia de integração](documentacao/INTEGRACAO_BACKEND.md) e a [consolidação do backend](documentacao/CONSOLIDACAO_BACKEND.md) para segurança, contratos e ensaios de carga. Os commits desta etapa permanecem locais, conforme solicitado.
 
 ## Stack
 
@@ -65,7 +65,7 @@ para gerar o segredo JWT local. O banco padrão desta versão é `rabbu_mvp`.
 As migrations são aplicadas automaticamente antes da API iniciar.
 
 A modelagem segue o documento **RABBU — MVP / Primeira Entrega (3 perfis)**.
-São sete tabelas: usuários, repúblicas, membros, despesas, rateios, pagamentos e tarefas.
+São oito tabelas: usuários, repúblicas, membros, despesas, rateios, pagamentos, comprovantes e tarefas.
 As operações financeiras usam transações ACID com isolamento `SERIALIZABLE`,
 rollback em caso de falha e repetição limitada de conflitos de concorrência.
 Veja [a documentação do banco](documentacao/BANCO_DE_DADOS.md) para relações, regras,
@@ -97,3 +97,5 @@ As credenciais têm valores padrão para desenvolvimento local e podem ser subst
 O Compose acima é para desenvolvimento. A execução compilada, somente com API e PostgreSQL, usa `Dockerfile` e `docker-compose.backend.yml`, com projeto/volumes próprios, migrations separadas e processo sem root. Consulte o [guia operacional](documentacao/OPERACAO_BACKEND.md) para execução, logs, readiness, backup e restauração isolada.
 
 A [matriz de validação](documentacao/VALIDACAO_MVP.md) relaciona requisitos, implementação e evidências. O [roteiro de demonstração](documentacao/ROTEIRO_DEMONSTRACAO_BACKEND.md) inclui requisições e estado esperado no banco. `npm run test:devops` ensaia a recuperação em Docker; o workflow do GitHub executa a verificação sem publicar imagens nem fazer deploy. A execução remota só conta como validada depois de ocorrer no GitHub.
+
+Comprovantes são armazenados no PostgreSQL, junto ao pagamento, na mesma transação. Veja [migração e operação](documentacao/COMPROVANTES_POSTGRESQL.md) e os [tipos e exemplos para integração](integracao/README.md).

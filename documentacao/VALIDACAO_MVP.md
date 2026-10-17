@@ -1,5 +1,7 @@
 # Matriz de validação do MVP
 
+A versão atual 2.0.1 acrescenta comprovantes transacionais e tipos para integração. Evidências: [validacao-comprovantes.json](evidencias/validacao-comprovantes.json). Os resultados 2.0.0 abaixo permanecem identificados como históricos.
+
 A matriz relaciona o documento **RABBU — MVP / Primeira Entrega (3 perfis)** às decisões aprovadas depois dele. Pagamentos parciais, saída/troca com histórico, transferência explícita e exclusão lógica prevalecem sobre sugestões de adiamento do PDF. O documento descreve requisitos; suas sugestões de ferramentas e estrutura não são comandos para alterar as decisões do projeto.
 
 Escopo auditado: API TypeScript, PostgreSQL e operação local. Frontend, hospedagem e deploy não são critérios desta etapa. As evidências automatizadas conferem respostas HTTP, contrato e registros no PostgreSQL; não representam prova de ausência de todo defeito possível.
@@ -31,7 +33,7 @@ Os nomes dos cenários abaixo permitem localizar as asserções. `OK local` sign
 | RF-MVP-05 Moradores ativos | `GET /api/membros` | `republicas/republicas.repository.ts` | H: lista ativa exclui quem saiu; `inativos=true` é restrito à administração | OK local |
 | RF-MVP-06 Cadastrar despesa | `POST /api/despesas` | `financeiro/` | H: despesa HTTP e rateio, NORMAL 403 e membro externo 400 sem inserção | OK local |
 | RF-MVP-07 Rateio igual | `POST/PATCH /api/despesas` | `financeiro/dominio/rateio.ts`, service/repository | `rateio.test.ts`, B e A: centavos, soma exata, seleção vazia/duplicada/externa e rollback | OK local |
-| RF-MVP-08 Pagamento/comprovante | `POST /api/pagamentos`; `GET /api/pagamentos/{id}/comprovante` | `financeiro/`; `infraestrutura/armazenamento/receipts.ts` | H: parcial, idempotência, concorrência, autorização, tipo real, limite de arquivo e arquivo ausente; D: hash após restauração | OK local |
+| RF-MVP-08 Pagamento/comprovante | `POST /api/pagamentos`; `GET /api/pagamentos/{id}/comprovante` | `financeiro/`; `infraestrutura/armazenamento/comprovantes.ts` | H: parcial, idempotência, concorrência, autorização, tipo real, limite de arquivo, bytes no banco e JSON sem conteúdo; D: hash após restauração | OK local |
 | RF-MVP-09 Consultar financeiro | `GET /api/despesas`, `/{id}` e `/api/me/financeiro` | `financeiro/`; `compartilhado/http/validation.ts` | H: edição pré/pós-pagamento e estados PENDENTE/VENCIDA/PAGA; dívida antiga própria; C: respostas validam o contrato | OK local |
 | RF-MVP-10 Tarefas | `POST/GET /api/tarefas`; `PATCH /api/tarefas/{id}` | `tarefas/` | H: atribuir/listar/concluir, responsável de outra casa recusado, outro morador 403 e outra casa 404; B: FK contextual | OK local |
 | RF-MVP-11 Dashboard | `GET /api/dashboard` | `painel/dashboard.repository.ts` | H: parciais e ex-moradores; primeiro/último instante mensal, mês anterior/seguinte excluídos; seed e C validam próximos vencimentos e tarefas | OK local |
@@ -60,7 +62,7 @@ Os nomes dos cenários abaixo permitem localizar as asserções. `OK local` sign
 | RNF-MVP-02 Privacidade | Middleware autentica; autorização MASTER e contexto são revalidados nos services, na mesma transação das consultas; H testa todas as famílias restritas | OK local; autorização de perfil fica no service, conforme arquitetura adotada |
 | RNF-MVP-03 Atomicidade | `infraestrutura/banco/transaction.ts` e migrations; A/B comprovam rollback e conflitos | OK local |
 | RNF-MVP-04 Configuração | `.env*` ignorados, exemplos sem segredos reais; imagem recebe ambiente no runtime; O/D conferem logs; CI usa credenciais descartáveis próprias | OK local por inspeção e testes; exemplos/fixtures não são credenciais de produção |
-| RNF-MVP-05 PostgreSQL/migrations | Prisma 7, PostgreSQL 18, sete migrations aplicadas do zero em H/D, sem modificar as anteriores | OK local |
+| RNF-MVP-05 PostgreSQL/migrations | Prisma 7, PostgreSQL 18, oito migrations aplicadas do zero em H/D, sem modificar as anteriores | OK local |
 | RNF-MVP-06 Camadas | Routes → controllers → services → repositories, domínio e infraestrutura separados; inspeção em `codigo/` | OK local por inspeção |
 | RNF-MVP-07 Testes | `npm run verificar` exige banco dedicado e executa build/contrato/tipos/testes; CI declara a mesma verificação | OK local; remoto pendente |
 
@@ -108,7 +110,7 @@ Uma asserção inicial do ensaio Docker esperava extensão `pgcrypto`, mas as mi
 
 ## Resultado local e pendências
 
-Os resultados atuais estão em [evidencias/validacao-consolidacao.json](evidencias/validacao-consolidacao.json) e [evidencias/carga-consolidacao.json](evidencias/carga-consolidacao.json). A verificação completa passou com **93 testes: 33 sem banco e 60 com PostgreSQL, zero falhas e zero ignorados**. A contagem inclui os testes-pai da jornada do runner Node. O registro anterior de 81 testes continua em [evidencias/validacao-local.json](evidencias/validacao-local.json), como histórico da etapa anterior.
+Os resultados da etapa 2.0.0 estão em [evidencias/validacao-consolidacao.json](evidencias/validacao-consolidacao.json) e [evidencias/carga-consolidacao.json](evidencias/carga-consolidacao.json). A verificação completa passou com **93 testes: 33 sem banco e 60 com PostgreSQL, zero falhas e zero ignorados**. A contagem inclui os testes-pai da jornada do runner Node. O registro anterior de 81 testes continua em [evidencias/validacao-local.json](evidencias/validacao-local.json), como histórico da etapa anterior.
 
 Não foram identificadas falhas remanescentes de autorização, isolamento ou integridade financeira nos cenários acima. Isso não inclui frontend nem uma auditoria de segurança externa. O [roteiro de demonstração](ROTEIRO_DEMONSTRACAO_BACKEND.md) e o [guia operacional](OPERACAO_BACKEND.md) permitem repetir a validação.
 
@@ -120,3 +122,16 @@ Não foram identificadas falhas remanescentes de autorização, isolamento ou in
 | Desenvolvimento | API recuperada na pasta atual, sete migrations e health/ready 200. Dumps preventivos preservados; PostgreSQL e volume original mantidos. Frontend antigo não foi recriado e permanece fora do escopo |
 | Bloqueio de merge por status obrigatório | Configuração administrativa futura do GitHub; o job falha ao encontrar erro, mas branch protection não foi alterada |
 | Frontend e deploy online | Fora do escopo desta etapa |
+
+## Entrega 2.0.1
+
+| Item | Evidência |
+| --- | --- |
+| Pagamento e comprovante atômicos | comprovantes.test.ts: rollback de pagamento e saldo quando o comprovante é inválido |
+| Limites e histórico no PostgreSQL | FK, hash, tamanho, MIME, unicidade por pagamento, imutabilidade e arquivo de 5 MiB |
+| Importação legada | Conferência sem escrita, arquivo ausente, hash divergente, repetição sem duplicação e originais preservados |
+| API e integração | Jornada HTTP: upload concorrente com mesma chave, replay pelos exemplos fetch, download privado e preservação após exclusão |
+| Backup formatos 1 e 2 | Ensaio Docker: migração de schema de sete para oito migrations e hash do download; dump unificado |
+| Contrato e tipos | OpenAPI 2.0.1, tipos gerados e exemplos compilados para navegador, sem validações ignoradas |
+| Carga com arquivos | Resultado próprio em validacao-comprovantes.json; não reutiliza a medição sem arquivos da etapa anterior |
+| GitHub | Não executado; commits somente locais, por decisão do usuário |

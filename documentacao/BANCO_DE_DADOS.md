@@ -2,7 +2,7 @@
 
 Implementação em PostgreSQL 18, baseada no documento `RABBU_MVP_Primeira_Entrega_3_Perfis.pdf`. O banco `rabbu_mvp` é separado do `banco_projeto` existente; as tabelas do banco anterior foram preservadas.
 
-O [schema Prisma](../prisma/schema.prisma) define sete tabelas. As migrations também contêm regras SQL que o Prisma não representa, como triggers e a view de despesas vencidas. O backend usa TypeScript e ESM, com Prisma 7.10.0 e o gerador moderno `prisma-client`, que produz os tipos e o cliente em `codigo/gerado/prisma`. A conexão PostgreSQL usa `@prisma/adapter-pg`. [Geradores do Prisma 7](https://www.prisma.io/docs/orm/v7/prisma-schema/overview/generators)
+O [schema Prisma](../prisma/schema.prisma) define oito tabelas. As migrations também contêm regras SQL que o Prisma não representa, como triggers e a view de despesas vencidas. O backend usa TypeScript e ESM, com Prisma 7.10.0 e o gerador moderno `prisma-client`, que produz os tipos e o cliente em `codigo/gerado/prisma`. A conexão PostgreSQL usa `@prisma/adapter-pg`. [Geradores do Prisma 7](https://www.prisma.io/docs/orm/v7/prisma-schema/overview/generators)
 
 A organização dos módulos e a execução da API estão descritas em [ARQUITETURA.md](ARQUITETURA.md).
 
@@ -16,6 +16,7 @@ A organização dos módulos e a execução da API estão descritas em [ARQUITET
 | `despesas` | Despesa, valor total, vencimento e autor. |
 | `rateios_despesa` | Parcela de cada membro e situação de pagamento. |
 | `pagamentos` | Pagamentos parciais ou integrais, com comprovante opcional e chave de idempotência. |
+| `comprovantes` | Conteúdo bytea e metadados, um por pagamento, com hash/tamanho verificados e histórico imutável. |
 | `tarefas` | Tarefa da república e membro responsável. |
 
 ```mermaid

@@ -1,6 +1,6 @@
 {
   "name": "projeto-rephouse",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Sistema web simples para gestão e organização de repúblicas e residências compartilhadas.",
   "main": "dist/server.js",
   "directories": {
@@ -10,7 +10,7 @@
     "start": "node dist/server.js",
     "dev": "tsx watch codigo/server.ts",
     "build": "npm run db:generate && tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.check.json && tsc -p tsconfig.carga.json",
+    "typecheck": "tsc -p tsconfig.check.json && tsc -p tsconfig.carga.json && tsc -p tsconfig.integracao.json && npm run typecheck --workspace @rephouse/contrato",
     "db:generate": "prisma generate",
     "db:validate": "prisma validate",
     "db:deploy": "prisma migrate deploy",
@@ -22,13 +22,16 @@
     "auth:secret": "tsx codigo/comandos/generate-secret.ts",
     "master:provision": "tsx codigo/comandos/provision-master.ts",
     "test": "tsx --test --test-concurrency=1 testes/rateio.test.ts testes/http.test.ts testes/integracao-http.test.ts testes/operacao-http.test.ts testes/backup.test.ts testes/robustez.test.ts",
-    "test:db": "tsx --test --test-concurrency=1 testes/database.test.ts testes/acid.test.ts testes/migration.test.ts",
+    "test:db": "tsx --test --test-concurrency=1 testes/database.test.ts testes/acid.test.ts testes/migration.test.ts testes/comprovantes.test.ts",
     "backup": "tsx codigo/comandos/backup.ts",
     "restaurar": "tsx codigo/comandos/restaurar.ts",
     "test:devops": "tsx codigo/comandos/verificar-devops.ts",
     "comprovantes:verificar": "tsx codigo/comandos/verificar-comprovantes.ts",
     "test:carga": "tsx codigo/comandos/verificar-carga.ts curto",
-    "test:carga:completo": "tsx codigo/comandos/verificar-carga.ts completo"
+    "test:carga:completo": "tsx codigo/comandos/verificar-carga.ts completo",
+    "comprovantes:importar": "tsx codigo/comandos/importar-comprovantes.ts",
+    "api:tipos": "npm run api:exportar && tsx ferramentas/contrato/gerar.ts",
+    "api:tipos:verificar": "tsx ferramentas/contrato/gerar.ts --verificar"
   },
   "repository": {
     "type": "git",
@@ -38,6 +41,9 @@
   "author": "",
   "license": "ISC",
   "type": "module",
+  "workspaces": [
+    "ferramentas/contrato"
+  ],
   "bugs": {
     "url": "https://github.com/Mirandaszx/projeto-Rephouse/issues"
   },

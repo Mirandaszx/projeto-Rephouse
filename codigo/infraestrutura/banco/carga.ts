@@ -3,8 +3,10 @@ import {hash,argon2id} from 'argon2'
 import {SignJWT} from 'jose'
 import type {PrismaClient,TipoUsuario} from '../../gerado/prisma/client.js'
 import {dividirIgualmente} from '../../modulos/financeiro/dominio/rateio.js'
+import {prepareReceipt} from '../armazenamento/comprovantes.js'
+import {receiptFixture} from './comprovante-fixture.js'
 
-export interface LoadActor {token:string;admin:boolean;republicaId:string;despesaId:string;rateioId:string;tarefaId:string}
+export interface LoadActor {token:string;admin:boolean;republicaId:string;despesaId:string;rateioId:string;tarefaId:string;comprovanteId:string}
 export async function prepareLoad(db:PrismaClient,profile:string,secret:string){
   if(process.env.NODE_ENV!=='test'||new URL(process.env.DATABASE_URL!).pathname!=='/rabbu_mvp_carga')throw new Error('Carga exige NODE_ENV=test e banco rabbu_mvp_carga isolado.')
   if(await db.usuario.count())throw new Error('O banco de carga deve estar vazio. Não há reset automático.')
@@ -17,6 +19,7 @@ export async function prepareLoad(db:PrismaClient,profile:string,secret:string){
   await db.usuario.createMany({data:users})
   let nextUser=1
   const actors:LoadActor[]=[]
+  const receipt=await prepareReceipt(receiptFixture())
   for(let house=0;house<houses;house++){
     const residents=users.slice(nextUser,Math.min(nextUser+10,total));nextUser+=residents.length
     const republicaId=id(),admin=residents[0]!
@@ -47,8 +50,10 @@ export async function prepareLoad(db:PrismaClient,profile:string,secret:string){
     const member=members[memberIndex]!
     const available=expenses[7]!
     const rateio=shares.find(share=>share.despesaId===available.id&&share.membroId===member.id)!
+    const download=payments.find(payment=>payment.membroId===member.id)!
+    await db.comprovante.create({data:{pagamentoId:download.id,...receipt}})
     const token=await new SignJWT({ver:0}).setProtectedHeader({alg:'HS256'}).setSubject(actor.id).setIssuedAt().setIssuer('rephouse').setAudience('rephouse-api').setExpirationTime('1h').sign(new TextEncoder().encode(secret))
-    actors.push({token,admin:memberIndex===0,republicaId,despesaId:available.id,rateioId:rateio.id,tarefaId:tasks[memberIndex]!.id})
+    actors.push({token,admin:memberIndex===0,republicaId,despesaId:available.id,rateioId:rateio.id,tarefaId:tasks[memberIndex]!.id,comprovanteId:download.id})
   }
   return {actors:actors.slice(0,50),profile,expected:{usuarios:total,republicas:houses,despesas:houses*expensesPerHouse,tarefas:houses*20}}
 }
@@ -62,5 +67,6 @@ export async function loadIntegrity(db:PrismaClient){
     ((SELECT count(*) FROM rateios_despesa r WHERE r.status::text<>CASE WHEN valor_pago=valor_devido THEN 'PAGO' WHEN valor_pago>0 THEN 'PARCIAL' ELSE 'PENDENTE' END)+(SELECT count(*) FROM despesas d WHERE d.status::text<>CASE WHEN valor_total=(SELECT sum(valor_pago) FROM rateios_despesa r WHERE r.despesa_id=d.id) THEN 'PAGA' ELSE 'PENDENTE' END))::int AS "statusInvalidos",
     current_setting('default_transaction_isolation') AS isolation,current_setting('synchronous_commit') AS sync,current_setting('fsync') AS fsync,current_setting('full_page_writes') AS "fullPageWrites"`
   if(!financial)throw new Error('Não foi possível conferir a integridade da carga.')
-  return {usuarios:await db.usuario.count(),republicas:await db.republica.count(),despesas:await db.despesa.count(),tarefas:await db.tarefa.count(),rateios:await db.rateioDespesa.count(),pagamentos:await db.pagamento.count(),...financial}
+  const [storage]=await db.$queryRaw<{comprovantesInvalidos:number;bancoBytes:number}[]>`SELECT (SELECT count(*)::int FROM comprovantes WHERE hash_sha256<>encode(sha256(conteudo),'hex') OR tamanho<>octet_length(conteudo)) AS "comprovantesInvalidos", pg_database_size(current_database())::float8 AS "bancoBytes"`
+  return {usuarios:await db.usuario.count(),republicas:await db.republica.count(),despesas:await db.despesa.count(),tarefas:await db.tarefa.count(),rateios:await db.rateioDespesa.count(),pagamentos:await db.pagamento.count(),comprovantes:await db.comprovante.count(),...financial,...storage}
 }

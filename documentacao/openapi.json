@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "RepHouse API",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "description": "Backend TypeScript. Listagens retornam {dados,paginacao}. Dinheiro é string decimal. Datas de entrada usam YYYY-MM-DD; datas civis de saída usam ISO à meia-noite UTC. Relatórios e vencimentos seguem APP_TIME_ZONE, padrão horário de Brasília (America/Sao_Paulo). Exemplos são ilustrativos. Endpoints protegidos usam Authorization: Bearer TOKEN; CORS não substitui autorização."
   },
   "servers": [
@@ -1554,7 +1554,7 @@
                   "openapi": "3.1.0",
                   "info": {
                     "title": "RepHouse API",
-                    "version": "2.0.0"
+                    "version": "2.0.1"
                   },
                   "paths": {},
                   "components": {}
@@ -11232,7 +11232,7 @@
         "tags": [
           "Financeiro"
         ],
-        "description": "Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Proprietário do pagamento, administrador da república de origem ou MASTER. Ausência de arquivo ou falta de acesso retorna 404.",
+        "description": "Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Proprietário do pagamento, administrador da república de origem ou MASTER. Conteúdo armazenado no PostgreSQL. Ausência de comprovante ou falta de acesso retorna 404.",
         "x-perfis": [
           "USUARIO_NORMAL",
           "USUARIO_ADMIN",
@@ -11240,13 +11240,30 @@
         ],
         "responses": {
           "200": {
-            "description": "Conteúdo binário do arquivo.",
+            "description": "Conteúdo binário do arquivo, carregado somente após autorização.",
             "headers": {
               "Content-Disposition": {
                 "schema": {
                   "type": "string"
                 },
                 "example": "attachment; filename=\"comprovante.pdf\""
+              },
+              "Content-Length": {
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 5242880
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
               },
               "X-Request-Id": {
                 "description": "UUID gerado pelo servidor para correlação com os logs.",

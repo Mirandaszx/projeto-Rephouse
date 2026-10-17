@@ -14,6 +14,7 @@ import { createDatabase } from '../codigo/infraestrutura/banco/client.js'
 import { createApp } from '../codigo/app.js'
 import { validarResposta } from './auxiliares/contrato.js'
 import { demonstracao, semearDemonstracao } from '../codigo/infraestrutura/banco/demonstracao.js'
+import {pagar,baixarComprovante,ErroResposta} from '../integracao/exemplos.js'
 
 const url = process.env.TEST_DATABASE_URL
 const dedicated = url && new URL(url).pathname === '/rabbu_mvp_test'
@@ -233,6 +234,11 @@ test('migração: jornada HTTP, privacidade, exclusão e concorrência', { skip:
       assert.equal(paid.status,201,JSON.stringify(paid.body))
       paymentWithFile = paid.body.id
       assert.equal(await db.comprovante.count({where:{pagamentoId:paymentWithFile}}),1)
+      const replay=await pagar(base,morador.token,{rateioId:ownRateio().id,valor:'10.00'},key,new Blob(['%PDF-1.4\ncomprovante de teste\n%%EOF'],{type:'application/pdf'}))
+      assert.equal(replay.id,paymentWithFile)
+      const downloaded=await baixarComprovante(base,morador.token,paymentWithFile)
+      assert.ok(downloaded.requestId);assert.equal(await downloaded.arquivo.text(),'%PDF-1.4\ncomprovante de teste\n%%EOF')
+      await assert.rejects(pagar(base,morador.token,{rateioId:ownRateio().id,valor:'10.00'},key,new Blob(['%PDF-1.4\nalterado\n%%EOF'])),error=>error instanceof ErroResposta&&error.status===409&&!!error.requestId)
       const download = await fetch(`${base}/api/pagamentos/${paymentWithFile}/comprovante`,{headers:{Authorization:`Bearer ${morador.token}`}})
       assert.equal(download.status,200)
       assert.equal(download.headers.get('x-content-type-options'),'nosniff')

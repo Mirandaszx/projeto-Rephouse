@@ -1,4 +1,6 @@
-# Consolidação do backend
+# Consolidação do backend — histórico 2.0.0
+
+A operação atual dos comprovantes e os novos resultados estão em [COMPROVANTES_POSTGRESQL.md](COMPROVANTES_POSTGRESQL.md). As medições e decisões abaixo registram a etapa anterior.
 
 A entrega anterior está preservada no commit `7781cfb`. Esta etapa fortalece o backend e prepara paginação e avaliação de crescimento. Por decisão do usuário, os commits ficam **somente locais**; push, PR e execução remota do GitHub Actions permanecem pendentes.
 

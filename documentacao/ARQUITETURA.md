@@ -36,7 +36,7 @@ interface/
   codigo/
     recursos/                    # Imagens e demais recursos da interface
   publico/                       # Arquivos públicos do Vite
-armazenamento/comprovantes/       # Arquivos privados em execução
+integracao/                      # Tipos OpenAPI e exemplos para navegador
 ```
 
 As pastas do projeto usam português sem acentos. `node_modules`, `dist`, `.git` e os diretórios internos gerados pelo Prisma conservam os nomes das ferramentas; `http` e `prisma` mantêm os nomes do protocolo e da tecnologia. O nome público dos endpoints não depende das pastas.
@@ -45,7 +45,7 @@ As pastas do projeto usam português sem acentos. `node_modules`, `dist`, `.git`
 | --- | --- |
 | [app.ts](../codigo/app.ts) | Criar a aplicação, registrar rotas e instalar os handlers de 404 e erro. Importar a aplicação não abre uma porta nem cria uma conexão com o banco. |
 | [server.ts](../codigo/server.ts) | Validar a configuração, conectar ao banco antes de abrir a porta e fechar HTTP e banco ao receber SIGINT ou SIGTERM. |
-| [configuracao/env.ts](../codigo/configuracao/env.ts) | Carregar `.env` e validar banco, JWT, diretório privado de comprovantes e configuração HTTP sem imprimir credenciais. |
+| [configuracao/env.ts](../codigo/configuracao/env.ts) | Carregar `.env` e validar banco, JWT e configuração HTTP sem imprimir credenciais. |
 | `*.routes.ts` | Associar caminhos e métodos HTTP aos controllers. |
 | `*.controller.ts` | Adaptar requisição e resposta HTTP, incluindo a validação da entrada. |
 | `*.service.ts` | Coordenar o caso de uso, as regras de negócio e suas transações. |
@@ -114,3 +114,5 @@ O build usa `tsc` e a execução usa `node dist/server.js`. Os imports relativos
 O cadastro público rejeita campos de privilégio. JWT usa assinatura HS256 com segredo local e duração de uma hora; logout, bloqueio e exclusão invalidam tokens por versão. MASTER é provisionado exclusivamente pelo comando administrativo documentado. Comentários no código explicam invariantes, limites de autorização e decisões transacionais, em vez de repetir operações óbvias.
 
 Na configuração compilada, migrations são um serviço separado e a API inicia de `dist`, sem ferramentas de build no startup. A API usa um pool dedicado e limitado para readiness e middleware de logs JSON com UUID por requisição, sem registrar entradas privadas. `APP_TIME_ZONE` adota o horário de Brasília como padrão dos relatórios e datas civis. O [guia operacional](OPERACAO_BACKEND.md) detalha volumes, recuperação e CI.
+
+Na versão 2.0.1, comprovantes usam bytea em tabela própria, com FK para pagamentos. A preparação e o hash antecedem a transação, que grava ambos; as consultas públicas não carregam o conteúdo. O download autoriza antes da consulta binária. Arquivos locais são usados apenas pelo importador legado.

@@ -2,7 +2,7 @@
 
 Esta entrega prepara a API para quem desenvolve o frontend. O contrato OpenAPI inclui rotas, perfis, corpos de entrada, schemas e exemplos de resposta, erros, idempotência e download de arquivos. A interface permanece com seu responsável.
 
-## Contrato 2.0.0
+## Contrato 2.0.1
 
 Todas as listagens retornam `{dados, paginacao}`. Acesse a coleção em `resposta.dados`, com parâmetros opcionais `pagina=1` e `limite=20` (máximo 100). `paginacao` informa `pagina`, `limite`, `totalItens` e `totalPaginas`. Páginas além do resultado retornam `dados: []`; parâmetros desconhecidos, duplicados ou inválidos retornam 400. `pagina` aceita até 1.000.000. O filtro `inativos` continua disponível para membros, conforme autorização. Consultas de detalhe e operações de escrita mantêm seus formatos. A mudança substitui os arrays diretos da versão anterior; importe novamente o OpenAPI no Insomnia.
 
@@ -18,7 +18,7 @@ npm run db:deploy
 npm run dev
 ```
 
-Os dados de conexão ficam exclusivamente no `.env`. O banco configurado em `DATABASE_URL` precisa existir. As migrations atuais são preservadas: esta etapa não exige migration nova nem reset de banco.
+Os dados de conexão ficam exclusivamente no `.env`. O banco configurado em `DATABASE_URL` precisa existir. As migrations anteriores são preservadas. A oitava migration acrescenta os comprovantes ao PostgreSQL; não há reset. Ambientes com arquivos legados devem seguir COMPROVANTES_POSTGRESQL.md antes de iniciar a API.
 
 O endereço padrão é `http://localhost:3000`. `GET /api/health` verifica o processo HTTP. As rotas protegidas exigem:
 
@@ -46,7 +46,7 @@ Pontos do contrato que afetam a interface:
 - `membroId`, `membroIds` e `responsavelId` identificam vínculos da república. Eles são diferentes de `usuarioId`; consulte `/api/membros`.
 - As rotas comuns derivam a república do vínculo ativo. Somente MASTER fornece república explicitamente nas rotas `/api/master/republicas/{republicaId}`.
 - Uma conta recém-cadastrada pode não ter república: `/api/me` retorna `membro: null`. Consultas que exigem vínculo retornam `409 NO_REPUBLIC`.
-- Listagens retornam arrays, sem envelope de paginação nesta entrega. `204` não tem corpo e não deve ser interpretado como JSON.
+- Listagens retornam `{dados,paginacao}`; os registros ficam em `dados`. `204` não tem corpo e não deve ser interpretado como JSON.
 - Erros seguem `{ "error": { "code": "...", "message": "..." } }`. Trate 401 como sessão indisponível; 403 como falta de permissão; 409 como conflito de regra ou de estado.
 - `/api/me/financeiro` inclui os próprios rateios de vínculos antigos. Sair com dívida é permitido; excluir a conta com dívida retorna `409 OUTSTANDING_DEBT`.
 
@@ -68,7 +68,7 @@ CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 
 Reinicie a API após alterar o ambiente. Para homologação, substitua pelos endereços usados pela equipe, incluindo esquema e porta. Não são aceitos `*`, caminhos, consultas ou credenciais na origem. Uma lista vazia não libera leitura entre origens. O Compose oferece as duas origens locais como padrão de desenvolvimento; na execução direta, a variável ausente resulta em lista vazia.
 
-O preflight aceita `Authorization`, `Content-Type` e `Idempotency-Key`. A resposta expõe `Content-Disposition`, `Retry-After` e headers de limite de tentativas. A autenticação usa Bearer, sem cookies de sessão.
+O preflight aceita `Authorization`, `Content-Type` e `Idempotency-Key`. A resposta expõe `Content-Disposition`, `X-Request-Id`, `Retry-After` e headers de limite de tentativas. A autenticação usa Bearer, sem cookies de sessão.
 
 CORS controla o acesso às respostas pelo navegador. Clientes como Insomnia e chamadas de servidor continuam dependendo da autenticação e das permissões da API. Requisições que passam pelo proxy `/api` do Vite usam a mesma origem do navegador e normalmente não precisam de CORS. [Documentação do middleware CORS](https://expressjs.com/en/resources/middleware/cors/).
 
@@ -110,3 +110,7 @@ O comando compila o backend, exporta o contrato, verifica tipos e executa testes
 A API usada nos testes é temporária; não exige `npm run dev` nem usa a porta 3000. Os cenários persistentes e os dados de demonstração dos testes ficam no banco dedicado, com limpeza das próprias fixtures. Rodar a verificação não executa seed no banco principal.
 
 Os comandos individuais `npm test`, `npm run test:db`, `npm run typecheck` e `npm run build` continuam disponíveis. Esta etapa verifica a integração local; implantação e operação de produção exigem preparação própria.
+
+## Tipos e exemplos prontos
+
+Consulte [integracao/README.md](../integracao/README.md). Os tipos são gerados do OpenAPI, sem Prisma, e os exemplos usam fetch. Execute `npm run api:tipos` para gerar e `npm run api:tipos:verificar` para conferir. Os comprovantes ficam no PostgreSQL, com as rotas e permissões preservadas; veja [operação e migração](COMPROVANTES_POSTGRESQL.md).

@@ -74,6 +74,7 @@ test('CORS libera somente origens exatas e expõe o nome de arquivos para downlo
     const allowed = await fetch(`${base}/api/health`, { headers: { Origin: 'http://localhost:5173' } })
     assert.equal(allowed.headers.get('access-control-allow-origin'), 'http://localhost:5173')
     assert.match(allowed.headers.get('access-control-expose-headers') ?? '', /Content-Disposition/i)
+    for(const header of ['X-Request-Id','Retry-After','RateLimit','RateLimit-Policy'])assert.ok((allowed.headers.get('access-control-expose-headers')??'').includes(header))
     const denied = await fetch(`${base}/api/health`, { headers: { Origin: 'http://localhost:5173.evil.test' } })
     assert.equal(denied.status, 200)
     assert.equal(denied.headers.get('access-control-allow-origin'), null)

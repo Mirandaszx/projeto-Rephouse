@@ -1,0 +1,166 @@
+{
+  "registradoEm": "2026-10-17T20:33:48.050Z",
+  "versao": "2.0.1",
+  "ambiente": "Docker local; uma API; sem CI remota",
+  "verificacao": {
+    "comando": "npm run verificar",
+    "testes": 100,
+    "semBanco": 34,
+    "comPostgreSQL": 66,
+    "falhas": 0,
+    "ignorados": 0
+  },
+  "transicao": {
+    "backupPreventivo": "2026-10-17T20-03-55-071Z-17f6e6de",
+    "pagamentosIniciais": 0,
+    "comprovantesIniciais": 0,
+    "migrations": 8,
+    "originaisPreservados": true
+  },
+  "devops": {
+    "concluidoEm": "2026-10-17T20:32:52.593Z",
+    "resultado": "passed",
+    "eventos": [
+      "Construindo imagens de runtime e migrations a partir do lockfile.",
+      "SIGTERM drenou requisição em andamento; replay após reinício preservou o mesmo pagamento sem duplicação.",
+      "Imagem compilada sem bind mount, usuário 1000, 8 migrations, registros e comprovante preservados após restart.",
+      "Banco desligado: readiness 503 em menos de dois segundos; health 200; recuperação automática após retorno.",
+      "Logs JSON correlacionados por requestId sem senha, token, DSN ou conteúdo do comprovante.",
+      "Backup concorrente recusado; falha de captura após parada real reiniciou a API e preservou banco/comprovante.",
+      "Backup customizado e comprovantes restaurados em cluster/volumes novos: registros, triggers, ACID, login, download e bloqueio de sobrepagamento conferidos.",
+      "Formato 1 restaurado: sete migrations antigas, oitava aplicada, arquivo importado e download com hash original; formato 2 contém apenas o dump.",
+      "Restauração recusou volume de destino preexistente mesmo sem rótulos Compose; nenhum volume existente é reutilizado."
+    ],
+    "estadoRestauradoFormato2": {
+      "usuarios": 7,
+      "republicas": 3,
+      "membros": 7,
+      "despesas": 3,
+      "rateios": 6,
+      "pagamentos": 5,
+      "comprovantes": 1,
+      "tarefas": 3,
+      "versoes": 8,
+      "vinculosInativos": 1,
+      "extensaoCrypto": 0,
+      "pago": 140,
+      "saldosInvalidos": 0,
+      "totaisInvalidos": 0,
+      "isolation": "serializable",
+      "sync": "on",
+      "fsync": "on",
+      "fullPageWrites": "on",
+      "triggers": 17,
+      "unlogged": 0
+    },
+    "formato1": "Fixture isolada com as sete migrations originais e arquivo real; oitava migration aplicada e download com hash conferido"
+  },
+  "cargaCurta": {
+    "concluidaEm": "2026-10-17T20:30:58.233Z",
+    "resultado": "passed",
+    "comAnexos": true
+  },
+  "cargaCompleta": {
+    "concluidaEm": "2026-10-17T20:26:05.198Z",
+    "resultado": "target_not_met",
+    "limites": {
+      "api": {
+        "cpus": 2,
+        "memoryGiB": 1
+      },
+      "postgres": {
+        "cpus": 2,
+        "memoryGiB": 2
+      }
+    },
+    "etapas": "30s até 10 VUs, 30s até 25, 30s até 50, cinco minutos com 50 e 30s até zero",
+    "misturaConfigurada": "80% leituras e 20% escritas; downloads em 10% do total; pagamentos com PNG válido de aproximadamente 256 KiB, pouco compressível",
+    "estadoInicial": {
+      "usuarios": 1000,
+      "republicas": 100,
+      "despesas": 10000,
+      "tarefas": 2000,
+      "rateios": 99900,
+      "pagamentos": 69930,
+      "comprovantes": 100,
+      "saldosInvalidos": 0,
+      "totaisInvalidos": 0,
+      "contextosInvalidos": 0,
+      "chavesDuplicadas": 0,
+      "statusInvalidos": 0,
+      "isolation": "serializable",
+      "sync": "on",
+      "fsync": "on",
+      "fullPageWrites": "on",
+      "comprovantesInvalidos": 0,
+      "bancoBytes": 94598847
+    },
+    "estadoFinal": {
+      "usuarios": 1000,
+      "republicas": 100,
+      "despesas": 10000,
+      "tarefas": 2000,
+      "rateios": 99900,
+      "pagamentos": 71095,
+      "comprovantes": 1265,
+      "saldosInvalidos": 0,
+      "totaisInvalidos": 0,
+      "contextosInvalidos": 0,
+      "chavesDuplicadas": 0,
+      "statusInvalidos": 0,
+      "isolation": "serializable",
+      "sync": "on",
+      "fsync": "on",
+      "fullPageWrites": "on",
+      "comprovantesInvalidos": 0,
+      "bancoBytes": 414684863
+    },
+    "motivoResultado": "145 respostas 429. Latência, taxa de falhas inferior a 1% e ausência de 500 passaram; o threshold adicional checks==1 falhou. Não houve reenvio automático nem aumento da capacidade de uploads.",
+    "limitesDaMedicao": "O ajuste posterior relativo a desconexões foi coberto por regressão e carga curta na imagem final. A carga completa mede tráfego sem desconexões deliberadas.",
+    "metricas": {
+      "requisicoes": 16604,
+      "requisicoesPorSegundo": 39.474429140161895,
+      "leituraP95Ms": 127.60304644999998,
+      "escritaP95Ms": 194.22998894999995,
+      "uploadP95Ms": 213.08117374999995,
+      "downloadP95Ms": 119.20928814999992,
+      "falhasInesperadas": 0.008732835461334618,
+      "errosHTTP500": 0,
+      "respostas429": 145,
+      "violacoesIsolamento": 0,
+      "pagamentosConfirmados": 1165,
+      "crescimentoBancoBytes": 320086016
+    },
+    "recursos": {
+      "api": {
+        "amostras": 36,
+        "cpuMaximaPercentualDocker": 107.99,
+        "memoriaMaximaMiB": 474.5
+      },
+      "postgres": {
+        "amostras": 36,
+        "cpuMaximaPercentualDocker": 20.45,
+        "memoriaMaximaMiB": 252.7
+      }
+    },
+    "observacao": "CPU Docker: 100% equivale a um núcleo. Amostragem aproximadamente a cada 10 segundos; picos entre amostras podem não aparecer. Resultado específico deste tráfego e infraestrutura."
+  },
+  "integracao": {
+    "openapi": "2.0.1",
+    "tipos": "integracao/api.d.ts",
+    "exemplos": "integracao/exemplos.ts",
+    "aplicacaoTypeScript": "6.0.3",
+    "geradorIsolado": {
+      "openapiTypeScript": "7.13.0",
+      "typescript": "5.9.3"
+    }
+  },
+  "git": {
+    "branch": "feat/consolidacao-backend",
+    "armazenamento": "133a5ae",
+    "backup": "2001bb4",
+    "publicacao": "Não realizada; commits somente locais por decisão do usuário",
+    "pullRequest": "Não aberto",
+    "CIremota": "Não executada"
+  }
+}
