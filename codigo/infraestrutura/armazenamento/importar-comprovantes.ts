@@ -5,6 +5,8 @@ import type {PrismaClient} from '../../gerado/prisma/client.js'
 import {executarTransacaoAcid} from '../banco/transaction.js'
 import {prepareReceipt} from './comprovantes.js'
 
+export class LegacyReceiptError extends Error {}
+
 export async function receiptInventory(db:PrismaClient){
   const [row]=await db.$queryRaw<{referenciasLegadasPendentes:number;comprovantes:number;invalidos:number}[]>`
     SELECT (SELECT count(*)::int FROM pagamentos p WHERE comprovante_url IS NOT NULL AND NOT EXISTS(SELECT 1 FROM comprovantes c WHERE c.pagamento_id=p.id)) AS "referenciasLegadasPendentes",
@@ -23,15 +25,15 @@ export async function importLegacyReceipts(db:PrismaClient,directory:string,appl
   // Valida todo o conjunto antes da primeira gravação. Nunca altera o pagamento histórico.
   for(const row of rows){
     const name=row.comprovanteUrl!
-    if(!/^[a-f0-9-]{36}\.(pdf|png|jpg|webp)$/.test(name))throw new Error(`Referência legada inválida no pagamento ${row.id}.`)
+    if(!/^[a-f0-9-]{36}\.(pdf|png|jpg|webp)$/.test(name))throw new LegacyReceiptError(`Referência legada inválida no pagamento ${row.id}.`)
     const path=resolve(root,name)
-    const stat=await lstat(path).catch(()=>{throw new Error(`Arquivo ausente no pagamento ${row.id}.`)})
-    if(!stat.isFile()||stat.isSymbolicLink()||stat.size<1||stat.size>5242880||dirname(await realpath(path))!==root)throw new Error(`Arquivo inválido no pagamento ${row.id}.`)
+    const stat=await lstat(path).catch(()=>{throw new LegacyReceiptError(`Arquivo ausente no pagamento ${row.id}.`)})
+    if(!stat.isFile()||stat.isSymbolicLink()||stat.size<1||stat.size>5242880||dirname(await realpath(path))!==root)throw new LegacyReceiptError(`Arquivo inválido no pagamento ${row.id}.`)
     const receipt=await prepareReceipt(await readFile(path))
     const expected=createHash('sha256').update(JSON.stringify([row.membro.usuarioId,row.rateioId,row.valor.toFixed(2),receipt.hashSha256])).digest('hex')
-    if(row.hashRequisicao&&row.hashRequisicao!==expected)throw new Error(`Hash divergente no pagamento ${row.id}.`)
+    if(row.hashRequisicao&&row.hashRequisicao!==expected)throw new LegacyReceiptError(`Hash divergente no pagamento ${row.id}.`)
     if(row.comprovante){
-      if(row.comprovante.hashSha256!==receipt.hashSha256||row.comprovante.tamanho!==receipt.tamanho||row.comprovante.mimeType!==receipt.mimeType)throw new Error(`Importação divergente no pagamento ${row.id}.`)
+      if(row.comprovante.hashSha256!==receipt.hashSha256||row.comprovante.tamanho!==receipt.tamanho||row.comprovante.mimeType!==receipt.mimeType)throw new LegacyReceiptError(`Importação divergente no pagamento ${row.id}.`)
       existing++
     }else pending.push({id:row.id,name,hash:receipt.hashSha256})
   }

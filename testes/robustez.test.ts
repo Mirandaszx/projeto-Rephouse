@@ -55,6 +55,8 @@ test('dois backups não entram simultaneamente e a trava é liberada após falha
 test('manifesto rejeita caminho extra, hashes inválidos e banco manipulável',()=>{
   const valid={format:1,createdAt:new Date().toISOString(),applicationVersion:'2.0.0',revision:`sha256:${'a'.repeat(64)}`,project:'rephouse-validacao',database:'rabbu_mvp',user:'rephouse',files:{'banco.dump':'a'.repeat(64),'comprovantes.tar.gz':'b'.repeat(64)}}
   assert.ok(manifestSchema.safeParse(valid).success)
+  assert.ok(manifestSchema.safeParse({...valid,format:2,files:{'banco.dump':'a'.repeat(64)}}).success)
+  assert.equal(manifestSchema.safeParse({...valid,format:2}).success,false)
   for(const value of [{...valid,database:'x;DROP DATABASE postgres'},{...valid,files:{...valid.files,'../segredo':'a'.repeat(64)}},{...valid,files:{...valid.files,'banco.dump':'invalido'}}])assert.equal(manifestSchema.safeParse(value).success,false)
 })
 test('terceiro upload recebe 429 e os dois slots são liberados ao terminar',async()=>{

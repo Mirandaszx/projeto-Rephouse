@@ -42,7 +42,12 @@ export async function sha256(file: string): Promise<string> {
 }
 const identifier=z.string().regex(/^[a-zA-Z_][a-zA-Z0-9_]*$/)
 const hash=z.string().regex(/^[a-f0-9]{64}$/)
-export const manifestSchema=z.object({format:z.literal(1),createdAt:z.iso.datetime(),applicationVersion:z.string().min(1).max(128),revision:z.string().regex(/^sha256:[a-f0-9]{64}$/),project:z.string().regex(/^[a-z][a-z0-9-]{1,62}$/),database:identifier,user:identifier,timeZone:z.string().default('America/Sao_Paulo').refine(value=>{try{appTimeZone(value);return true}catch{return false}}),files:z.object({'banco.dump':hash,'comprovantes.tar.gz':hash}).strict()}).strict()
+const manifestBase={createdAt:z.iso.datetime(),applicationVersion:z.string().min(1).max(128),revision:z.string().regex(/^sha256:[a-f0-9]{64}$/),project:z.string().regex(/^[a-z][a-z0-9-]{1,62}$/),database:identifier,user:identifier,timeZone:z.string().default('America/Sao_Paulo').refine(value=>{try{appTimeZone(value);return true}catch{return false}})}
+export const manifestSchema=z.discriminatedUnion('format',[
+  z.object({...manifestBase,format:z.literal(1),files:z.object({'banco.dump':hash,'comprovantes.tar.gz':hash}).strict()}).strict(),
+  z.object({...manifestBase,format:z.literal(2),files:z.object({'banco.dump':hash}).strict()}).strict(),
+])
+
 type Manifest=z.infer<typeof manifestSchema>
 export async function backup(s: Stack, run: typeof compose = compose, inspect: typeof command = command): Promise<string> {
   return withProjectLock(s.project,join(tmpdir(),'rephouse-operacoes-docker'),()=>captureBackup(s,run,inspect))
@@ -51,23 +56,20 @@ async function captureBackup(s:Stack,run:typeof compose,inspect:typeof command):
   const postgres = await run(s, ['ps', '-q', 'postgres'])
   const api = await run(s, ['ps', '-q', 'api'])
   if (!postgres || !api) throw new Error('Banco e API precisam estar em execução antes do backup.')
-  const mounts = JSON.parse(await inspect(['inspect','--format','{{json .Mounts}}',api],{env:s.env})) as {Type:string;Name?:string;Destination:string}[]
-  const expectedVolume=`${s.project}_${s.compose==='docker-compose.backend.yml'?'comprovantes':'comprovantes_data'}`
-  if (!mounts.some(mount=>mount.Type==='volume'&&mount.Name===expectedVolume&&mount.Destination==='/app/armazenamento/comprovantes')) throw new Error('A API precisa usar o volume de comprovantes da configuração selecionada. Confira as montagens antes do backup.')
-  const runtime = JSON.parse(await run(s, ['exec', '-T', 'api', 'node', '-e', 'require("dotenv").config({quiet:true});process.stdout.write(JSON.stringify({version:require("./package.json").version,timeZone:process.env.APP_TIME_ZONE??"America/Sao_Paulo",uploadDir:process.env.UPLOAD_DIR??"armazenamento/comprovantes"}))'])) as {version:string;timeZone:string;uploadDir?:string}
-  if (!['armazenamento/comprovantes','/app/armazenamento/comprovantes'].includes(runtime.uploadDir ?? 'armazenamento/comprovantes')) throw new Error('Backup exige UPLOAD_DIR no volume padrão de comprovantes.')
+  const runtime=JSON.parse(await run(s,['exec','-T','api','node','-e','process.stdout.write(JSON.stringify({version:require("./package.json").version,timeZone:process.env.APP_TIME_ZONE??"America/Sao_Paulo"}))'])) as {version:string;timeZone:string}
+  const inventory=JSON.parse(await run(s,['exec','-T','api','node','dist/comandos/verificar-comprovantes.js'])) as {invalidos:number;referenciasLegadasPendentes:number}
+  if(inventory.invalidos||inventory.referenciasLegadasPendentes)throw new Error('Conclua a importação dos comprovantes antes do backup formato 2.')
   const directory = join(root, 'copias-seguranca', `${new Date().toISOString().replace(/[:.]/g, '-')}-${randomUUID().slice(0, 8)}`)
   await mkdir(directory, { recursive: true, mode: 0o700 })
   // Sem stop concluído não há captura. O finally também cobre erro no próprio stop.
   try {
-    await run(s, ['stop', '-t', '15', 'api'])
+    await run(s, ['stop', '-t', '20', 'api'])
     await run(s, ['exec', '-T', 'postgres', 'sh', '-c', 'exec pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc --create'], { output: join(directory, 'banco.dump') })
-    await run(s, ['run', '--rm', '--no-deps', '-T', '--user', '0', '--entrypoint', 'tar', 'api', '-C', '/app/armazenamento/comprovantes', '-czf', '-', '.'], { output: join(directory, 'comprovantes.tar.gz') })
     const metadata = JSON.parse(await run(s, ['exec', '-T', 'postgres', 'sh', '-c', 'exec psql -X -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc "SELECT json_build_object(\'database\',current_database(),\'user\',current_user)"'])) as { database: string; user: string }
     // A revisão da imagem identifica o código realmente executado, inclusive sem Git no host.
-    const revision = await command(['inspect', '--format', '{{.Image}}', api], { env: s.env })
-    const manifest: Manifest = { format: 1, createdAt: new Date().toISOString(), applicationVersion: runtime.version, timeZone:runtime.timeZone, revision, project: s.project, ...metadata,
-      files: { 'banco.dump': await sha256(join(directory, 'banco.dump')), 'comprovantes.tar.gz': await sha256(join(directory, 'comprovantes.tar.gz')) } }
+    const revision = await inspect(['inspect', '--format', '{{.Image}}', api], { env: s.env })
+    const manifest: Manifest = { format: 2, createdAt: new Date().toISOString(), applicationVersion: runtime.version, timeZone:runtime.timeZone, revision, project: s.project, ...metadata,
+      files: { 'banco.dump': await sha256(join(directory, 'banco.dump')) } }
     await writeFile(join(directory, 'manifesto.json'), `${JSON.stringify(manifest, null, 2)}\n`, { flag: 'wx', mode: 0o600 })
     return directory
   } finally { await run(s, ['start', 'api']) }
@@ -86,7 +88,7 @@ async function restoreBackup(s:Stack,directory:string):Promise<void>{
   const parsed=manifestSchema.safeParse(JSON.parse(await readFile(join(source,'manifesto.json'),'utf8')))
   if(!parsed.success)throw new Error('Manifesto inválido.')
   const manifest=parsed.data
-  for (const name of ['banco.dump', 'comprovantes.tar.gz'] as const) {
+  for (const name of Object.keys(manifest.files) as (keyof typeof manifest.files)[]) {
     if (await sha256(join(source, name)) !== manifest.files[name]) throw new Error(`Hash inválido: ${name}`)
   }
   const targetUrl = new URL(s.env.BACKEND_DATABASE_URL!)
@@ -97,12 +99,25 @@ async function restoreBackup(s:Stack,directory:string):Promise<void>{
   s.env.BACKEND_TIME_ZONE = manifest.timeZone ?? 'America/Sao_Paulo'
   await compose(s, ['up', '-d', '--wait', 'postgres'])
   await compose(s, ['exec', '-T', 'postgres', 'sh', '-c', 'exec pg_restore --exit-on-error --create -U "$POSTGRES_USER" -d postgres'], { stdinFile: join(source, 'banco.dump') })
-  // Somente arquivos produzidos pelo nosso tar, nunca caminhos absolutos ou links.
-  const listing = await compose(s, ['run', '--rm', '--no-deps', '-T', '--user', '0', '--entrypoint', 'tar', 'api', '-tzf', '-'], { stdinFile: join(source, 'comprovantes.tar.gz') })
-  if (listing.split('\n').some(name => name !== './' && !/^\.\/[a-f0-9-]{36}\.(pdf|png|jpg|webp)$/.test(name))) throw new Error('Arquivo de comprovantes contém caminho inesperado.')
-  const types = await compose(s, ['run', '--rm', '--no-deps', '-T', '--user', '0', '--entrypoint', 'tar', 'api', '-tvzf', '-'], { stdinFile: join(source, 'comprovantes.tar.gz') })
-  if (types.split('\n').some(line => line && !['-', 'd'].includes(line[0]!))) throw new Error('Links não são aceitos no arquivo de comprovantes.')
-  await compose(s, ['run', '--rm', '--no-deps', '-T', '--user', '1000:1000', '--entrypoint', 'tar', 'api', '-C', '/app/armazenamento/comprovantes', '-xzf', '-', '--no-same-owner', '--no-same-permissions'], { stdinFile: join(source, 'comprovantes.tar.gz') })
+  s.env.BACKEND_DB_NAME=manifest.database
+  await compose(s,['run','--rm','--no-deps','-T','migracoes'])
+  if(manifest.format===1){
+    // Área temporária exclusiva da restauração; os arquivos do backup original não mudam.
+    const volume=s.project+'_comprovantes_legados'
+    if(await command(['volume','ls','-q','--filter','name=^'+volume+'$']))throw new Error('Volume temporário já existe.')
+    await command(['volume','create','--label','com.docker.compose.project='+s.project,volume])
+    const tar=(args:string[],opts:{stdinFile?:string}={})=>compose(s,['run','--rm','--no-deps','-T','--user','0','--volume',volume+':/importacao','--entrypoint','tar','api',...args],opts)
+    const archive={stdinFile:join(source,'comprovantes.tar.gz')}
+    const listing=await tar(['-tzf','-'],archive)
+    if(listing.split('\n').some(name=>name!=='./'&&!/^\.\/[a-f0-9-]{36}\.(pdf|png|jpg|webp)$/.test(name)))throw new Error('Arquivo de comprovantes contém caminho inesperado.')
+    const types=await tar(['-tvzf','-'],archive)
+    if(types.split('\n').some(line=>line&&!['-','d'].includes(line[0]!)))throw new Error('Links não são aceitos no arquivo de comprovantes.')
+    await tar(['-C','/importacao','-xzf','-','--no-same-owner','--no-same-permissions'],archive)
+    await compose(s,['run','--rm','--no-deps','-T','--user','0','--volume',volume+':/importacao','--entrypoint','chown','api','-R','1000:1000','/importacao'])
+    await compose(s,['run','--rm','--no-deps','-T','--volume',volume+':/importacao:ro','api','node','dist/comandos/importar-comprovantes.js','aplicar','/importacao'])
+    await command(['volume','rm',volume]) // Apenas a área temporária criada nesta restauração bem-sucedida.
+  }
+  await compose(s,['run','--rm','--no-deps','-T','api','node','dist/comandos/verificar-comprovantes.js'])
   await compose(s, ['exec', '-T', 'postgres', 'sh', '-c', `exec psql -X -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "${manifest.database}" -c ANALYZE`])
   s.env.BACKEND_DB_NAME = manifest.database
   await compose(s, ['up', '-d', '--wait', 'api'])

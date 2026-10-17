@@ -21,12 +21,11 @@ FROM dependencias AS dependencias-producao
 RUN npm prune --omit=dev
 
 FROM base AS runtime
-ENV NODE_ENV=production PORT=3000 UPLOAD_DIR=/app/armazenamento/comprovantes
+ENV NODE_ENV=production PORT=3000
 WORKDIR /app
 COPY --from=dependencias-producao /app/node_modules ./node_modules
 COPY --from=compilacao /app/dist ./dist
 COPY package.json ./
-RUN mkdir -p /app/armazenamento/comprovantes && chown -R node:node /app/armazenamento
 USER node
 EXPOSE 3000
 CMD ["node", "dist/server.js"]

@@ -13,11 +13,12 @@ test('backup reinicia a API quando pg_dump falha e não anuncia cópia completa'
     await assert.rejects(backup(fake,async (_s,args,opts) => {
       calls.push(args[0]!)
       if (args[0]==='ps') return 'id-ficticio'
+      if (args.includes('dist/comandos/verificar-comprovantes.js')) return JSON.stringify({invalidos:0,referenciasLegadasPendentes:0})
       if (args.includes('node')) return JSON.stringify({version:'1.0.0',timeZone:'America/Sao_Paulo'})
       if (args[0]==='exec') { output=opts?.output; throw new Error('falha simulada de captura') }
       return ''
     },async ()=>JSON.stringify([{Type:'volume',Name:'teste-sem-docker_comprovantes',Destination:'/app/armazenamento/comprovantes'}])),/falha simulada/)
-    assert.deepEqual(calls,['ps','ps','exec','stop','exec','start'])
+    assert.deepEqual(calls,['ps','ps','exec','exec','stop','exec','start'])
   } finally {
     if (output) {
       const directory=dirname(output)

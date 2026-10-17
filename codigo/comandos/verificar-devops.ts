@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict'
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
-import { mkdir, writeFile, readdir } from 'node:fs/promises'
+import { mkdir, writeFile, readdir,readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
 import { command, compose, stack, backup, restore, root, assertInsideRoot, type Stack } from './operacao-docker.js'
+import {legacyBackupFixture} from './fixture-backup-legado.js'
 
 // Credenciais descartáveis, novas por execução; nenhum segredo real do .env é usado.
 const suffix = randomBytes(6).toString('hex')
@@ -20,6 +21,7 @@ const events: string[] = []
 const ownedProjects = new Set<string>()
 function evidence(message: string) { events.push(message); console.log(message) }
 let source: Stack | undefined, target: Stack | undefined
+let legacy:Stack|undefined,legacyTarget:Stack|undefined
 
 async function reserve(s: Stack) {
   for (const kind of ['container','volume']) {
@@ -39,6 +41,7 @@ const snapshotSql = `SELECT json_build_object(
  'usuarios',(SELECT count(*) FROM usuarios), 'republicas',(SELECT count(*) FROM republicas),
  'membros',(SELECT count(*) FROM membros_republica), 'despesas',(SELECT count(*) FROM despesas),
  'rateios',(SELECT count(*) FROM rateios_despesa), 'pagamentos',(SELECT count(*) FROM pagamentos),
+ 'comprovantes',(SELECT count(*) FROM comprovantes),
  'tarefas',(SELECT count(*) FROM tarefas), 'versoes',(SELECT count(*) FROM _prisma_migrations WHERE finished_at IS NOT NULL),
  'vinculosInativos',(SELECT count(*) FROM membros_republica WHERE NOT ativo),
  'extensaoCrypto',(SELECT count(*) FROM pg_extension WHERE extname='pgcrypto'),
@@ -102,6 +105,7 @@ try {
   const mountIds = await compose(source,['ps','-q','api'])
   const mounts = JSON.parse(await command(['inspect','--format','{{json .Mounts}}',mountIds])) as {Type:string}[]
   assert.ok(mounts.every(mount=>mount.Type==='volume'))
+  assert.equal(mounts.length,0,'A API não depende de armazenamento em volume.')
   // Exercita backup dos três perfis, vínculos históricos e tarefas, além do comprovante.
   source.env.DEMO_PASSWORD=senha
   await compose(source,['exec','-T','-e','NODE_ENV=test','-e','DEMO_PASSWORD','api','node','dist/comandos/semear-demonstracao.js'])
@@ -204,6 +208,21 @@ try {
   assert.deepEqual(await snapshot(target),before)
   await assert.rejects(restore(target,backupDir),/Destino já possui recursos/)
   evidence('Backup customizado e comprovantes restaurados em cluster/volumes novos: registros, triggers, ACID, login, download e bloqueio de sobrepagamento conferidos.')
+  const manifest=JSON.parse(await readFile(join(backupDir,'manifesto.json'),'utf8'))
+  assert.equal(manifest.format,2);assert.deepEqual(Object.keys(manifest.files),['banco.dump'])
+  legacy=await stack(`rephouse-legado-${suffix}`,envFile);await reserve(legacy)
+  const legacyDir=join(directory,'backup-formato-1')
+  const legacyData=await legacyBackupFixture(legacy,legacyDir,senha)
+  legacyTarget=await stack(`rephouse-restauracao-legado-${suffix}`,envFile);await reserve(legacyTarget)
+  legacyTarget.env.BACKEND_PORT=String(Number(restorePort)+1)
+  await restore(legacyTarget,legacyDir)
+  const legacyBase=`http://127.0.0.1:${legacyTarget.env.BACKEND_PORT}`
+  const session=await fetch(legacyBase+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:legacyData.email,senha})})
+  assert.equal(session.status,200)
+  await verifyReceipt(legacyBase,(await session.json() as {token:string}).token,legacyData.paymentId,legacyData.hash)
+  const legacyState=await snapshot(legacyTarget)
+  assert.equal(legacyState.versoes,before.versoes);assert.equal(legacyState.comprovantes,1);assert.equal(legacyState.saldosInvalidos,0)
+  evidence('Formato 1 restaurado: sete migrations antigas, oitava aplicada, arquivo importado e download com hash original; formato 2 contém apenas o dump.')
   await writeFile(join(directory,'resultado.json'),JSON.stringify({at:new Date().toISOString(),result:'passed',events,snapshot:before,backup:backupDir,remoteCI:'não executada'},null,2))
   console.log(`Evidência local: ${join(directory,'resultado.json')}`)
 } catch(error) {
@@ -211,7 +230,7 @@ try {
   process.exitCode=1
 } finally {
   // A limpeza alcança apenas os dois projetos aleatórios criados por este comando.
-  for (const s of [target,source]) if (s && ownedProjects.has(s.project)) {
+  for (const s of [legacyTarget,legacy,target,source]) if (s && ownedProjects.has(s.project)) {
     try { await compose(s,['down','--volumes','--remove-orphans']) } catch { console.error(`Limpeza pendente do projeto ${s.project}.`); process.exitCode=1 }
   }
 }

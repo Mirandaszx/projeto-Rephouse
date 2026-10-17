@@ -37,8 +37,6 @@ services:
       CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-}
     ports:
       - "127.0.0.1:${BACKEND_PORT:-3001}:3000"
-    volumes:
-      - comprovantes:/app/armazenamento/comprovantes
     depends_on:
       migracoes:
         condition: service_completed_successfully
@@ -50,4 +48,3 @@ services:
     init: true
 volumes:
   banco:
-  comprovantes:
