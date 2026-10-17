@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { once } from 'node:events'
-import { mkdtemp, readdir, readFile, rm, rename } from 'node:fs/promises'
+import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises'
 import { basename, dirname, join, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
 import pg from 'pg'
@@ -39,7 +39,7 @@ test('migração: jornada HTTP, privacidade, exclusão e concorrência', { skip:
     for (const migration of (await readdir('prisma/migracoes')).filter(n => /^\d/.test(n)).sort()) {
       await setup.query(await readFile(`prisma/migracoes/${migration}/migration.sql`, 'utf8'))
     }
-    server = createApp({ database: db, jwtSecret: 'segredo-de-testes-isolados-com-mais-de-32-caracteres', uploadDirectory: directory }).listen(0, '127.0.0.1')
+    server = createApp({ database: db, jwtSecret: 'segredo-de-testes-isolados-com-mais-de-32-caracteres' }).listen(0, '127.0.0.1')
     await once(server, 'listening')
     const address = server.address()
     assert.ok(address && typeof address !== 'string')
@@ -225,9 +225,14 @@ test('migração: jornada HTTP, privacidade, exclusão e concorrência', { skip:
       form.set('rateioId',ownRateio().id)
       form.set('valor','10.00')
       form.set('comprovante',new Blob(['%PDF-1.4\ncomprovante de teste\n%%EOF'],{type:'application/pdf'}),'conta.pdf')
-      const paid = await request<{id:string}>('POST','/api/pagamentos',morador.token,form,randomUUID())
+      const key=randomUUID()
+      const simultaneous=await Promise.all([1,2].map(()=>request<{id:string}>('POST','/api/pagamentos',morador.token,form,key)))
+      const paid=simultaneous[0]!
+      assert.deepEqual(simultaneous.map(result=>result.status),[201,201])
+      assert.equal(paid.body.id,simultaneous[1]!.body.id)
       assert.equal(paid.status,201,JSON.stringify(paid.body))
       paymentWithFile = paid.body.id
+      assert.equal(await db.comprovante.count({where:{pagamentoId:paymentWithFile}}),1)
       const download = await fetch(`${base}/api/pagamentos/${paymentWithFile}/comprovante`,{headers:{Authorization:`Bearer ${morador.token}`}})
       assert.equal(download.status,200)
       assert.equal(download.headers.get('x-content-type-options'),'nosniff')
@@ -245,15 +250,21 @@ test('migração: jornada HTTP, privacidade, exclusão e concorrência', { skip:
         assert.equal((await request('POST','/api/pagamentos',morador.token,invalid,randomUUID())).status,status)
       }
     })
-    await t.test('arquivo físico ausente retorna 404 conforme o contrato, preservando o pagamento', async () => {
-      const paid = await db.pagamento.findUniqueOrThrow({where:{id:paymentWithFile}})
-      assert.ok(paid.comprovanteUrl)
-      const file = join(directory,paid.comprovanteUrl)
-      await rename(file,`${file}.ausente`)
-      try {
-        assert.equal((await request('GET',`/api/pagamentos/${paymentWithFile}/comprovante`,admin.token)).status,404)
-        assert.ok(await db.pagamento.findUnique({where:{id:paymentWithFile}}))
-      } finally { await rename(`${file}.ausente`,file) }
+    await t.test('comprovante no banco mantém bytes, headers e URLs públicas em todas as consultas', async () => {
+      const paid=await db.pagamento.findUniqueOrThrow({where:{id:paymentWithFile}})
+      assert.equal(paid.comprovanteUrl,null)
+      const proof=await db.comprovante.findUniqueOrThrow({where:{pagamentoId:paymentWithFile}})
+      assert.equal(Buffer.from(proof.conteudo).toString(),'%PDF-1.4\ncomprovante de teste\n%%EOF')
+      const download=await fetch(base+'/api/pagamentos/'+paymentWithFile+'/comprovante',{headers:{Authorization:'Bearer '+admin.token}})
+      assert.equal(download.status,200);assert.equal(download.headers.get('content-length'),String(proof.tamanho))
+      assert.equal(download.headers.get('content-type'),'application/pdf')
+      const history=await request('GET','/api/me/financeiro',morador.token)
+      assert.ok(JSON.stringify(history.json).includes('/api/pagamentos/'+paymentWithFile+'/comprovante'))
+      for(const response of [history.json,(await request('GET','/api/despesas/'+expense.id,admin.token)).json]){
+        const json=JSON.stringify(response)
+        for(const field of ['conteudo','hashSha256','mimeType','pagamentoId','arquivoHash'])assert.ok(!json.includes('"'+field+'"'))
+      }
+      assert.deepEqual(await readdir(directory),[])
     })
     await t.test('somente o responsável conclui tarefas; troca inválida sofre rollback', async () => {
       const members = await request<Member[]>('GET','/api/membros',adminB.token)
@@ -304,6 +315,8 @@ test('migração: jornada HTTP, privacidade, exclusão e concorrência', { skip:
       assert.equal(deleted.ativo,false)
       assert.ok(deleted.excluidoEm)
       assert.ok(await db.pagamento.findUnique({where:{id:paymentWithFile}}))
+      assert.ok(await db.comprovante.findUnique({where:{pagamentoId:paymentWithFile}}))
+      assert.equal((await fetch(`${base}/api/pagamentos/${paymentWithFile}/comprovante`,{headers:{Authorization:`Bearer ${master.token}`}})).status,200)
       assert.equal((await request('PATCH',`/api/master/usuarios/${morador.usuario.id}/status`,master.token,{ativo:true})).status,409)
     })
     await t.test('conta sem república pode ser excluída; último MASTER permanece ativo', async () => {

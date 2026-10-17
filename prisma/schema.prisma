@@ -134,10 +134,23 @@ model Pagamento {
 
   rateio RateioDespesa   @relation(fields: [rateioId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   membro MembroRepublica @relation(fields: [membroId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  comprovante Comprovante?
 
   @@index([membroId, dataPagamento])
   @@index([rateioId])
   @@map("pagamentos")
+}
+
+model Comprovante {
+  pagamentoId String @id @map("pagamento_id") @db.Uuid
+  conteudo Bytes
+  mimeType String @map("mime_type") @db.VarChar(100)
+  tamanho Int
+  hashSha256 String @map("hash_sha256") @db.Char(64)
+  criadoEm DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
+  pagamento Pagamento @relation(fields: [pagamentoId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@map("comprovantes")
 }
 
 model Tarefa {

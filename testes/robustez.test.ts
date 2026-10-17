@@ -8,7 +8,7 @@ import { createAuthService } from '../codigo/modulos/autenticacao/auth.service.j
 import type { PrismaClient } from '../codigo/gerado/prisma/client.js'
 import { errorHandler } from '../codigo/compartilhado/http/error-handler.js'
 import {createUploadLimit} from '../codigo/compartilhado/http/upload-limit.js'
-import {createReceiptStore,type ReceiptIO} from '../codigo/infraestrutura/armazenamento/receipts.js'
+import {prepareReceipt} from '../codigo/infraestrutura/armazenamento/comprovantes.js'
 import {withProjectLock} from '../codigo/comandos/project-lock.js'
 import {manifestSchema} from '../codigo/comandos/operacao-docker.js'
 import {mkdtemp,rm} from 'node:fs/promises'
@@ -31,16 +31,11 @@ test('erros estruturados de conexão e conflitos esgotados retornam 503, sem dep
     }finally{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()))}
   }
 })
-test('falha de escrita remove somente o arquivo criado, fecha o handle e retorna 503',async()=>{
-  let closed=false,removed=false
-  const io:ReceiptIO={mkdir:async()=>{},open:async()=>({writeFile:async()=>{throw new Error('ENOSPC privado')},sync:async()=>{},close:async()=>{closed=true}}),unlink:async()=>{removed=true}}
-  const store=createReceiptStore('armazenamento/teste-virtual',io)
-  await assert.rejects(store.save({buffer:Buffer.from('%PDF-1.4\nteste\n%%EOF')} as Express.Multer.File),error=>error instanceof Error&&'statusCode'in error&&error.statusCode===503)
-  assert.ok(closed&&removed)
-  removed=false
-  io.open=async()=>{throw Object.assign(new Error('permissão negada'),{code:'EACCES'})}
-  await assert.rejects(store.save({buffer:Buffer.from('%PDF-1.4\nteste\n%%EOF')} as Express.Multer.File))
-  assert.equal(removed,false)
+test('preparação de comprovante valida tipo, tamanho e hash sem depender do disco',async()=>{
+  const proof=await prepareReceipt(Buffer.from('%PDF-1.4\nteste\n%%EOF'))
+  assert.equal(proof.mimeType,'application/pdf');assert.equal(proof.tamanho,proof.conteudo.byteLength)
+  assert.match(proof.hashSha256,/^[a-f0-9]{64}$/)
+  for(const buffer of [Buffer.alloc(0),Buffer.from('arquivo falso'),Buffer.from([137,80,78,71,13,10,26,10]),Buffer.alloc(5242881)])await assert.rejects(prepareReceipt(buffer),error=>error instanceof AppError&&error.statusCode===400)
 })
 test('dois backups não entram simultaneamente e a trava é liberada após falha',async()=>{
   const directory=await mkdtemp(join(tmpdir(),'rephouse-lock-'))
@@ -92,18 +87,16 @@ test('HTTP protege conteúdo com headers Helmet',async()=>{
     assert.equal(response.headers.get('x-frame-options'),'SAMEORIGIN')
   }finally{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()))}
 })
-test('commit incerto preserva comprovante; falha de negócio confirmada remove o candidato',async()=>{
-  let removed=0
-  let failure:Error=Object.assign(new Error('mensagem privada'),{code:'ECONNRESET'})
-  const controller=createFinanceiroController({pay:async()=>{throw failure}} as unknown as FinanceiroService,{save:async()=>({name:'candidato.pdf',hash:'a'.repeat(64)}),remove:async()=>{removed++},path:name=>name})
+test('falha transacional retorna erro sem escrita externa do comprovante',async()=>{
+  let received=false
+  const controller=createFinanceiroController({pay:async(_actor:unknown,input:{comprovante?:unknown})=>{received=!!input.comprovante;throw new AppError(409,'PAYMENT_EXCEEDS_BALANCE','Saldo insuficiente.')}} as unknown as FinanceiroService)
   const app=express();app.use((_req,res,next)=>{res.locals.actor={id:'11111111-1111-4111-8111-111111111111',versaoToken:0};next()})
   app.post('/',multer({storage:multer.memoryStorage()}).single('comprovante'),controller.pay);app.use(errorHandler)
   const server=app.listen(0,'127.0.0.1');await once(server,'listening')
   try{
     const addr=server.address();assert.ok(addr&&typeof addr!=='string')
-    const send=()=>{const form=new FormData();form.set('rateioId','11111111-1111-4111-8111-111111111111');form.set('valor','1.00');form.set('comprovante',new Blob(['%PDF-1.4\nteste']),'conta.pdf');return fetch(`http://127.0.0.1:${addr.port}`,{method:'POST',headers:{'Idempotency-Key':'22222222-2222-4222-8222-222222222222'},body:form})}
-    assert.equal((await send()).status,503);assert.equal(removed,0)
-    failure=new AppError(409,'PAYMENT_EXCEEDS_BALANCE','Saldo insuficiente.')
-    assert.equal((await send()).status,409);assert.equal(removed,1)
+    const form=new FormData();form.set('rateioId','11111111-1111-4111-8111-111111111111');form.set('valor','1.00');form.set('comprovante',new Blob(['%PDF-1.4\nteste']),'conta.pdf')
+    const result=await fetch('http://127.0.0.1:'+addr.port,{method:'POST',headers:{'Idempotency-Key':'22222222-2222-4222-8222-222222222222'},body:form})
+    assert.equal(result.status,409);assert.ok(received)
   }finally{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()))}
 })

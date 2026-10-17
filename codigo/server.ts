@@ -3,6 +3,7 @@ import { loadEnv } from './configuracao/env.js'
 import { createDatabase } from './infraestrutura/banco/client.js'
 import { createReadinessProbe } from './modulos/saude/readiness.js'
 import { stdoutLog } from './compartilhado/http/request-log.js'
+import {receiptInventory} from './infraestrutura/armazenamento/importar-comprovantes.js'
 
 async function startServer(): Promise<void> {
   const env = loadEnv()
@@ -10,7 +11,9 @@ async function startServer(): Promise<void> {
   const probe = createReadinessProbe(env.DATABASE_URL)
   try {
     await database.$connect()
-    const server = createApp({ database, readiness: () => probe.check(), jwtSecret: env.JWT_SECRET, uploadDirectory: env.UPLOAD_DIR, corsOrigins: env.CORS_ORIGINS }).listen(env.PORT, env.HOST, () => {
+    const inventory=await receiptInventory(database)
+    if(inventory.referenciasLegadasPendentes||inventory.invalidos)throw new Error('Conclua a importação e a conferência dos comprovantes antes de iniciar a API.')
+    const server = createApp({ database, readiness: () => probe.check(), jwtSecret: env.JWT_SECRET, corsOrigins: env.CORS_ORIGINS }).listen(env.PORT, env.HOST, () => {
       stdoutLog({ event: 'started', port: env.PORT })
     })
     let encerrando = false

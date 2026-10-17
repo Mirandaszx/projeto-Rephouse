@@ -16,7 +16,6 @@ import { createRepublicasRouter } from './modulos/republicas/republicas.routes.j
 import { createFinanceiroService } from './modulos/financeiro/financeiro.service.js'
 import { createFinanceiroController } from './modulos/financeiro/financeiro.controller.js'
 import { createFinanceiroRouter } from './modulos/financeiro/financeiro.routes.js'
-import { createReceiptStore } from './infraestrutura/armazenamento/receipts.js'
 import { createTarefasService } from './modulos/tarefas/tarefas.service.js'
 import { createTarefasController } from './modulos/tarefas/tarefas.controller.js'
 import { createTarefasRouter } from './modulos/tarefas/tarefas.routes.js'
@@ -28,7 +27,7 @@ import { openApiDocument } from './openapi.js'
 import { requestLog, type LogSink } from './compartilhado/http/request-log.js'
 import { isReady } from './modulos/saude/readiness.js'
 
-interface AppOptions { database?: PrismaClient; jwtSecret?: string; uploadDirectory?: string; corsOrigins?: string[]; log?: LogSink; readiness?: () => Promise<unknown> }
+interface AppOptions { database?: PrismaClient; jwtSecret?: string; corsOrigins?: string[]; log?: LogSink; readiness?: () => Promise<unknown> }
 
 // Monta HTTP sem abrir porta ou conexão: reutilizável nos testes.
 export function createApp(options: AppOptions = {}): Express {
@@ -58,9 +57,8 @@ export function createApp(options: AppOptions = {}): Express {
     const auth = createAuthController(createAuthService(db, options.jwtSecret))
     const republicas = createRepublicasService(db)
     const rc = createRepublicasController(republicas)
-    const receipts = createReceiptStore(options.uploadDirectory ?? 'armazenamento/comprovantes')
     const financeiro = createFinanceiroService(db)
-    const fc = createFinanceiroController(financeiro, receipts)
+    const fc = createFinanceiroController(financeiro)
     const tarefas = createTarefasService(db)
     const dashboard = createDashboardService(db)
     const master = createMasterController(createMasterService(db))
@@ -85,7 +83,7 @@ export function createApp(options: AppOptions = {}): Express {
     api.get('/master/republicas/:republicaId', mrc.current).patch('/master/republicas/:republicaId', mrc.edit)
     api.get('/master/republicas/:republicaId/membros', mrc.members).patch('/master/republicas/:republicaId/membros/:id', mrc.deactivate)
     api.post('/master/republicas/:republicaId/transferir-admin', mrc.transfer)
-    api.use('/master/republicas/:republicaId/despesas', createFinanceiroRouter(createFinanceiroController(financeiro, receipts, true)))
+    api.use('/master/republicas/:republicaId/despesas', createFinanceiroRouter(createFinanceiroController(financeiro, true)))
     api.use('/master/republicas/:republicaId/tarefas', createTarefasRouter(createTarefasController(tarefas, true)))
     api.get('/master/republicas/:republicaId/dashboard', createDashboardController(dashboard, true).get)
     app.use('/api', api)

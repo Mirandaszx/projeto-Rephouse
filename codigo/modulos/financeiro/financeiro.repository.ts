@@ -9,7 +9,7 @@ export class FinanceiroRepository {
     return tx.membroRepublica.count({ where: { id: { in: [...ids] }, republicaId, ativo: true, usuario: { ativo: true, excluidoEm: null } } })
   }
   pagamentoPorChave(tx: Prisma.TransactionClient, chaveIdempotencia: string) {
-    return tx.pagamento.findUnique({ where: { chaveIdempotencia } })
+    return tx.pagamento.findUnique({ where: { chaveIdempotencia }, include: {comprovante:{select:{pagamentoId:true}}} })
   }
   listarDespesas(tx: Prisma.TransactionClient, republicaId: string, page:PageInput) {
     return tx.despesa.findMany({ ...pageArgs(page),where: { republicaId }, include: { rateios: true }, orderBy: [{ vencimento: 'asc' },{id:'asc'}] })
@@ -17,7 +17,7 @@ export class FinanceiroRepository {
   contarDespesas(tx:Prisma.TransactionClient,republicaId:string){return tx.despesa.count({where:{republicaId}})}
   contarPessoal(tx:Prisma.TransactionClient,usuarioId:string){return tx.rateioDespesa.count({where:{membro:{usuarioId}}})}
   detalharDespesa(tx: Prisma.TransactionClient, id: string, republicaId: string) {
-    return tx.despesa.findFirst({ where: { id, republicaId }, include: { rateios: { include: { pagamentos: true } } } })
+    return tx.despesa.findFirst({ where: { id, republicaId }, include: { rateios: { include: { pagamentos: {include:{comprovante:{select:{pagamentoId:true}}}} } } } })
   }
   contarPagamentos(tx: Prisma.TransactionClient, despesaId: string) {
     return tx.pagamento.count({ where: { rateio: { despesaId } } })
@@ -28,7 +28,7 @@ export class FinanceiroRepository {
   }
   pessoal(tx: Prisma.TransactionClient, usuarioId: string, id?: string, page?:PageInput) {
     return tx.rateioDespesa.findMany({ ...(page?pageArgs(page):{skip:0,take:1}),orderBy:[{despesa:{vencimento:'asc'}},{id:'asc'}],where: { ...(id ? { id } : {}), membro: { usuarioId } }, include: {
-      pagamentos: true, despesa: { select: { id: true, titulo: true, categoria: true, vencimento: true,
+      pagamentos: {include:{comprovante:{select:{pagamentoId:true}}}}, despesa: { select: { id: true, titulo: true, categoria: true, vencimento: true,
         republica: { select: { id: true, nome: true } } } },
     } })
   }
@@ -61,6 +61,7 @@ export class FinanceiroRepository {
 
   criarPagamento(tx: Prisma.TransactionClient, dados: RegistrarPagamentoInput, valor: Prisma.Decimal) {
     const { rateioId, membroId, comprovanteUrl, chaveIdempotencia, hashRequisicao } = dados
-    return tx.pagamento.create({ data: { rateioId, membroId, comprovanteUrl, chaveIdempotencia, hashRequisicao, valor } })
+    return tx.pagamento.create({ data: { rateioId, membroId, comprovanteUrl, chaveIdempotencia, hashRequisicao, valor,
+      ...(dados.comprovante ? {comprovante:{create:dados.comprovante}} : {}) }, include:{comprovante:{select:{pagamentoId:true}}} })
   }
 }

@@ -7,6 +7,7 @@ import type { CriarDespesaInput, DespesaComRateios, RegistrarPagamentoInput } fr
 import { withActor, republicContext, requireAdmin, type Actor } from '../../compartilhado/context.js'
 import { AppError } from '../../compartilhado/http/app-error.js'
 import {pageResult,type PageInput} from '../../compartilhado/http/pagination.js'
+import {paymentPublic,type ReceiptInput} from '../../infraestrutura/armazenamento/comprovantes.js'
 
 const repository = new FinanceiroRepository()
 
@@ -74,7 +75,7 @@ export function createFinanceiroService(db: PrismaClient) {
       const republic = await republicContext(tx, user, scope)
       const expense = await repository.detalharDespesa(tx, id, republic.id)
       if (!expense) throw new AppError(404, 'NOT_FOUND', 'Despesa não encontrada.')
-      return expense
+      return {...expense,rateios:expense.rateios.map(rateio=>({...rateio,pagamentos:rateio.pagamentos.map(paymentPublic)}))}
     }),
     edit: (actor: Actor, id: string, input: Partial<Omit<CriarDespesaInput, 'republicaId' | 'criadaPorId'>>, scope?: string) => withActor(db, actor, async (tx, user) => {
       const republic = await republicContext(tx, user, scope)
@@ -100,12 +101,13 @@ export function createFinanceiroService(db: PrismaClient) {
     personal: (actor: Actor, id?: string, page?:PageInput) => withActor(db, actor, async (tx, user) => {
       // Este escopo é por proprietário, sem exigir vínculo ativo na república antiga.
       const items = await repository.pessoal(tx, user.id, id, page)
+      const publicItems = items.map(item=>({...item,pagamentos:item.pagamentos.map(paymentPublic)}))
       if (id && !items.length) throw new AppError(404, 'NOT_FOUND', 'Rateio não encontrado.')
-      return id ? items[0] : pageResult(items,await repository.contarPessoal(tx,user.id),page!)
+      return id ? publicItems[0] : pageResult(publicItems,await repository.contarPessoal(tx,user.id),page!)
     }),
-    async pay(actor: Actor, input: { rateioId: string; valor: string; chaveIdempotencia: string; comprovanteUrl?: string; arquivoHash?: string }) {
+    async pay(actor: Actor, input: { rateioId: string; valor: string; chaveIdempotencia: string; comprovante?: ReceiptInput }) {
       const hashRequisicao = createHash('sha256').update(JSON.stringify([
-        actor.id, input.rateioId, new Prisma.Decimal(input.valor).toFixed(2), input.arquivoHash ?? null,
+        actor.id, input.rateioId, new Prisma.Decimal(input.valor).toFixed(2), input.comprovante?.hashSha256 ?? null,
       ])).digest('hex')
       const operation = () => withActor(db, actor, async (tx, user) => {
         const rateio = await repository.rateioDoUsuario(tx, input.rateioId, user.id)
@@ -121,12 +123,15 @@ export function createFinanceiroService(db: PrismaClient) {
     },
     receipt: (actor: Actor, id: string) => withActor(db, actor, async (tx, user) => {
       const payment = await repository.comprovante(tx, id)
-      if (!payment?.comprovanteUrl) throw new AppError(404, 'NOT_FOUND', 'Comprovante não encontrado.')
+      if (!payment) throw new AppError(404, 'NOT_FOUND', 'Comprovante não encontrado.')
       const republic = payment.rateio.despesa.republica
       const own = payment.membro.usuarioId === user.id
       const admin = republic.adminId === user.id && user.tipoUsuario === 'USUARIO_ADMIN'
       if (!own && !admin && user.tipoUsuario !== 'USUARIO_MASTER') throw new AppError(404, 'NOT_FOUND', 'Comprovante não encontrado.')
-      return payment.comprovanteUrl
+      // O conteúdo é consultado somente depois da autorização na mesma transação.
+      const receipt = await tx.comprovante.findUnique({where:{pagamentoId:id}})
+      if(!receipt) throw new AppError(404,'NOT_FOUND','Comprovante não encontrado.')
+      return receipt
     }),
   }
 }

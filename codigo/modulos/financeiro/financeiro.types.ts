@@ -1,4 +1,5 @@
 import type { Prisma } from '../../gerado/prisma/client.js'
+import type { ReceiptInput } from '../../infraestrutura/armazenamento/comprovantes.js'
 
 export interface CriarDespesaInput {
   republicaId: string
@@ -14,6 +15,7 @@ export interface RegistrarPagamentoInput {
   rateioId: string
   membroId: string
   comprovanteUrl?: string
+  comprovante?: ReceiptInput
   valor?: string
   chaveIdempotencia?: string
   hashRequisicao?: string
