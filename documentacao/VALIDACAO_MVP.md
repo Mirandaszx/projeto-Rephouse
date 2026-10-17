@@ -97,6 +97,8 @@ Os nomes dos cenários abaixo permitem localizar as asserções. `OK local` sign
 | Banco indisponível e retorno | D: PostgreSQL parado, ready 503 em menos de 2s, health 200 e recuperação automática | OK local |
 | Meta de 1.000 contas/100 repúblicas/50 simultâneos | L: 10.000 despesas, 2.000 tarefas, cinco minutos com 50 VUs; p95 leitura 177,46ms/escrita 219,47ms; zero falhas inesperadas/500/violações | Meta aprovada no cenário local; [medição](evidencias/carga-consolidacao.json) |
 | Inventário manual de comprovantes | `npm run comprovantes:verificar`: modo somente leitura; desenvolvimento sem referências/arquivos ausentes ou órfãos | OK local |
+| Instalação com arquivos versionados | `git archive 9fa3397`, `npm ci`, `npm run verificar`; 93 testes e contrato sincronizado, sem copiar `.env` | OK local; [evidência](evidencias/checkout-consolidacao.json) |
+| Arquivos privados do k6 no Linux | Cenário com pasta 0700/arquivo 0600: UID original recusado; UID/GID do operador executa e escreve o resumo | OK local em volume Linux Docker; [evidência](evidencias/permissoes-k6-linux.json); CI remota pendente |
 
 ## Falha reproduzida e correção
 

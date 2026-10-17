@@ -1,10 +1,12 @@
 {
-  "registradoEm": "2026-10-17T19:46:45.465Z",
+  "registradoEm": "2026-10-17T19:53:03.777Z",
   "versao": "2.0.0",
   "branch": "feat/consolidacao-backend",
   "commitsAnteriores": {
     "base": "7781cfb",
-    "seguranca": "89c376c"
+    "seguranca": "89c376c",
+    "drenagemTrava": "2b5241c",
+    "paginacaoCrescimento": "9fa3397"
   },
   "verificacao": {
     "comando": "npm run verificar",
@@ -70,5 +72,59 @@
     "publicacao": "Não realizada: usuário escolheu manter os commits somente locais.",
     "pullRequest": "Não aberto.",
     "CIremota": "Não executada; workflow preparado localmente."
+  },
+  "checkoutLimpo": {
+    "registradoEm": "2026-10-17T19:50:51.577Z",
+    "resultado": "passed",
+    "origem": "git archive",
+    "revisao": "9fa3397cf949be3c67e210e43aa682c9180fad7e",
+    "instalacao": "npm ci",
+    "verificacao": "npm run verificar",
+    "testes": 93,
+    "ignorados": 0,
+    "contratoSincronizado": true,
+    "ambiente": "Variáveis fornecidas apenas ao processo; nenhuma cópia do .env."
+  },
+  "permissoesK6Linux": {
+    "registradoEm": "2026-10-17T19:52:14.744Z",
+    "resultado": "passed",
+    "ambiente": "Filesystem Linux em volume Docker exclusivo",
+    "pasta": "0700",
+    "tokensFixture": "0600",
+    "usuarioOriginal12345": "Acesso recusado, como esperado",
+    "usuarioOperador1001": "Cenário TypeScript leu a fixture e escreveu o resumo",
+    "CIremota": "Não executada"
+  },
+  "cargaCurta": {
+    "comando": "npm run test:carga",
+    "concluidaEm": "2026-10-17T19:52:33.767Z",
+    "resultado": "passed",
+    "usuarios": 100,
+    "republicas": 10,
+    "despesas": 100,
+    "tarefas": 200,
+    "leituraP95Ms": 45.597375599999985,
+    "escritaP95Ms": 28.5337571,
+    "falhasInesperadas": 0,
+    "errosHTTP500": 0
+  },
+  "desenvolvimento": {
+    "health": {
+      "status": 200,
+      "requestId": true
+    },
+    "ready": {
+      "status": 200,
+      "requestId": true
+    },
+    "migrationsAplicadas": 7,
+    "acid": {
+      "isolamento": "serializable",
+      "synchronous_commit": "on",
+      "fsync": "on",
+      "full_page_writes": "on"
+    },
+    "volumePostgreSQLPreservado": "projeto-rephouse_postgres_data",
+    "prazoParadaDockerSegundos": 20
   }
 }

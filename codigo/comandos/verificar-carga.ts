@@ -17,6 +17,8 @@ try{
   await writeFile(envFile,`BACKEND_DB_USER=rephouse\nBACKEND_DB_NAME=rabbu_mvp_carga\nBACKEND_DB_PASSWORD=${password}\nBACKEND_DATABASE_URL=postgresql://rephouse:${password}@postgres:5432/rabbu_mvp_carga?schema=public\nBACKEND_JWT_SECRET=${secret}\nBACKEND_PORT=${process.env.CARGA_PORT??'3401'}\n`,{mode:0o600})
   s=await stack(project,envFile);s.args.push('-f','docker-compose.carga.yml')
   s.env.CARGA_DIR=directory.replaceAll('\\','/');s.env.CARGA_PERFIL=profile
+  // No Linux, o k6 precisa ler/escrever os arquivos privados do operador (0700/0600).
+  s.env.CARGA_UID=String(process.getuid?.()??1000);s.env.CARGA_GID=String(process.getgid?.()??1000)
   for(const kind of ['container','volume'])assert.equal(await command([kind,'ls',...(kind==='container'?['-a']:[]),'-q','--filter',`label=com.docker.compose.project=${project}`]),'')
   owned=true
   console.log(`Carga ${profile}: construindo imagens e iniciando projeto isolado.`)

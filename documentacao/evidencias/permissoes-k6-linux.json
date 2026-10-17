@@ -1,0 +1,10 @@
+{
+  "registradoEm": "2026-10-17T19:52:14.744Z",
+  "resultado": "passed",
+  "ambiente": "Filesystem Linux em volume Docker exclusivo",
+  "pasta": "0700",
+  "tokensFixture": "0600",
+  "usuarioOriginal12345": "Acesso recusado, como esperado",
+  "usuarioOperador1001": "Cenário TypeScript leu a fixture e escreveu o resumo",
+  "CIremota": "Não executada"
+}
