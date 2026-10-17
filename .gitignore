@@ -1,3 +1,7 @@
 .env
 node_modules/
-frontend/dist/
+dist/
+codigo/gerado/
+*.tsbuildinfo
+interface/dist/
+armazenamento/

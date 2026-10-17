@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "noEmit": true
+  },
+  "include": ["codigo/**/*.ts", "testes/**/*.ts", "prisma.config.ts"]
+}

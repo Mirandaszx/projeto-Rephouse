@@ -1,9 +1,10 @@
 services:
   postgres:
     image: postgres:18
+    command: ["postgres", "-c", "fsync=on", "-c", "synchronous_commit=on", "-c", "full_page_writes=on"]
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-banco_projeto}
+      POSTGRES_DB: ${POSTGRES_DB:-rabbu_mvp}
       POSTGRES_USER: ${POSTGRES_USER:-gabrisel}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-troque_por_uma_senha_segura}
     ports:
@@ -19,16 +20,18 @@ services:
   api:
     image: node:24-bookworm-slim
     working_dir: /app
-    command: sh -c "npm ci && npm run dev"
+    command: sh -c "npm ci && npm run db:generate && npm run db:deploy && npm run dev"
     restart: unless-stopped
     environment:
+      NODE_ENV: development
       PORT: 3000
-      DATABASE_URL: postgresql://${POSTGRES_USER:-gabrisel}:${POSTGRES_PASSWORD:-troque_por_uma_senha_segura}@postgres:5432/${POSTGRES_DB:-banco_projeto}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-gabrisel}:${POSTGRES_PASSWORD:-troque_por_uma_senha_segura}@postgres:5432/${POSTGRES_DB:-rabbu_mvp}?schema=public
     ports:
       - "3000:3000"
     volumes:
       - .:/app
       - api_node_modules:/app/node_modules
+      - comprovantes_data:/app/armazenamento/comprovantes
     depends_on:
       postgres:
         condition: service_healthy
@@ -46,10 +49,11 @@ services:
     ports:
       - "5173:5173"
     volumes:
-      - ./frontend:/app
+      - ./interface:/app
       - frontend_node_modules:/app/node_modules
 
 volumes:
   postgres_data:
   api_node_modules:
   frontend_node_modules:
+  comprovantes_data:

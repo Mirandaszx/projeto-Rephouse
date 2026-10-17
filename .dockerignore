@@ -10,4 +10,4 @@ coverage
 **/coverage
 npm-debug.log*
 *.log
-docs
+documentacao
