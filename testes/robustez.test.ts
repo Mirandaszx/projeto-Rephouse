@@ -14,6 +14,10 @@ import {manifestSchema} from '../codigo/comandos/operacao-docker.js'
 import {mkdtemp,rm} from 'node:fs/promises'
 import {tmpdir} from 'node:os'
 import {join} from 'node:path'
+import multer from 'multer'
+import {createFinanceiroController} from '../codigo/modulos/financeiro/financeiro.controller.js'
+import type {FinanceiroService} from '../codigo/modulos/financeiro/financeiro.service.js'
+import {AppError} from '../codigo/compartilhado/http/app-error.js'
 
 test('erros estruturados de conexão e conflitos esgotados retornam 503, sem depender da mensagem', async () => {
   for(const error of [{code:'ECONNREFUSED',message:'senha privada'}, {cause:{originalCode:'40001'}}, {meta:{driverAdapterError:{cause:{originalCode:'40P01'}}}}]) {
@@ -86,5 +90,20 @@ test('HTTP protege conteúdo com headers Helmet',async()=>{
     const response=await fetch(`http://127.0.0.1:${address.port}/api/health`)
     assert.equal(response.headers.get('x-content-type-options'),'nosniff')
     assert.equal(response.headers.get('x-frame-options'),'SAMEORIGIN')
+  }finally{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()))}
+})
+test('commit incerto preserva comprovante; falha de negócio confirmada remove o candidato',async()=>{
+  let removed=0
+  let failure:Error=Object.assign(new Error('mensagem privada'),{code:'ECONNRESET'})
+  const controller=createFinanceiroController({pay:async()=>{throw failure}} as unknown as FinanceiroService,{save:async()=>({name:'candidato.pdf',hash:'a'.repeat(64)}),remove:async()=>{removed++},path:name=>name})
+  const app=express();app.use((_req,res,next)=>{res.locals.actor={id:'11111111-1111-4111-8111-111111111111',versaoToken:0};next()})
+  app.post('/',multer({storage:multer.memoryStorage()}).single('comprovante'),controller.pay);app.use(errorHandler)
+  const server=app.listen(0,'127.0.0.1');await once(server,'listening')
+  try{
+    const addr=server.address();assert.ok(addr&&typeof addr!=='string')
+    const send=()=>{const form=new FormData();form.set('rateioId','11111111-1111-4111-8111-111111111111');form.set('valor','1.00');form.set('comprovante',new Blob(['%PDF-1.4\nteste']),'conta.pdf');return fetch(`http://127.0.0.1:${addr.port}`,{method:'POST',headers:{'Idempotency-Key':'22222222-2222-4222-8222-222222222222'},body:form})}
+    assert.equal((await send()).status,503);assert.equal(removed,0)
+    failure=new AppError(409,'PAYMENT_EXCEEDS_BALANCE','Saldo insuficiente.')
+    assert.equal((await send()).status,409);assert.equal(removed,1)
   }finally{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()))}
 })

@@ -26,6 +26,7 @@ services:
         condition: service_healthy
   api:
     image: rephouse-backend:local
+    stop_grace_period: 20s
     build:
       context: .
       target: runtime

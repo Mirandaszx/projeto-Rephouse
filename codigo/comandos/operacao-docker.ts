@@ -8,6 +8,7 @@ import { parse } from 'dotenv'
 import { z } from 'zod'
 import { withProjectLock } from './project-lock.js'
 import { appTimeZone } from '../configuracao/time-zone.js'
+import { tmpdir } from 'node:os'
 
 export const root = resolve(import.meta.dirname, '../..')
 export async function command(args: string[], options: { env?: NodeJS.ProcessEnv; input?: string; output?: string; stdinFile?: string } = {}): Promise<string> {
@@ -44,7 +45,7 @@ const hash=z.string().regex(/^[a-f0-9]{64}$/)
 export const manifestSchema=z.object({format:z.literal(1),createdAt:z.iso.datetime(),applicationVersion:z.string().min(1).max(128),revision:z.string().regex(/^sha256:[a-f0-9]{64}$/),project:z.string().regex(/^[a-z][a-z0-9-]{1,62}$/),database:identifier,user:identifier,timeZone:z.string().default('America/Sao_Paulo').refine(value=>{try{appTimeZone(value);return true}catch{return false}}),files:z.object({'banco.dump':hash,'comprovantes.tar.gz':hash}).strict()}).strict()
 type Manifest=z.infer<typeof manifestSchema>
 export async function backup(s: Stack, run: typeof compose = compose, inspect: typeof command = command): Promise<string> {
-  return withProjectLock(s.project,join(root,'.devops-local','travas'),()=>captureBackup(s,run,inspect))
+  return withProjectLock(s.project,join(tmpdir(),'rephouse-operacoes-docker'),()=>captureBackup(s,run,inspect))
 }
 async function captureBackup(s:Stack,run:typeof compose,inspect:typeof command):Promise<string>{
   const postgres = await run(s, ['ps', '-q', 'postgres'])
@@ -73,7 +74,7 @@ async function captureBackup(s:Stack,run:typeof compose,inspect:typeof command):
 }
 
 export async function restore(s: Stack, directory: string): Promise<void> {
-  return withProjectLock(s.project,join(root,'.devops-local','travas'),()=>restoreBackup(s,directory))
+  return withProjectLock(s.project,join(tmpdir(),'rephouse-operacoes-docker'),()=>restoreBackup(s,directory))
 }
 async function restoreBackup(s:Stack,directory:string):Promise<void>{
   if (s.compose !== 'docker-compose.backend.yml' || !/^rephouse-restauracao-[a-z0-9-]+$/.test(s.project)) throw new Error('Restauração exige projeto novo rephouse-restauracao-<nome> na configuração backend.')
