@@ -29,6 +29,11 @@ export const errorHandler: ErrorRequestHandler = (error: unknown, _request, resp
     return
   }
 
+  if (error instanceof Error && 'type' in error && error.type === 'entity.too.large') {
+    response.status(413).json({ error: { code: 'PAYLOAD_TOO_LARGE', message: 'O corpo JSON deve ter no máximo 1 MB.' } })
+    return
+  }
+
   if (error instanceof SyntaxError && 'status' in error && error.status === 400
     && 'type' in error && error.type === 'entity.parse.failed') {
     response.status(400).json({ error: {

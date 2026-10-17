@@ -2,13 +2,18 @@ import 'dotenv/config'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
 import { once } from 'node:events'
-import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises'
+import { mkdtemp, readdir, readFile, rm, rename } from 'node:fs/promises'
 import { basename, dirname, join, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
 import pg from 'pg'
+import { SignJWT } from 'jose'
 import { createDatabase } from '../codigo/infraestrutura/banco/client.js'
 import { createApp } from '../codigo/app.js'
+import { validarResposta } from './auxiliares/contrato.js'
+import { demonstracao, semearDemonstracao } from '../codigo/infraestrutura/banco/demonstracao.js'
 
 const url = process.env.TEST_DATABASE_URL
 const dedicated = url && new URL(url).pathname === '/rabbu_mvp_test'
@@ -45,8 +50,11 @@ test('migração: jornada HTTP, privacidade, exclusão e concorrência', { skip:
       const form = data instanceof FormData
       if (data && !form) headers['Content-Type'] = 'application/json'
       const res = await fetch(`${base}${path}`, { method, headers, body: data ? form ? data : JSON.stringify(data) : undefined })
+      assert.match(res.headers.get('x-request-id') ?? '',/^[a-f0-9-]{36}$/)
       const content = await res.text()
-      return { status: res.status, body: (content ? JSON.parse(content) : {}) as T }
+      const body = content ? JSON.parse(content) : {}
+      validarResposta(method, path, res.status, body)
+      return { status: res.status, body: body as T }
     }
     const senha = 'Senha-forte-de-testes123!'
     async function register(nome: string) {
@@ -100,6 +108,69 @@ test('migração: jornada HTTP, privacidade, exclusão e concorrência', { skip:
       assert.equal((await request('POST','/api/despesas',morador.token,{titulo:'Invasão',categoria:'OUTROS',valorTotal:'1.00',vencimento:'2030-01-15',membroIds:[membro.id]})).status,403)
     })
     const ownRateio = () => expense.rateios.find(r => r.membroId === membro.id)!
+    await t.test('todas as famílias de rotas MASTER recusam NORMAL e ADMIN e não alteram o banco', async () => {
+      const prefix=`/api/master/republicas/${republicA.body.id}`
+      const routes: [string,string,unknown?][] = [
+        ['GET','/api/master/usuarios'],['GET','/api/master/republicas'],['GET','/api/master/dashboard'],
+        ['PATCH',`/api/master/usuarios/${adminB.usuario.id}/status`,{ativo:false}],
+        ['PATCH',`/api/master/republicas/${republicA.body.id}/status`,{ativa:false}],
+        ['GET',prefix],['PATCH',prefix,{nome:'Invasão'}],['GET',`${prefix}/membros`],
+        ['PATCH',`${prefix}/membros/${membro.id}`,{ativo:false}],
+        ['POST',`${prefix}/transferir-admin`,{membroId:membro.id}],
+        ['GET',`${prefix}/despesas`],['GET',`${prefix}/despesas/${expense.id}`],
+        ['POST',`${prefix}/despesas`,{titulo:'Invasão',categoria:'OUTROS',valorTotal:'1.00',vencimento:'2030-01-01',membroIds:[membro.id]}],
+        ['PATCH',`${prefix}/despesas/${expense.id}`,{titulo:'Invasão'}],
+        ['GET',`${prefix}/tarefas`],['POST',`${prefix}/tarefas`,{titulo:'Invasão',responsavelId:membro.id}],
+        ['PATCH',`${prefix}/tarefas/${randomUUID()}`,{status:'CONCLUIDA'}],['GET',`${prefix}/dashboard`],
+      ]
+      const before=[await db.despesa.count(),await db.tarefa.count(),await db.membroRepublica.count({where:{ativo:true}})]
+      for(const token of [morador.token,admin.token]) for(const [method,path,body] of routes) {
+        assert.equal((await request(method,path,token,body)).status,403,`${method} ${path}`)
+      }
+      assert.deepEqual([await db.despesa.count(),await db.tarefa.count(),await db.membroRepublica.count({where:{ativo:true}})],before)
+      assert.equal((await db.republica.findUniqueOrThrow({where:{id:republicA.body.id}})).nome,'Casa A')
+      assert.equal((await db.usuario.findUniqueOrThrow({where:{id:adminB.usuario.id}})).ativo,true)
+    })
+    await t.test('sessão expirada não autoriza nem consulta dados privados', async () => {
+      const expired = await new SignJWT({ ver: 0 }).setProtectedHeader({ alg: 'HS256' }).setSubject(morador.usuario.id)
+        .setIssuer('rephouse').setAudience('rephouse-api').setExpirationTime(Math.floor(Date.now()/1000)-1)
+        .sign(new TextEncoder().encode('segredo-de-testes-isolados-com-mais-de-32-caracteres'))
+      assert.equal((await request('GET','/api/me',expired)).status,401)
+      assert.equal((await request('GET','/api/dashboard',expired)).status,401)
+    })
+    await t.test('edição antes/depois do pagamento, estados e limites mensais no horário de Brasília', async () => {
+      const memberB = await db.membroRepublica.findFirstOrThrow({where:{usuarioId:adminB.usuario.id,ativo:true}})
+      const created = await request<Expense>('POST','/api/despesas',adminB.token,{titulo:'Auditoria',categoria:'OUTROS',valorTotal:'90.00',vencimento:'2001-01-01',membroIds:[memberB.id]})
+      assert.equal(created.status,201)
+      const path = `/api/despesas/${created.body.id}`
+      const edited = await request<Expense>('PATCH',path,adminB.token,{valorTotal:'100.00',membroIds:[memberB.id]})
+      assert.equal(edited.status,200)
+      assert.equal(edited.body.rateios[0]!.valorDevido,'100.00')
+      assert.equal((await request<{statusCalculado:string}>('GET',path,adminB.token)).body.statusCalculado,'VENCIDA')
+      assert.equal((await request('PATCH',path,morador.token,{titulo:'Invasão'})).status,403)
+      assert.equal((await request('PATCH',path,admin.token,{valorTotal:'5.00'})).status,404)
+      const rateio = edited.body.rateios[0]!
+      assert.equal((await request('POST','/api/pagamentos',adminB.token,{rateioId:rateio.id,valor:'10.00'},randomUUID())).status,201)
+      const before = await db.rateioDespesa.findUniqueOrThrow({where:{id:rateio.id}})
+      for (const body of [{valorTotal:'101.00'},{membroIds:[memberB.id]}]) assert.equal((await request('PATCH',path,adminB.token,body)).status,409)
+      const unchanged = await db.rateioDespesa.findUniqueOrThrow({where:{id:rateio.id}})
+      assert.equal(unchanged.valorDevido.toFixed(2),before.valorDevido.toFixed(2))
+      assert.equal(unchanged.valorPago.toFixed(2),'10.00')
+      assert.equal((await request('PATCH',path,adminB.token,{titulo:'Renomeada',vencimento:'2099-01-01'})).status,200)
+      assert.equal((await request<{statusCalculado:string}>('GET',path,adminB.token)).body.statusCalculado,'PENDENTE')
+      const parts = new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit'}).formatToParts(new Date())
+      const year = Number(parts.find(p=>p.type==='year')!.value), month = Number(parts.find(p=>p.type==='month')!.value)
+      const start = Date.UTC(year,month-1,1,3), end = Date.UTC(year,month,1,3)
+      // Instantes de fronteira são fixtures de inserção, sem alterar pagamentos históricos.
+      for (const [valor,instant] of [['30.00',start-1],['20.00',start],['15.00',end-1],['25.00',end]] as const) {
+        await db.pagamento.create({data:{rateioId:rateio.id,membroId:memberB.id,valor,dataPagamento:new Date(instant)}})
+      }
+      const final = await request<{status:string;statusCalculado:string}>('GET',path,adminB.token)
+      assert.equal(final.body.status,'PAGA'); assert.equal(final.body.statusCalculado,'PAGA')
+      const dashboard = await request<{totalPendente:string;totalPagoNoMes:string}>('GET','/api/dashboard',adminB.token)
+      assert.equal(dashboard.body.totalPendente,'0.00'); assert.equal(dashboard.body.totalPagoNoMes,'45.00')
+      assert.equal((await request<{totalPendente:string}>('GET','/api/dashboard',admin.token)).body.totalPendente,'100.00')
+    })
     await t.test('pagamento parcial idempotente e rejeição de dados divergentes', async () => {
       const key = randomUUID()
       const input = {rateioId:ownRateio().id,valor:'20.00'}
@@ -114,6 +185,7 @@ test('migração: jornada HTTP, privacidade, exclusão e concorrência', { skip:
       assert.equal(replay.body.id,first.body.id)
       assert.equal((await request('POST','/api/pagamentos',morador.token,{...input,valor:'21.00'},key)).status,409)
       assert.equal((await request('POST','/api/pagamentos',adminB.token,input,randomUUID())).status,404)
+      assert.equal((await request('POST','/api/pagamentos',admin.token,input,randomUUID())).status,404)
       assert.equal((await db.rateioDespesa.findUniqueOrThrow({where:{id:ownRateio().id}})).valorPago.toFixed(2),'20.00')
     })
     await t.test('exclusão bloqueia administração pendente e dívidas, inclusive antigas', async () => {
@@ -132,6 +204,12 @@ test('migração: jornada HTTP, privacidade, exclusão e concorrência', { skip:
       assert.equal(old.body.find(r => r.id === ownRateio().id)?.valorPago,'20.00')
       assert.equal((await request('DELETE','/api/me',morador.token,{senha})).status,409)
       assert.equal((await request('GET',`/api/me/financeiro/${expense.rateios.find(r=>r.membroId===adminMember.id)!.id}`,morador.token)).status,404)
+      assert.equal((await request<Member[]>('GET','/api/membros',admin.token)).body.some(m=>m.id===membro.id),false)
+      // O helper de contrato usa caminho sem query, pois os parâmetros não mudam a operação.
+      const history = await fetch(`${base}/api/membros?inativos=true`,{headers:{Authorization:`Bearer ${admin.token}`}})
+      assert.equal(history.status,200)
+      assert.ok((await history.json() as Member[]).some(m=>m.id===membro.id&&!m.ativo))
+      assert.equal((await fetch(`${base}/api/membros?inativos=true`,{headers:{Authorization:`Bearer ${morador.token}`}})).status,403)
     })
     await t.test('pagamentos simultâneos nunca ultrapassam o saldo', async () => {
       const results = await Promise.all([1,2].map(() => request('POST','/api/pagamentos',morador.token,{rateioId:ownRateio().id,valor:'20.00'},randomUUID())))
@@ -153,6 +231,12 @@ test('migração: jornada HTTP, privacidade, exclusão e concorrência', { skip:
       assert.equal(download.status,200)
       assert.equal(download.headers.get('x-content-type-options'),'nosniff')
       await download.arrayBuffer()
+      for (const token of [admin.token,master.token]) {
+        const allowed = await fetch(`${base}/api/pagamentos/${paymentWithFile}/comprovante`,{headers:{Authorization:`Bearer ${token}`}})
+        assert.equal(allowed.status,200); await allowed.arrayBuffer()
+      }
+      assert.equal((await request('GET',`/api/pagamentos/${paymentWithFile}/comprovante`)).status,401)
+      assert.equal((await request('GET',`/api/pagamentos/${randomUUID()}/comprovante`,morador.token)).status,404)
       assert.equal((await request('GET',`/api/pagamentos/${paymentWithFile}/comprovante`,adminB.token)).status,404)
       for (const [contents,status] of [[new Blob(['arquivo falso'],{type:'application/pdf'}),400],[new Blob([new Uint8Array(5*1024*1024+1)]),413]] as const) {
         const invalid = new FormData()
@@ -160,11 +244,27 @@ test('migração: jornada HTTP, privacidade, exclusão e concorrência', { skip:
         assert.equal((await request('POST','/api/pagamentos',morador.token,invalid,randomUUID())).status,status)
       }
     })
+    await t.test('arquivo físico ausente retorna 404 conforme o contrato, preservando o pagamento', async () => {
+      const paid = await db.pagamento.findUniqueOrThrow({where:{id:paymentWithFile}})
+      assert.ok(paid.comprovanteUrl)
+      const file = join(directory,paid.comprovanteUrl)
+      await rename(file,`${file}.ausente`)
+      try {
+        assert.equal((await request('GET',`/api/pagamentos/${paymentWithFile}/comprovante`,admin.token)).status,404)
+        assert.ok(await db.pagamento.findUnique({where:{id:paymentWithFile}}))
+      } finally { await rename(`${file}.ausente`,file) }
+    })
     await t.test('somente o responsável conclui tarefas; troca inválida sofre rollback', async () => {
       const members = await request<Member[]>('GET','/api/membros',adminB.token)
       const newMember = members.body.find(m=>m.usuarioId===morador.usuario.id)!
+      const beforeTasks = await db.tarefa.count()
+      assert.equal((await request('POST','/api/tarefas',adminB.token,{titulo:'Inválida',responsavelId:adminMember.id})).status,400)
+      assert.equal(await db.tarefa.count(),beforeTasks)
       const task = await request<{id:string}>('POST','/api/tarefas',adminB.token,{titulo:'Cozinha',responsavelId:newMember.id})
       assert.equal(task.status,201)
+      assert.ok((await request<{id:string}[]>('GET','/api/tarefas',morador.token)).body.some(item=>item.id===task.body.id))
+      assert.ok(!(await request<{id:string}[]>('GET','/api/tarefas',admin.token)).body.some(item=>item.id===task.body.id))
+      assert.equal((await request('PATCH',`/api/tarefas/${task.body.id}`,admin.token,{titulo:'Invasão'})).status,404)
       const vizinho = await register('Vizinho')
       assert.equal((await request('POST','/api/republicas/entrar',vizinho.token,{codigoEntrada:republicB.body.codigoEntrada})).status,201)
       assert.equal((await request('PATCH',`/api/tarefas/${task.body.id}`,vizinho.token,{status:'CONCLUIDA'})).status,403)
@@ -225,6 +325,53 @@ test('migração: jornada HTTP, privacidade, exclusão e concorrência', { skip:
       assert.equal(signed.status,200)
       assert.equal((await request('POST','/api/auth/logout',signed.body.token)).status,204)
       assert.equal((await request('GET','/api/me',signed.body.token)).status,401)
+    })
+    await t.test('seed cria os três perfis, saldo parcial e dívida de ex-moradora sem duplicar ou sobrescrever dados', async () => {
+      await assert.rejects(semearDemonstracao(db, senha, 'production'), /produção/)
+      await assert.rejects(semearDemonstracao(db, undefined, 'test'))
+      const result = await semearDemonstracao(db, senha, 'test')
+      assert.equal(result.criado, true)
+      const counts = await Promise.all([db.usuario.count(), db.republica.count(), db.membroRepublica.count(), db.despesa.count(), db.pagamento.count(), db.tarefa.count()])
+      const stored = await db.usuario.findUniqueOrThrow({ where: { email: 'ana@demo.rephouse.test' } })
+      const partial = await db.rateioDespesa.findUniqueOrThrow({ where: { id: demonstracao.rateios.ana } })
+      assert.equal(partial.valorPago.toFixed(2), '10.00')
+      assert.equal(partial.status, 'PARCIAL')
+      assert.equal((await semearDemonstracao(db, 'OutraSenhaDeTeste123!', 'test')).criado, false)
+      assert.deepEqual(await Promise.all([db.usuario.count(), db.republica.count(), db.membroRepublica.count(), db.despesa.count(), db.pagamento.count(), db.tarefa.count()]), counts)
+      assert.equal((await db.usuario.findUniqueOrThrow({ where: { id: stored.id } })).senhaHash, stored.senhaHash)
+      const signed = await request<Session>('POST', '/api/auth/login', undefined, { email: 'carla@demo.rephouse.test', senha })
+      assert.equal(signed.status, 200)
+      const old = await request<Rateio[]>('GET', '/api/me/financeiro', signed.body.token)
+      assert.equal(old.body.find(r => r.id === demonstracao.rateios.carla)?.valorPago, '0.00')
+      assert.equal((await request('GET', '/api/master/usuarios', signed.body.token)).status, 403)
+      const masterDemo = await request<Session>('POST', '/api/auth/login', undefined, { email: 'master@demo.rephouse.test', senha })
+      assert.equal(masterDemo.status, 200)
+      assert.equal((await request('GET', '/api/master/dashboard', masterDemo.body.token)).status, 200)
+      const scope=`/api/master/republicas/${demonstracao.republicas.aurora}`
+      const panel = await request<{totalPendente:string;totalPagoNoMes:string;tarefasAbertas:number;moradoresAtivos:number;proximasContas:{id:string;vencimento:string}[]}>('GET',`${scope}/dashboard`,masterDemo.body.token)
+      assert.equal(panel.body.totalPendente,'50.00'); assert.equal(panel.body.totalPagoNoMes,'40.00')
+      assert.equal(panel.body.tarefasAbertas,1); assert.equal(panel.body.moradoresAtivos,2)
+      assert.deepEqual(panel.body.proximasContas.map(item=>item.id),[demonstracao.despesas.internet])
+      const tarefa = await db.tarefa.findUniqueOrThrow({ where: { id: demonstracao.tarefas[0] } })
+      await db.tarefa.delete({ where: { id: tarefa.id } })
+      await assert.rejects(semearDemonstracao(db, senha, 'test'), /incompleta/)
+      assert.equal(await db.tarefa.count(), counts[5] - 1)
+      await db.tarefa.create({ data: tarefa })
+      const cli = await promisify(execFile)(process.execPath, [resolve('node_modules/prisma/build/index.js'), 'db', 'seed'], {
+        env: { ...process.env, DATABASE_URL: isolated.toString(), DEMO_PASSWORD: senha, NODE_ENV: 'test' },
+        windowsHide: true,
+      })
+      assert.match(cli.stdout, /já existe/)
+      assert.equal(cli.stdout.includes(senha), false)
+      for(let index=0;index<6;index++) {
+        const due=new Date(); due.setUTCDate(due.getUTCDate()+365+index)
+        assert.equal((await request('POST',`${scope}/despesas`,masterDemo.body.token,{titulo:`Próxima ${index}`,categoria:'OUTROS',valorTotal:'1.00',vencimento:due.toISOString().slice(0,10),membroIds:[demonstracao.membros.adminAurora]})).status,201)
+      }
+      const upcoming=await request<{proximasContas:{vencimento:string;status:string}[]}>('GET',`${scope}/dashboard`,masterDemo.body.token)
+      assert.equal(upcoming.body.proximasContas.length,5)
+      assert.ok(upcoming.body.proximasContas.every(item=>item.status==='PENDENTE'))
+      const dates=upcoming.body.proximasContas.map(item=>item.vencimento)
+      assert.deepEqual(dates,[...dates].sort())
     })
   } finally {
     if (server) { server.closeAllConnections(); await new Promise<void>(done=>server!.close(()=>done())) }

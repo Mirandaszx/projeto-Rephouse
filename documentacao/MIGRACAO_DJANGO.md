@@ -13,7 +13,7 @@ Referência analisada: [Sistema-da-Republica, commit 8a0cede](https://github.com
 | Comprovante obrigatório | Comprovante opcional, privado, validado pelo conteúdo e limitado a 5 MB. |
 | Exclusão da conta | Incluída como exclusão lógica com confirmação da senha, quitação de dívidas e transferência prévia de administração. |
 | Tarefas | Responsável obrigatório, prazo opcional, ABERTA/CONCLUIDA; morador apenas conclui as próprias tarefas. |
-| Dashboard | Soma real de rateios e pagamentos, incluindo parciais e dívidas de ex-moradores; mês de America/Fortaleza. |
+| Dashboard | Soma real de rateios e pagamentos, incluindo parciais e dívidas de ex-moradores; horário de Brasília por padrão (`APP_TIME_ZONE`). |
 | Poder global is_staff | MASTER explícito, rotas próprias e provisionamento administrativo local. |
 | Acertos entre pagador/recebedor, exclusão/edição de pagamento | Não portados. Pagamentos são uma trilha imutável; estornos ficam para outra entrega. |
 | Prioridades, CEP, mapas e templates | Fora deste backend; endereço textual opcional foi incluído. |
@@ -89,3 +89,5 @@ npm run build
 `test:db` exige `TEST_DATABASE_URL` explícita. A jornada HTTP executa em schema temporário próprio do banco `rabbu_mvp_test`, aplica as migrations do zero e remove esse schema e os arquivos temporários ao terminar. Nunca executa limpeza de fixtures no banco principal.
 
 Comentários relevantes no código registram o motivo das regras: seleção de membros, vínculos históricos, revogação, exclusão lógica, idempotência, ordem de locks e limites do retry.
+
+A entrega para integração inclui schemas e exemplos de resposta, [contrato importável](openapi.json), CORS configurável, seed de demonstração e o comando `npm run verificar`. Veja [INTEGRACAO_BACKEND.md](INTEGRACAO_BACKEND.md) para preparar o ambiente e consumir a API.

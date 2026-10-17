@@ -1,12 +1,14 @@
 import { Prisma } from '../../gerado/prisma/client.js'
+import { appTimeZone } from '../../configuracao/time-zone.js'
 export class DashboardRepository {
   async resumo(tx: Prisma.TransactionClient, republicaId?: string) {
-    // Fortaleza é UTC-3: os limites mensais são convertidos para instantes UTC.
-    const month = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Fortaleza', year: 'numeric', month: '2-digit' }).formatToParts(new Date())
-    const year = Number(month.find(p => p.type === 'year')?.value)
-    const number = Number(month.find(p => p.type === 'month')?.value)
-    const start = new Date(Date.UTC(year, number - 1, 1, 3))
-    const end = new Date(Date.UTC(year, number, 1, 3))
+    // PostgreSQL resolve as fronteiras conforme o fuso, inclusive mudanças históricas.
+    const zone = appTimeZone()
+    const [month] = await tx.$queryRaw<{start: Date; end: Date}[]>`
+      SELECT date_trunc('month', now() AT TIME ZONE ${zone}) AT TIME ZONE ${zone} AS start,
+      (date_trunc('month', now() AT TIME ZONE ${zone}) + interval '1 month') AT TIME ZONE ${zone} AS end`
+    if (!month) throw new Error('Não foi possível calcular o mês de referência.')
+    const { start, end } = month
     const where = republicaId ? { republicaId } : {}
     const totals = await tx.rateioDespesa.aggregate({ where: { despesa: where }, _sum: { valorDevido: true, valorPago: true } })
     const paid = await tx.pagamento.aggregate({ where: { rateio: { despesa: where }, dataPagamento: { gte: start, lt: end } }, _sum: { valor: true } })

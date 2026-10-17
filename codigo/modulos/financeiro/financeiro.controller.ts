@@ -30,10 +30,14 @@ export function createFinanceiroController(service: FinanceiroService, receipts:
       throw error
     }
   }
-  const receipt: RequestHandler = async (req, res) => {
+  const receipt: RequestHandler = async (req, res, next) => {
     const file = await service.receipt(res.locals.actor as Actor, idParam(req))
     res.set('X-Content-Type-Options', 'nosniff')
-    res.download(receipts.path(file), `comprovante.${file.split('.').at(-1)}`)
+    res.download(receipts.path(file), `comprovante.${file.split('.').at(-1)}`, error => {
+      // Registro financeiro permanece intacto mesmo se o arquivo foi perdido no disco.
+      if (error) next('code' in error && error.code === 'ENOENT'
+        ? new AppError(404, 'NOT_FOUND', 'Comprovante não encontrado.') : error)
+    })
   }
   return {
     create: endpoint((req, actor) => service.create(actor, expenseSchema.parse(req.body), scope(req)), 201),

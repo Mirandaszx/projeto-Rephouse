@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { Request, RequestHandler } from 'express'
 import { Prisma } from '../../gerado/prisma/client.js'
 import type { Actor } from '../context.js'
+import { civilDate } from '../../configuracao/time-zone.js'
 
 export const uuid = z.uuid()
 export const money = z.string().regex(/^\d{1,10}(\.\d{1,2})?$/).refine(value => new Prisma.Decimal(value).greaterThan(0))
@@ -16,7 +17,7 @@ function jsonValue(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(jsonValue)
   if (value && typeof value === 'object') {
     const fields = value as Record<string, unknown>
-    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Fortaleza', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
+    const today = civilDate()
     const derived = fields.vencimento instanceof Date && (fields.status === 'PAGA' || fields.status === 'PENDENTE')
       ? { ...fields, statusCalculado: fields.status === 'PAGA' ? 'PAGA' : fields.vencimento.toISOString().slice(0,10) < today ? 'VENCIDA' : 'PENDENTE' } : fields
     // Defesa adicional ao select dos repositories: metadados internos não compõem DTOs públicos.

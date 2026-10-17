@@ -11,3 +11,7 @@ coverage
 npm-debug.log*
 *.log
 documentacao
+armazenamento
+copias-seguranca
+.devops-local
+interface

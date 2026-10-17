@@ -24,6 +24,8 @@ Os módulos auth, repúblicas, financeiro, tarefas, dashboard e master já possu
 rotas e serviços. A migração inclui pagamentos parciais, cobrança após saída da
 república e exclusão lógica da própria conta. A interface React fica para a próxima etapa.
 Veja [MIGRACAO_DJANGO.md](documentacao/MIGRACAO_DJANGO.md) para as regras e os endpoints.
+O [guia de integração do backend](documentacao/INTEGRACAO_BACKEND.md) explica
+o contrato importável, CORS, contas de demonstração e a verificação automatizada.
 
 ## Backend local em TypeScript
 
@@ -48,6 +50,11 @@ npm start
 
 O build gera JavaScript em `dist/`. `npm run test:db` executa a suíte PostgreSQL/ACID
 usando a `TEST_DATABASE_URL` explícita, conforme [a documentação do banco](documentacao/BANCO_DE_DADOS.md).
+
+Com o banco de testes preparado, `npm run verificar` executa build, exportação do
+OpenAPI, verificação de tipos e todas as suítes. Para gerar o contrato importável,
+use `npm run api:exportar`. Para criar a demonstração em desenvolvimento, defina
+`DEMO_PASSWORD` no `.env` e execute `npm run db:seed`.
 
 ## Rodar com Docker
 
@@ -85,6 +92,6 @@ docker compose down
 
 As credenciais têm valores padrão para desenvolvimento local e podem ser substituídas por variáveis em um arquivo `.env` na raiz. Não use esses valores padrão em produção.
 
-O Compose atual é para desenvolvimento. Antes de publicar, será necessário preparar imagens de produção, remover os volumes de código e configurar credenciais e segredos próprios do ambiente.
+O Compose acima é para desenvolvimento. A execução compilada, somente com API e PostgreSQL, usa `Dockerfile` e `docker-compose.backend.yml`, com projeto/volumes próprios, migrations separadas e processo sem root. Consulte o [guia operacional](documentacao/OPERACAO_BACKEND.md) para execução, logs, readiness, backup e restauração isolada.
 
-Os arquivos `.dockerignore` estão prontos para quando forem adicionados Dockerfiles. No modo atual, o Compose usa a imagem oficial do Node e volumes de desenvolvimento, então eles não alteram a execução local.
+A [matriz de validação](documentacao/VALIDACAO_MVP.md) relaciona requisitos, implementação e evidências. O [roteiro de demonstração](documentacao/ROTEIRO_DEMONSTRACAO_BACKEND.md) inclui requisições e estado esperado no banco. `npm run test:devops` ensaia a recuperação em Docker; o workflow do GitHub executa a verificação sem publicar imagens nem fazer deploy. A execução remota só conta como validada depois de ocorrer no GitHub.

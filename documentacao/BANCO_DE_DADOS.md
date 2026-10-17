@@ -33,7 +33,7 @@ erDiagram
     rateios_despesa ||--o{ pagamentos : recebe
 ```
 
-Os perfis são `USUARIO_NORMAL`, `USUARIO_ADMIN` e `USUARIO_MASTER`. Novos usuários recebem `USUARIO_NORMAL` por padrão. Para provisionar uma conta ativa já cadastrada, execute `npm run master:provision -- --email EMAIL`. O comando invalida seus tokens anteriores; não há conta ou senha de demonstração.
+Os perfis são `USUARIO_NORMAL`, `USUARIO_ADMIN` e `USUARIO_MASTER`. Novos usuários recebem `USUARIO_NORMAL` por padrão. Para provisionar uma conta ativa já cadastrada, execute `npm run master:provision -- --email EMAIL`. O comando invalida seus tokens anteriores. A demonstração opcional é criada por `npm run db:seed`, com senha local explícita e execução restrita a desenvolvimento/teste; veja [INTEGRACAO_BACKEND.md](INTEGRACAO_BACKEND.md).
 
 Cada usuário pode ter somente um vínculo ativo. O administrador deve ter perfil ADMIN ou MASTER e vínculo ativo na própria república. Ao criar uma república, grave também esse vínculo na mesma transação. O autor de uma despesa deve ser o administrador da república ou um MASTER ativo.
 

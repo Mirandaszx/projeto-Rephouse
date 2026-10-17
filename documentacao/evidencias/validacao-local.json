@@ -1,0 +1,86 @@
+{
+  "registradoEm": "2026-10-17T01:16:40.159Z",
+  "revisaoBase": "343ca22381ebf658bcd6b0cc09d8482fe90c95bc",
+  "estadoDoCodigo": "Alterações locais, ainda sem commit nesta etapa.",
+  "nodeHost": "v24.21.0",
+  "fusoPadrao": "America/Sao_Paulo (horário de Brasília)",
+  "verificacao": {
+    "comando": "npm run verificar",
+    "concluidaEm": "2026-10-17T01:14:53.915Z",
+    "etapas": [
+      "build",
+      "api:exportar",
+      "typecheck",
+      "test",
+      "test:db"
+    ],
+    "testes": 81,
+    "semBanco": 25,
+    "comPostgreSQL": 56,
+    "falhas": 0,
+    "ignorados": 0
+  },
+  "contrato": {
+    "operacoes": 48,
+    "schema": "OpenAPI 3.1 validado; exemplos, respostas e exportação sincronizados"
+  },
+  "devops": {
+    "comando": "npm run test:devops",
+    "concluidoEm": "2026-10-17T01:15:56.752Z",
+    "resultado": "passed",
+    "checagens": [
+      "Construindo imagens de runtime e migrations a partir do lockfile.",
+      "Imagem compilada sem bind mount, usuário 1000, seis migrations, registros e comprovante preservados após restart.",
+      "Banco desligado: readiness 503 em menos de dois segundos; health 200; recuperação automática após retorno.",
+      "Logs JSON correlacionados por requestId sem senha, token, DSN ou conteúdo do comprovante.",
+      "Backup customizado e comprovantes restaurados em cluster/volumes novos: registros, triggers, ACID, login, download e bloqueio de sobrepagamento conferidos."
+    ],
+    "estadoAntesEDepois": {
+      "usuarios": 7,
+      "republicas": 3,
+      "membros": 7,
+      "despesas": 3,
+      "rateios": 6,
+      "pagamentos": 5,
+      "tarefas": 3,
+      "versoes": 6,
+      "vinculosInativos": 1,
+      "extensaoCrypto": 0,
+      "pago": 140,
+      "saldosInvalidos": 0,
+      "totaisInvalidos": 0,
+      "isolation": "serializable",
+      "sync": "on",
+      "fsync": "on",
+      "fullPageWrites": "on",
+      "triggers": 16,
+      "unlogged": 0
+    },
+    "recursosTemporariosRemovidos": true
+  },
+  "backup": {
+    "pasta": "copias-seguranca/2026-10-17T01-15-35-769Z-0245da97",
+    "criadoEm": "2026-10-17T01:15:38.496Z",
+    "versaoAplicacao": "1.0.0",
+    "imagem": "sha256:5b750fe6552139d320d9382cffe33a4f677c672f6ea1287e21d022c4d2babf25",
+    "fuso": "America/Sao_Paulo",
+    "sha256": {
+      "banco.dump": "dcedfdeeac1a98c5b7c422e9bc3695688c8434b6e30a08a9a3db78c1fe337e60",
+      "comprovantes.tar.gz": "47b5e641827e8ddea6dfdf89cfe548da7b7418358ba09ea7b15b195f86b4bc82"
+    }
+  },
+  "preservacao": {
+    "migrationsAplicadas": "Sem alterações; seis versões existentes.",
+    "bancoPrincipal": "Sem contas de demonstração criadas pelos testes.",
+    "schemasTemporarios": "Nenhum remanescente no banco principal ou de testes.",
+    "volumeAntigo": "projeto-rephouse_postgres_data preservado.",
+    "pdf": "Movimentação existente preservada; conteúdo igual ao arquivo versionado."
+  },
+  "github": {
+    "workflow": ".github/workflows/backend.yml",
+    "yaml": "Sintaxe e estrutura conferidas localmente.",
+    "execucaoRemota": "Não executada; pendente após commit/push.",
+    "publicacaoOuDeploy": false
+  },
+  "pendenciaAmbienteAntigo": "Containers de desenvolvimento apontam para a pasta anterior ausente; não foram recriados."
+}

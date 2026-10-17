@@ -1,0 +1,52 @@
+name: rephouse-validacao
+services:
+  postgres:
+    image: postgres:18
+    command: ["postgres", "-c", "fsync=on", "-c", "synchronous_commit=on", "-c", "full_page_writes=on"]
+    environment:
+      POSTGRES_USER: ${BACKEND_DB_USER:-rephouse}
+      POSTGRES_DB: ${BACKEND_DB_NAME:-rabbu_mvp}
+      POSTGRES_PASSWORD: ${BACKEND_DB_PASSWORD:?Defina BACKEND_DB_PASSWORD}
+    volumes:
+      - banco:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+  migracoes:
+    image: rephouse-migracoes:local
+    build:
+      context: .
+      target: migracoes
+    environment:
+      DATABASE_URL: ${BACKEND_DATABASE_URL:?Defina BACKEND_DATABASE_URL com host postgres}
+    depends_on:
+      postgres:
+        condition: service_healthy
+  api:
+    image: rephouse-backend:local
+    build:
+      context: .
+      target: runtime
+    environment:
+      DATABASE_URL: ${BACKEND_DATABASE_URL:?Defina BACKEND_DATABASE_URL}
+      JWT_SECRET: ${BACKEND_JWT_SECRET:?Defina BACKEND_JWT_SECRET}
+      APP_TIME_ZONE: ${BACKEND_TIME_ZONE:-America/Sao_Paulo}
+      CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-}
+    ports:
+      - "127.0.0.1:${BACKEND_PORT:-3001}:3000"
+    volumes:
+      - comprovantes:/app/armazenamento/comprovantes
+    depends_on:
+      migracoes:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    init: true
+volumes:
+  banco:
+  comprovantes:

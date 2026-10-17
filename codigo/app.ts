@@ -3,6 +3,7 @@ import { createHealthRouter } from './modulos/saude/health.routes.js'
 import { errorHandler } from './compartilhado/http/error-handler.js'
 import { notFoundHandler } from './compartilhado/http/not-found.js'
 import multer from 'multer'
+import cors from 'cors'
 import type { PrismaClient } from './gerado/prisma/client.js'
 import { createAuthService } from './modulos/autenticacao/auth.service.js'
 import { createAuthController } from './modulos/autenticacao/auth.controller.js'
@@ -22,15 +23,30 @@ import { createDashboardController } from './modulos/painel/dashboard.controller
 import { createMasterService } from './modulos/administracao/master.service.js'
 import { createMasterController } from './modulos/administracao/master.controller.js'
 import { openApiDocument } from './openapi.js'
+import { requestLog, type LogSink } from './compartilhado/http/request-log.js'
+import { isReady } from './modulos/saude/readiness.js'
 
-interface AppOptions { database?: PrismaClient; jwtSecret?: string; uploadDirectory?: string }
+interface AppOptions { database?: PrismaClient; jwtSecret?: string; uploadDirectory?: string; corsOrigins?: string[]; log?: LogSink; readiness?: () => Promise<unknown> }
 
 // Monta HTTP sem abrir porta ou conexão: reutilizável nos testes.
 export function createApp(options: AppOptions = {}): Express {
   const app = express()
   app.disable('x-powered-by')
+  app.use(requestLog(options.log))
+  // CORS regula leitura pelo navegador. Identidade e permissões continuam nas rotas.
+  app.use(cors({
+    origin: options.corsOrigins?.length ? options.corsOrigins : false,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key'],
+    exposedHeaders: ['Content-Disposition', 'Retry-After', 'RateLimit', 'RateLimit-Policy', 'X-Request-Id'],
+    credentials: false, maxAge: 600,
+  }))
   app.use(express.json({ limit: '1mb' }))
   app.use('/api/health', createHealthRouter())
+  app.get('/api/ready', async (_req, res) => {
+    const ready = await isReady(options.readiness ?? (options.database ? () => options.database!.$queryRaw`SELECT 1` : undefined))
+    res.status(ready ? 200 : 503).json({ status: ready ? 'ok' : 'unavailable' })
+  })
   app.get('/api/openapi.json', (_req, res) => { res.json(openApiDocument) })
   if (options.database) {
     if (!options.jwtSecret || options.jwtSecret.length < 32) throw new Error('JWT_SECRET precisa ter ao menos 32 caracteres.')

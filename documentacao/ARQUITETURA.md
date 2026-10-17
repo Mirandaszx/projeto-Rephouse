@@ -15,7 +15,8 @@ codigo/
   infraestrutura/
     banco/                       # Cliente Prisma e transações ACID
     armazenamento/               # Comprovantes privados
-  comandos/                      # Provisionamento e segredo JWT
+  comandos/                      # Provisionamento, seed e exportação de contrato
+  contratos/                     # OpenAPI, schemas e exemplos de integração
   modulos/
     saude/                       # Endpoint de saúde
     autenticacao/                # Autenticação e identidade
@@ -101,6 +102,8 @@ O build usa `tsc` e a execução usa `node dist/server.js`. Os imports relativos
 
 `npm test` verifica as regras puras e o comportamento HTTP, sem depender de PostgreSQL. `npm run test:db` executa os testes de integração com a `TEST_DATABASE_URL` explícita; veja o preparo e os cuidados com fixtures em [BANCO_DE_DADOS.md](BANCO_DE_DADOS.md).
 
+`npm run verificar` reúne build, exportação do contrato, tipos e testes, exigindo o banco dedicado para evitar integração ignorada. `npm run db:seed` cria a demonstração de forma atômica e repetível, sem sobrescrever alterações. CORS é configurado por origens explícitas no ambiente. O [guia de integração](INTEGRACAO_BACKEND.md) descreve a entrega para o frontend.
+
 ## Adicionar funcionalidades
 
 1. Defina os dados de entrada e valide o que chega por HTTP. Tipos TypeScript não substituem validação em execução.
@@ -109,3 +112,5 @@ O build usa `tsc` e a execução usa `node dist/server.js`. Os imports relativos
 4. Registre a rota na aplicação quando sua autenticação e autorização estiverem implementadas.
 
 O cadastro público rejeita campos de privilégio. JWT usa assinatura HS256 com segredo local e duração de uma hora; logout, bloqueio e exclusão invalidam tokens por versão. MASTER é provisionado exclusivamente pelo comando administrativo documentado. Comentários no código explicam invariantes, limites de autorização e decisões transacionais, em vez de repetir operações óbvias.
+
+Na configuração compilada, migrations são um serviço separado e a API inicia de `dist`, sem ferramentas de build no startup. A API usa um pool dedicado e limitado para readiness e middleware de logs JSON com UUID por requisição, sem registrar entradas privadas. `APP_TIME_ZONE` adota o horário de Brasília como padrão dos relatórios e datas civis. O [guia operacional](OPERACAO_BACKEND.md) detalha volumes, recuperação e CI.

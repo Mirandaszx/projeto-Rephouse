@@ -1,4 +1,9 @@
 .env
+.env.*
+!.env.example
+!.env.backend.example
+copias-seguranca/
+.devops-local/
 node_modules/
 dist/
 codigo/gerado/

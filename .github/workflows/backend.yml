@@ -1,0 +1,44 @@
+name: Validar backend
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: rephouse_ci
+          POSTGRES_PASSWORD: credencial_exclusiva_ci_temporaria
+          POSTGRES_DB: rabbu_mvp_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U rephouse_ci -d rabbu_mvp_test"
+          --health-interval 5s --health-timeout 5s --health-retries 15
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://rephouse_ci:credencial_exclusiva_ci_temporaria@localhost:5432/rabbu_mvp_test?schema=public
+      TEST_DATABASE_URL: postgresql://rephouse_ci:credencial_exclusiva_ci_temporaria@localhost:5432/rabbu_mvp_test?schema=public
+      JWT_SECRET: segredo_exclusivo_dos_testes_ci_nao_utilizar_em_producao
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run db:deploy
+      - run: npm run verificar
+      - name: Conferir contrato versionado
+        run: git diff --exit-code -- documentacao/openapi.json
+      - name: Construir, iniciar, interromper banco e ensaiar recuperação isolada
+        run: npm run test:devops
