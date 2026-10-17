@@ -2,6 +2,8 @@
 
 Esta entrega cobre execução compilada, CI, diagnóstico e recuperação local. Não realiza publicação, deploy, agendamento ou exclusão automática de backups. O Compose de desenvolvimento continua em `docker-compose.yml`; os comandos abaixo usam `docker-compose.backend.yml`, sem frontend e sem volumes compartilhados com o desenvolvimento.
 
+O código já foi publicado na branch `homologacao`, sem publicação da aplicação. Para o ambiente persistente da equipe, use o [guia de homologação](HOMOLOGACAO_BACKEND.md): projeto `rephouse-homologacao`, porta 3403 e volume próprio. As evidências antigas de execução exclusivamente local continuam históricas.
+
 ## Preparar e iniciar
 
 Requisitos: Docker com Compose e acesso ao registro de imagens. Para os comandos TypeScript de verificação e backup, instale Node.js 24 e execute `npm ci` na raiz. A API compilada não depende do Node, código ou `node_modules` do host.
@@ -89,12 +91,12 @@ O comando constrói ambas as imagens, cria quatro projetos aleatórios, usa senh
 
 ## CI e evidências
 
-`.github/workflows/backend.yml` executa em push para `main`, PR com destino `main` e acionamento manual. Usa Linux, Node 24 e PostgreSQL 18 temporário com credenciais exclusivas de teste. Executa `npm ci`, migrations no banco `rabbu_mvp_test`, `npm run verificar`, comparação do OpenAPI e dos tipos versionados e o ensaio completo `npm run test:devops`. Qualquer falha encerra o job. Permissão do token: apenas leitura do repositório. Não há publicação de imagem nem deploy.
+`.github/workflows/backend.yml` executa em push para `main` e `homologacao`, PR com destino a essas branches e acionamento manual. Usa Linux, Node 24 e PostgreSQL 18 temporário com credenciais exclusivas de teste. Executa `npm ci`, migrations no banco `rabbu_mvp_test`, `npm run verificar`, comparação do OpenAPI e dos tipos versionados e o ensaio completo `npm run test:devops`. Qualquer falha encerra o job. Permissão do token: apenas leitura do repositório. Não há publicação de imagem nem deploy.
 
 Referências técnicas: [build em múltiplas etapas do Docker](https://docs.docker.com/build/building/multi-stage/), [serviço PostgreSQL no Actions](https://docs.github.com/en/actions/tutorials/use-containerized-services/create-postgresql-service-containers), [checkout](https://github.com/actions/checkout) e [setup-node](https://github.com/actions/setup-node).
 
 `npm run verificar` exige `TEST_DATABASE_URL` para o banco dedicado e não aceita a ausência de integração como sucesso. O ensaio Docker usa seus próprios bancos e não depende do PostgreSQL do host.
 
-As [evidências e pendências](VALIDACAO_MVP.md) registram os resultados locais separadamente da execução no GitHub. Criar o workflow localmente não prova uma execução remota. Os commits desta consolidação permanecem locais por decisão do usuário; push, PR e CI remota estão pendentes.
+As [evidências e pendências](VALIDACAO_MVP.md) registram os resultados locais separadamente da execução no GitHub. Criar o workflow localmente não prova uma execução remota. O guia de homologação aponta para o resultado desta nova etapa; os registros anteriores continuam descrevendo apenas o que havia sido executado em cada entrega. A primeira validação remota usa um PR para `homologacao`, sem depender de `workflow_dispatch`, cujo arquivo precisa estar na branch padrão.
 
-A [consolidação do backend](CONSOLIDACAO_BACKEND.md) documenta as proteções adicionais, a paginação 2.0.0 e os comandos `npm run test:carga` e `npm run test:carga:completo`. O workflow regular inclui a carga curta; o acionamento manual permite `carga_completa=true`. Backup/restauração agora usam trava exclusiva por projeto e validação estrita do manifesto. `npm run comprovantes:verificar` confere referências, tamanhos e hashes no PostgreSQL, sem exclusões. O [guia de comprovantes](COMPROVANTES_POSTGRESQL.md) detalha importação, compatibilidade e recuperação.
+A [consolidação do backend](CONSOLIDACAO_BACKEND.md) documenta as proteções adicionais, a paginação 2.0.0 e os comandos `npm run test:carga` e `npm run test:carga:completo`. A carga curta e a completa ficam condicionadas ao acionamento manual com `carga_completa=true`; não executam automaticamente em pushes ou PRs. Nenhuma carga financeira é acionada nesta entrega. Backup/restauração usam trava exclusiva por projeto e validação estrita do manifesto. `npm run comprovantes:verificar` confere referências, tamanhos e hashes no PostgreSQL, sem exclusões. O [guia de comprovantes](COMPROVANTES_POSTGRESQL.md) detalha importação, compatibilidade e recuperação.
