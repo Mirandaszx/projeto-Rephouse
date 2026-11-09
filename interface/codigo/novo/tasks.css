@@ -1,0 +1,62 @@
+.rep-tasks {
+  border: 1px solid #dbe6de;
+  border-radius: 20px;
+  background: #fff;
+  padding: clamp(16px, 3vw, 26px);
+  min-width: 0;
+}
+.rep-tasks-head, .rep-tasks-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.rep-tasks-head { justify-content: space-between; flex-wrap: wrap; margin-bottom: 18px; }
+.rep-tasks-heading p { margin-top: 3px; color: #53695f; font-size: .875rem; }
+.rep-task-symbol {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  flex: none;
+  color: #1c563d;
+  background: #e7f0e9;
+}
+.rep-tasks-filter { max-width: 100%; margin-bottom: 14px; }
+.rep-task-list { list-style: none; padding: 0; margin: 0; }
+.rep-task-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px 12px;
+  border: 1px solid #e1eae3;
+  border-radius: 13px;
+  padding: 11px 13px;
+  background: #fafcf9;
+}
+.rep-task-checkbox { min-height: 30px; align-items: start; }
+.rep-task-checkbox:has(:focus-visible) { outline: 2px solid #256746; outline-offset: 3px; border-radius: 5px; }
+.rep-task-checkmark { margin-top: 3px; color: #fff; border-color: #678075; background: #fff; }
+.rep-task-checkmark-done { border-color: #285742; background: #285742; }
+.rep-task-name { color: #17372b; overflow-wrap: anywhere; }
+.rep-task-name-done { color: #52645b; }
+.rep-task-description, .rep-task-meta { margin-left: 30px; }
+.rep-task-description { color: #53695f; overflow-wrap: anywhere; font-size: .875rem; }
+.rep-task-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 5px; color: #4d6659; font-size: .78rem; }
+.rep-task-meta span { display: inline-flex; align-items: center; gap: 4px; overflow-wrap: anywhere; }
+.rep-task-meta svg { flex: none; }
+.rep-task-status { padding: 4px 8px; border-radius: 30px; background: #f5ead7; color: #654b21; font-size: .72rem; font-weight: 650; white-space: nowrap; }
+.rep-task-status[data-done="true"] { background: #e1efe5; color: #23513a; }
+.rep-task-state, .rep-task-feedback { border-radius: 10px; padding: 12px; color: #315547; background: #eef5ef; font-size: .875rem; }
+.rep-task-feedback { margin-bottom: 8px; }
+.rep-task-state [role="alert"] { margin-bottom: 8px; }
+.rep-task-dialog :is(select, textarea) { width: 100%; padding: 10px; border: 1px solid var(--rep-line); border-radius: 9px; font: inherit; background: #fff; }
+.rep-task-dialog textarea { resize: vertical; }
+.republica .rep-glisse-dock .lg-tab-bar { --lg-tab-width: clamp(66px, 20vw, 84px); }
+@media (max-width: 385px) {
+  .rep-task-row { padding: 9px 10px; gap: 7px; }
+  .rep-task-status { font-size: .67rem; padding: 3px 6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rep-task-checkbox * { transition: none; }
+}

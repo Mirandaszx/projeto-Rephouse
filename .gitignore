@@ -5,3 +5,8 @@ codigo/gerado/
 *.tsbuildinfo
 interface/dist/
 armazenamento/
+
+# Artefatos locais de desenvolvimento, revisão e gravação
+/output/
+/tmp/
+/debug.log

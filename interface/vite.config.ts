@@ -10,7 +10,7 @@ export default defineConfig({
     host: '0.0.0.0',
     proxy: {
       '/api': {
-        target: 'http://api:3000',
+        target: process.env.REPHOUSE_API_URL || 'http://127.0.0.1:3000',
         changeOrigin: true,
       },
     },

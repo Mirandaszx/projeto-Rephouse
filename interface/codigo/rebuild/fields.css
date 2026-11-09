@@ -1,0 +1,25 @@
+.rep-animated-field { margin-block: 8px; }
+.rep-animated-field input { height: 46px; background: white; color: #193732; border-color: #c8d8ce; }
+.rep-animated-field label { display: block !important; font-size: 14px; font-weight: 500; }
+.rep-combobox { display: flex; align-items: center; min-height: 38px; border: 1px solid #c8d8ce; border-radius: 9px; background: #fff; max-width: 100%; }
+.rep-combobox > input { border: 0 !important; border-radius: 9px; background: transparent; color: #193732; min-width: 0; width: 150px; padding: 9px 10px; font: inherit; font-size: 13px; }
+.rep-combobox > button { padding: 9px; border: 0; background: transparent; color: #315b49; }
+.rep-combobox-popup { background: #fff; border: 1px solid #c8d8ce; border-radius: 12px; padding: 5px; box-shadow: 0 9px 24px #133d3220; color: #193732; font: 13px Inter, system-ui, sans-serif; transition: opacity 150ms ease-out, transform 150ms ease-out; max-height: 300px; overflow-y: auto; min-width: 180px; }
+.rep-combobox-popup[data-starting-style], .rep-combobox-popup[data-ending-style] { opacity: 0; transform: translateY(-4px); }
+.rep-combobox-item { padding: 10px; gap: 14px; border-radius: 7px; }
+.rep-combobox-item[data-highlighted] { background: #e6f1e9; }
+.rep-combobox-item[data-selected] { color: #205b42; font-weight: 650; }
+.rep-combobox-empty { padding: 10px; }
+.rep-calendar-positioner { z-index: 60; }
+.rep-calendar-popup { --cell-size: 34px; --cell-radius: 7px; background: white; border: 1px solid #c8d8ce; border-radius: 12px; padding: 12px; box-shadow: 0 9px 24px #133d3220; max-width: calc(100vw - 30px); color: #193732; }
+.rep-calendar-popup .rdp-month_caption { min-height: 40px; }
+.rep-calendar-popup .rdp-month_grid { width: 100%; }
+.rep-calendar-popup button { min-width: 32px; min-height: 32px; border-radius: 7px; }
+.rep-calendar-popup button:hover { background: #deede3; }
+.rep-calendar-popup button[data-selected-single=true] { background: #245c48; color: white; }
+.rep-date-field { position: relative; }
+.rep-date-field label { display: grid; gap: 6px; }
+.rep-date-field label input { padding-right: 42px; min-height: 46px; width: 100%; }
+.rep-date-field > button { position: absolute; right: 5px; bottom: 5px; min-height: 36px; width: 36px; display: grid; place-items: center; background: white; color: #315b49; border: 1px solid #c8d8ce; border-radius: 8px; }
+.rep-date-field input::-webkit-calendar-picker-indicator { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .rep-combobox-popup { transition: none; } }
