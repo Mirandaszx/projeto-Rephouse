@@ -2,6 +2,8 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { lazy, Suspense } from 'react'
 import './index.css'
+import './aparencia/appearance'
+import './aparencia/appearance.css'
 
 const App = lazy(() => import('./App'))
 const DesignSystem = lazy(() => import('./DesignSystem'))

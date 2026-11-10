@@ -1,0 +1,57 @@
+{
+  "dataLocal": "2026-11-10",
+  "versao": "2.1.0",
+  "escopo": "Simplificacao da terceira apresentacao: Docker, funcionalidades e testes; recursos operacionais avancados opcionais",
+  "ambiente": "Local Windows, Node.js 24, PostgreSQL 18 em Docker e navegador Edge headless",
+  "workflow": {
+    "validacaoLocal": "YAML analisado com o parser yaml; eventos, permissoes, servico e seis etapas conferidos por assertions",
+    "eventos": ["push: main/homologacao", "pull_request: main/homologacao", "workflow_dispatch sem inputs"],
+    "node": "24",
+    "postgresql": "18",
+    "permissoes": { "contents": "read" },
+    "comandos": ["npm ci", "npm run db:deploy", "npm run verificar", "git diff --exit-code -- documentacao/openapi.json integracao/api.d.ts"],
+    "removidoDoWorkflow": ["test:devops", "test:carga", "test:carga:completo", "input carga_completa", "upload dos artefatos dos ensaios"],
+    "resultadoRemoto": "Nao executado para esta alteracao"
+  },
+  "backend": {
+    "comando": "npm run verificar",
+    "saida": 0,
+    "compilacaoTipagemContratoETipos": "Aprovados",
+    "testesUnidadeEHTTP": 37,
+    "testesPostgreSQL": 101,
+    "total": 138,
+    "falhas": 0,
+    "ignorados": 0,
+    "log": ".devops-local/terceira-apresentacao/backend.log"
+  },
+  "frontend": {
+    "comando": "npm --prefix interface run verificar",
+    "saida": 0,
+    "compilacaoTipagemLint": "Aprovados; zero erros e cinco avisos preexistentes de Fast Refresh",
+    "testesAprovados": 13,
+    "falhas": 0,
+    "ignorados": 0,
+    "jornadasPreservadas": ["cadastro e login", "tarefas", "pagamento com comprovante", "MASTER", "layout e redirecionamentos"],
+    "log": ".devops-local/terceira-apresentacao/frontend.log"
+  },
+  "bancoDeTestes": {
+    "projeto": "rephouse-interface-test",
+    "banco": "rabbu_mvp_test",
+    "porta": 5544,
+    "migrations": "Nove migrations reconhecidas; nenhuma pendente",
+    "isolamento": "TEST_DATABASE_URL explicita; transacoes revertidas ou schemas descartaveis"
+  },
+  "docker": {
+    "configuracoesConferidas": ["docker compose config --quiet", "docker compose -f interface/docker-compose.test.yml config --quiet"],
+    "resultado": "Ambas aprovadas",
+    "operacaoExecutada": "Docker Desktop iniciado e PostgreSQL de testes iniciado com up -d --wait postgres",
+    "observacao": "Servicos existentes com politica de reinicio voltaram ao iniciar o Docker; nenhuma operacao de seed, limpeza, reset, carga ou restauracao foi executada no projeto da equipe",
+    "volumesExistentes": "Preservados, inclusive desenvolvimento, homologacao e comprovantes legados"
+  },
+  "compatibilidade": {
+    "openapiETipos": "Sem diferencas apos exportacao e verificacao",
+    "aplicacaoBancoEScripts": "Sem alteracoes em codigo, migrations, testes, tipos publicos, dependencias, Dockerfile ou arquivos Compose",
+    "documentacao": "Caminho principal local e roteiro funcional atualizados; alternativas anteriores identificadas como opcionais ou historicas"
+  },
+  "naoExecutado": ["carga", "ensaio de recuperacao", "backup", "restauracao", "limpeza de volumes", "seed no banco da equipe", "commit", "push", "CI remota", "deploy"]
+}

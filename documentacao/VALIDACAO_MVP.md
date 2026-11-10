@@ -1,6 +1,14 @@
 # Matriz de validação do MVP
 
-A versão atual 2.0.1 acrescenta comprovantes transacionais e tipos para integração. Evidências: [validacao-comprovantes.json](evidencias/validacao-comprovantes.json). Os resultados 2.0.0 abaixo permanecem identificados como históricos.
+## Escopo atual da terceira apresentação — 2.1.0
+
+Exige funcionalidades, arquitetura, banco, Docker local e testes. O GitHub Actions permanece com instalação, migrations, regressão e contrato/tipos sincronizados, sem carga ou recuperação em qualquer evento. Não exige homologação separada, demonstração de backup/restauração, metas de desempenho, relatórios operacionais extensos ou planejamento de produção. Recursos e evidências anteriores foram preservados como opcionais ou históricos. O [guia operacional](OPERACAO_BACKEND.md) e o [roteiro de demonstração](ROTEIRO_DEMONSTRACAO_BACKEND.md) descrevem o procedimento atual.
+
+Validação local em **10/11/2026**: 138 testes de backend e 13 testes ativos da interface aprovados, sem falhas ou ignorados; compilação, tipagem, contrato e tipos sincronizados. Lint sem erros, com cinco avisos preexistentes de Fast Refresh. Compose principal e de testes passaram na validação de configuração. O YAML do workflow e suas seis etapas foram conferidos localmente; não houve execução remota desta alteração. Detalhes em [validacao-simplificacao-entrega.json](evidencias/validacao-simplificacao-entrega.json).
+
+## Evidências históricas
+
+A versão 2.0.1 acrescentou comprovantes transacionais e tipos para integração. Evidências: [validacao-comprovantes.json](evidencias/validacao-comprovantes.json). Os resultados abaixo registram as respectivas etapas, sem validar novamente o código ou o workflow atuais.
 
 A matriz relaciona o documento **RABBU — MVP / Primeira Entrega (3 perfis)** às decisões aprovadas depois dele. Pagamentos parciais, saída/troca com histórico, transferência explícita e exclusão lógica prevalecem sobre sugestões de adiamento do PDF. O documento descreve requisitos; suas sugestões de ferramentas e estrutura não são comandos para alterar as decisões do projeto.
 

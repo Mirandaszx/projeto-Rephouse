@@ -2,11 +2,11 @@
 
 Aplicação web para organização de repúblicas e residências compartilhadas.
 
-O backend local está na versão **2.1.0**: as listagens da API principal retornam `{dados,paginacao}`, com `pagina=1` e `limite=20` por padrão. Veja o [guia de integração](documentacao/INTEGRACAO_BACKEND.md) e a [consolidação do backend](documentacao/CONSOLIDACAO_BACKEND.md) para segurança, contratos e ensaios de carga. A versão **2.0.1** validada anteriormente foi publicada em `homologacao`; essa branch reúne a integração antes de promover alterações para `main` por PR.
+O backend está na versão **2.1.0**: as listagens da API principal retornam `{dados,paginacao}`, com `pagina=1` e `limite=20` por padrão. Veja o [guia de integração](documentacao/INTEGRACAO_BACKEND.md) para os contratos.
 
 Para integrar conta, repúblicas, moradores, tarefas e MASTER, siga o [roteiro sem operações financeiras](documentacao/JORNADAS_INTEGRACAO.md). Ele inclui coleção Insomnia, exemplos fetch e demonstração isolada por `npm run integracao:demo`.
 
-Para executar a API compilada em ambiente local persistente da equipe e entender os testes do GitHub, siga [HOMOLOGACAO_BACKEND.md](documentacao/HOMOLOGACAO_BACKEND.md).
+Na terceira apresentação, o foco é demonstrar funcionalidades, arquitetura, banco e testes. O caminho principal é o Docker Compose local descrito abaixo e no [guia operacional](documentacao/OPERACAO_BACKEND.md). Não é necessário preparar homologação separada, demonstrar backup/restauração ou executar carga e recuperação.
 
 ## Stack
 
@@ -100,9 +100,31 @@ docker compose down
 
 As credenciais têm valores padrão para desenvolvimento local e podem ser substituídas por variáveis em um arquivo `.env` na raiz. Não use esses valores padrão em produção.
 
-O Compose acima é para desenvolvimento. A execução compilada, somente com API e PostgreSQL, usa `Dockerfile` e `docker-compose.backend.yml`, com projeto/volumes próprios, migrations separadas e processo sem root. Consulte o [guia operacional](documentacao/OPERACAO_BACKEND.md) para execução, logs, readiness, backup e restauração isolada.
+O volume `postgres_data` preserva registros e comprovantes ao reiniciar os containers ou usar `docker compose down`. Não use `down -v`, reset ou limpeza de volumes no procedimento normal. Em bancos já inicializados, mudar as variáveis de senha não altera as credenciais existentes.
 
-A [matriz de validação](documentacao/VALIDACAO_MVP.md) relaciona requisitos, implementação e evidências. O [roteiro de demonstração](documentacao/ROTEIRO_DEMONSTRACAO_BACKEND.md) inclui requisições e estado esperado no banco. `npm run test:devops` ensaia a recuperação em Docker; o workflow do GitHub executa a verificação sem publicar imagens nem fazer deploy. A execução remota só conta como validada depois de ocorrer no GitHub.
+A [matriz de validação](documentacao/VALIDACAO_MVP.md) relaciona requisitos, implementação e evidências históricas. O [roteiro de demonstração](documentacao/ROTEIRO_DEMONSTRACAO_BACKEND.md) orienta a apresentação das funcionalidades e do estado no banco.
+
+## Testes locais e GitHub Actions
+
+Com Node.js 24 e dependências instaladas na raiz e em `interface`, prepare somente o PostgreSQL dedicado aos testes:
+
+```powershell
+docker compose -f interface/docker-compose.test.yml up -d --wait postgres
+$env:TEST_DATABASE_URL='postgresql://rephouse_interface_test:rephouse_interface_test_local@127.0.0.1:5544/rabbu_mvp_test'
+$env:DATABASE_URL=$env:TEST_DATABASE_URL
+npm run db:deploy
+npm run verificar
+npm --prefix interface run verificar
+git diff --exit-code -- documentacao/openapi.json integracao/api.d.ts
+```
+
+Use um terminal exclusivo para esses comandos; feche-o ao terminar para não reaproveitar a URL de testes em uma execução da aplicação. O banco `rabbu_mvp_test` usa a porta 5544 e volume próprio. As migrations acima são aplicadas somente nele; os testes usam transações revertidas ou schemas descartáveis. Não use o banco da equipe.
+
+O GitHub Actions continua em pushes e PRs para `main` e `homologacao`, além do acionamento manual. Valida o backend com Node.js 24, PostgreSQL 18 temporário, instalação pelo lockfile, migrations, regressão completa e contrato/tipos sincronizados. Os testes de navegador da interface são executados localmente pelo comando acima. Nenhum evento do workflow executa carga, recuperação, backup, restauração ou deploy. Resultados locais e remotos são registrados separadamente.
+
+## Recursos opcionais preservados
+
+Dockerfile, Compose compilado, ambiente de homologação, scripts de backup/restauração e ensaios de carga/recuperação continuam disponíveis. Não são requisitos da terceira apresentação nem etapas do Actions atual. Os guias [operacional](documentacao/OPERACAO_BACKEND.md), [de homologação](documentacao/HOMOLOGACAO_BACKEND.md) e [de consolidação](documentacao/CONSOLIDACAO_BACKEND.md) identificam essas alternativas e seus registros anteriores. Planejamento de hospedagem, custos de provedor e escalabilidade fica para outra etapa.
 
 Comprovantes são armazenados no PostgreSQL, junto ao pagamento, na mesma transação. Veja [migração e operação](documentacao/COMPROVANTES_POSTGRESQL.md) e os [tipos e exemplos para integração](integracao/README.md).
 

@@ -1,5 +1,5 @@
 .rep-animated-field { margin-block: 8px; }
-.rep-animated-field input { height: 46px; background: white; color: #193732; border-color: #c8d8ce; }
+.rep-animated-field input { height: 46px; background: var(--app-input-bg); color: var(--app-text); border-color: var(--app-control-border); }
 .rep-animated-field label { display: block !important; font-size: 14px; font-weight: 500; }
 .rep-combobox { display: flex; align-items: center; min-height: 38px; border: 1px solid #c8d8ce; border-radius: 9px; background: #fff; max-width: 100%; }
 .rep-combobox > input { border: 0 !important; border-radius: 9px; background: transparent; color: #193732; min-width: 0; width: 150px; padding: 9px 10px; font: inherit; font-size: 13px; }

@@ -1,0 +1,53 @@
+{
+  "dataLocal": "2026-11-10",
+  "versao": "2.1.0",
+  "mudanca": "Reorganizacao da visao geral e da navegacao do painel interno",
+  "organizacao": {
+    "indicadores": ["Sua parte a pagar", "Em aberto na casa", "Pago neste mes", "Tarefas abertas"],
+    "despesasRecentes": "Ate cinco, por criadaEm decrescente e desempate por ID; lista original preservada",
+    "tarefasPendentes": "Ate quatro abertas, por prazo e ID; sem prazo ao final",
+    "listasCompletas": "Links para Despesas e Tarefas; filtros existentes preservados",
+    "convite": "Area propria Convide um morador em Moradores; retirado da visao geral",
+    "saida": "Junto ao perfil na lateral do computador e no topo do celular",
+    "navegacaoMobile": "Quatro links com icones Lucide, foco visivel e aria-current para a pagina atual",
+    "falhaDeTarefas": "Erro local com tentativa manual, sem remover o resumo financeiro carregado"
+  },
+  "validacao": {
+    "comando": "npm --prefix interface run verificar",
+    "saida": 0,
+    "compilacaoETipagem": "Aprovadas",
+    "lint": { "erros": 0, "avisosFastRefreshPreexistentes": 5 },
+    "testesAprovados": 21,
+    "falhas": 0,
+    "ignorados": 0,
+    "log": ".devops-local/painel-organizado/frontend.log",
+    "ambiente": "API HTTP real, PostgreSQL 18 dedicado em rabbu_mvp_test e Edge headless",
+    "limitadorAutenticacao": "Mantido ativo; novos cenarios reutilizam a sessao real preparada pela API"
+  },
+  "cenariosNovos": [
+    "Indicadores coerentes com o PostgreSQL e o dashboard da API",
+    "Cinco despesas recentes entre oito registros e quatro tarefas entre cinco abertas",
+    "Lista completa de despesas e filtro de pagas",
+    "Convite disponivel somente em Moradores",
+    "Falha 503 controlada na consulta de tarefas, resumo preservado e nova tentativa bem-sucedida",
+    "Quatro paginas internas em cinco larguras, sem rolagem horizontal",
+    "Logout remove a sessao do navegador e o token passa a receber 401"
+  ],
+  "regressaoPreservada": ["cadastro e login", "criacao e entrada em republica", "tarefas", "pagamento com comprovante", "MASTER", "layout do acesso", "rotas antigas"],
+  "visual": {
+    "larguras": [320, 390, 768, 1366, 1440],
+    "paginas": ["/republica", "/republica/despesas", "/republica/tarefas", "/republica/moradores"],
+    "capturas": ".devops-local/interface/imagens/painel-organizado",
+    "inspecaoVisual": "Capturas finais da visao geral em 1366 e 390 px conferidas",
+    "loginCadastroECasinha": "Preservados"
+  },
+  "servidorLocal": {
+    "url": "http://localhost:5173/republica",
+    "operacao": "Somente frontend reiniciado; aguardada a inicializacao do Vite",
+    "verificacao": "Modulos Republica e Overview respondem 200 e contem a navegacao e os paineis atualizados",
+    "healthEReady": 200,
+    "bancoDaEquipe": "Nenhum formulario enviado, seed, limpeza ou alteracao direta executada"
+  },
+  "compatibilidade": "Sem alteracoes no backend, APIs, tipos publicos, migrations, dependencias ou versao",
+  "naoExecutado": ["commit", "push", "CI remota", "deploy", "carga", "restauracao", "seed ou limpeza no banco da equipe"]
+}

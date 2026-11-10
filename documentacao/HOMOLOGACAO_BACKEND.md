@@ -1,5 +1,7 @@
 # Homologação local do backend e CI
 
+> Guia opcional e registro histórico da entrega 2.0.1. Não é necessário preparar este ambiente na terceira apresentação. O caminho principal atual usa o Compose da raiz, frontend 5173 e API 3000, conforme [OPERACAO_BACKEND.md](OPERACAO_BACKEND.md). As instruções e evidências abaixo preservam a etapa anterior; a CI atual mantém instalação, migrations, testes e contrato, sem carga ou recuperação e sem artefatos desses ensaios. `carga_completa` não é mais um parâmetro do workflow. Não altere nem apague os volumes já existentes desta homologação.
+
 A branch `homologacao` reúne as alterações para integração do frontend com a API antes de um PR para `main`. Cada integrante desenvolve em sua própria branch e abre PR para `homologacao`. Esta entrega prepara o backend e sua verificação: não cria telas, não hospeda a aplicação e não altera pagamentos. O contrato continua **2.0.1**.
 
 ## Preparar uma cópia local

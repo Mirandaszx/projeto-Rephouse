@@ -4,12 +4,14 @@ import { request, brl as money } from '../api'
 import CopyInvite from './CopyInvite'
 import Master from '../rebuild/Admin'
 import { GlisseButton } from '../rebuild/GlisseButton'
-import { SegmentedControl, TabBar } from 'glisse'
+import { SegmentedControl } from 'glisse'
 import { HaloDropzone } from '../rebuild/vendor/cult-halo-dropzone'
 import AnimatedTitle from '../rebuild/AnimatedTitle'
 import { AnimatedField, DateField } from '../rebuild/Fields'
-import { Building2, ClipboardCheck, ReceiptText, Users } from 'lucide-react'
+import { Building2, ClipboardCheck, LogOut, ReceiptText, Users, UserRoundPlus } from 'lucide-react'
 import Tasks from './Tasks'
+import Overview, { type Expense, type Share } from './Overview'
+import AppearanceControl from '../aparencia/AppearanceControl'
 import MemberPicker from '../rebuild/MemberPicker'
 import './republica.css'
 import './motion.css'
@@ -26,8 +28,6 @@ type User = { id: string; nome: string; tipoUsuario: string; membro: { id: strin
 type House = { nome: string; codigoEntrada?: string; adminId: string }
 type Dashboard = { totalPendente: string; totalPagoNoMes: string; tarefasAbertas: number }
 type Member = { id: string; usuario: { id: string; nome: string } }
-type Share = { id: string; membroId: string; valorDevido: string; valorPago: string }
-type Expense = { id: string; titulo: string; categoria: string; valorTotal: string; vencimento: string; rateios: Share[] }
 type Home = { user: User; house: House | null; dashboard: Dashboard | null; members: Member[]; expenses: Expense[] }
 const initials = (name: string) => name.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase()
 const remaining = (share: Share) => Math.max(0, Math.round(Number(share.valorDevido) * 100) - Math.round(Number(share.valorPago) * 100))
@@ -46,7 +46,7 @@ export default function Republica() {
   const [revision, setRevision] = useState(0)
   const [filter, setFilter] = useState<Filter>('Todas')
   const [editing, setEditing] = useState<{ expense: Expense; share: Share } | null>(null)
-  const [createHouse, setCreateHouse] = useState(false)
+  const [createHouse, setCreateHouse] = useState(() => new URLSearchParams(window.location.search).get('acao') === 'criar')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [formError, setFormError] = useState('')
@@ -142,6 +142,9 @@ export default function Republica() {
       await request(createHouse ? '/republicas' : '/republicas/entrar', token, createHouse
         ? { nome: String(data.get('nome')).trim() }
         : { codigoEntrada: String(data.get('codigoEntrada')).trim().toUpperCase() })
+      const currentUrl = new URL(window.location.href)
+      currentUrl.searchParams.delete('acao')
+      window.history.replaceState(null, '', currentUrl.pathname + currentUrl.search + currentUrl.hash)
       refresh()
     } catch (err) { if (!expired(err)) setError((err as Error).message) }
     finally { setBusy(false); submitting.current = false }
@@ -172,8 +175,8 @@ export default function Republica() {
     </main>
   </div>
   if (!house || !dashboard) return <div className="republica"><main className="rep-main rep-onboarding">
-    <header className="rep-top"><a className="rep-brand" href="/republica">RepHouse</a><GlisseButton variant="secondary" disabled={busy} onClick={() => void logout()}>Sair</GlisseButton></header>
-    <section className="rep-intro"><div><AnimatedTitle>{'Oi, ' + user.nome.split(' ')[0] + '.'}</AnimatedTitle><p>Entre com um convite ou crie sua república.</p></div></section>
+    <header className="rep-top"><a className="rep-brand" href="/republica">RepHouse</a><div className="rep-onboarding-actions"><AppearanceControl compact /><GlisseButton variant="secondary" disabled={busy} onClick={() => void logout()}>Sair</GlisseButton></div></header>
+    <section className="rep-intro"><div><AnimatedTitle>{'Oi, ' + user.nome.split(' ')[0] + '.'}</AnimatedTitle><p>{createHouse ? 'Dê um nome à sua república. Você receberá um código para convidar os moradores.' : 'Informe o código compartilhado por alguém da sua república ou crie uma nova.'}</p></div></section>
     <section className="rep-expenses"><SegmentedControl aria-label="Escolher república" value={createHouse ? 'criar' : 'entrar'} items={[
       { value: 'entrar', label: 'Tenho um convite' },
       { value: 'criar', label: 'Criar república' },
@@ -187,8 +190,6 @@ export default function Republica() {
 
   const canCreate = user.tipoUsuario === 'USUARIO_ADMIN' && house.adminId === user.id
   const role = house.adminId === user.id ? 'Administrador' : 'Morador'
-  const shares = expenses.flatMap(expense => expense.rateios.filter(share => share.membroId === user.membro?.id))
-  const pending = shares.reduce((total, share) => total + remaining(share), 0)
   const paid = (expense: Expense) => expense.rateios.every(share => remaining(share) === 0)
   const visible = expenses.filter(expense => filter === 'Todas' || paid(expense) === (filter === 'Pagas'))
   const month = new Intl.DateTimeFormat('pt-BR', { month: 'long' }).format(new Date())
@@ -198,32 +199,24 @@ export default function Republica() {
       <a className="rep-brand" href="/republica"><span aria-hidden="true">⌂</span> RepHouse</a>
       <div className="rep-house"><span>Minha república</span><strong>{house.nome}</strong></div>
       <nav aria-label="Navegação da casa">{pages.map(({ path, icon: Icon, label }) => <a key={path} href={path} aria-current={page.path === path ? 'page' : undefined}><Icon size={18} aria-hidden="true" /><span>{label}</span></a>)}</nav>
-      <div className="rep-profile"><span className="rep-avatar">{initials(user.nome)}</span><div><strong>{user.nome}</strong><small>{role}</small></div></div>
+      <div className="rep-account"><div className="rep-profile"><span className="rep-avatar">{initials(user.nome)}</span><div><strong>{user.nome}</strong><small>{role}</small></div></div><AppearanceControl /><button className="rep-logout" disabled={busy} onClick={() => void logout()}><LogOut size={17} aria-hidden="true" />Sair</button></div>
     </aside>
     <div className="rep-glisse-dock">
-      <TabBar aria-label="Navegação da casa" value={page.path} items={pages.map(({ path, icon: Icon, label }) => ({ value: path, href: path, label, icon: <Icon size={18} aria-hidden="true" /> }))} />
+      <nav className="rep-mobile-nav" aria-label="Navegação da casa">{pages.map(({ path, icon: Icon, label }) => <a key={path} href={path} aria-current={page.path === path ? 'page' : undefined}><Icon size={19} aria-hidden="true" /><span>{label}</span></a>)}</nav>
     </div>
-    <main className="rep-main" aria-busy={loading}>
-      <header className="rep-top"><span>{house.nome} <b> / </b> {page.label}</span><GlisseButton variant="secondary" disabled={busy} onClick={() => void logout()}>Sair</GlisseButton></header>
+    <main className="rep-main rep-workspace" aria-busy={loading}>
+      <div className="rep-mobile-profile"><div className="rep-profile"><span className="rep-avatar">{initials(user.nome)}</span><div><strong>{user.nome}</strong><small>{role}</small></div></div><div className="rep-mobile-actions"><AppearanceControl compact /><button className="rep-logout" disabled={busy} onClick={() => void logout()}><LogOut size={17} aria-hidden="true" />Sair</button></div></div>
       {error && <div className="rep-error"><p role="alert">{error}</p><GlisseButton variant="secondary" disabled={loading} onClick={refresh}>Tentar novamente</GlisseButton></div>}
       {loading && <p role="status">Atualizando sua república…</p>}
       <section className="rep-intro" id="resumo">
-        <div><p>{house.nome} · {month}</p><AnimatedTitle>{overview ? 'Oi, ' + user.nome.split(' ')[0] + '.' : page.label}</AnimatedTitle><p>{overview ? 'Veja o que já foi pago e o que falta acertar na casa.' : people ? 'Conheça os moradores da sua república.' : tasks ? 'Distribua os afazeres e acompanhe o que já foi feito.' : 'Acompanhe as contas da casa e registre seus pagamentos.'}</p></div>
+        <div><p>{house.nome} · {month}</p><AnimatedTitle>{overview ? 'Oi, ' + user.nome.split(' ')[0] + '.' : page.label}</AnimatedTitle><p>{overview ? 'Acompanhe as contas e as tarefas da república.' : people ? 'Conheça os moradores da sua república.' : tasks ? 'Distribua os afazeres e acompanhe o que já foi feito.' : 'Acompanhe as contas da casa e registre seus pagamentos.'}</p></div>
         {!people && !tasks && canCreate && <GlisseButton disabled={busy || loading || Boolean(error)} onClick={() => open(null)}>＋ Nova despesa</GlisseButton>}
-        {people && house.codigoEntrada && <CopyInvite code={house.codigoEntrada} />}
       </section>
-      {overview && <>
-        <div className="rep-overview">
-          <section className="rep-balance"><p>Sua parte a pagar</p><strong>{money.format(pending / 100)}</strong><span>{shares.filter(share => remaining(share) > 0).length} rateios em aberto</span><svg className="rep-roof" viewBox="0 0 240 150" fill="none" aria-hidden="true"><path d="M8 148 94 66l85 82M50 148l86-82 86 82M92 148l86-82 61 58M128 148V97m45 51v-34" stroke="currentColor" strokeWidth="2" /></svg></section>
-          <section className="rep-members" id="moradores"><h2>Quem mora aqui</h2><div className="rep-avatars" aria-label={members.map(member => member.usuario.nome).join(', ')}>{members.slice(0, 5).map(member => <span className="rep-avatar" key={member.id} title={member.usuario.nome}>{initials(member.usuario.nome)}</span>)}</div><p>{members.length} moradores</p>{house.codigoEntrada && <CopyInvite code={house.codigoEntrada} />}</section>
-        </div>
-        <div className="rep-summary" aria-label="Resumo da casa"><p>Em aberto na casa <strong>{money.format(Number(dashboard.totalPendente))}</strong></p><p>Pago neste mês <strong>{money.format(Number(dashboard.totalPagoNoMes))}</strong></p><p><a className="rep-task-link" href="/republica/tarefas">Tarefas abertas <strong>{dashboard.tarefasAbertas}</strong></a></p></div>
-      </>}
-      {tasks ? <Tasks token={token} members={members} memberId={user.membro?.id} canManage={canCreate} onExpired={expired} /> : people ? <section className="rep-expenses" aria-labelledby="residents-title">
+      {overview ? <Overview token={token} revision={revision} memberId={user.membro?.id} members={members} expenses={expenses} dashboard={dashboard} disabled={busy || loading || Boolean(error)} onPay={open} onExpired={expired} /> : tasks ? <Tasks token={token} members={members} memberId={user.membro?.id} canManage={canCreate} onExpired={expired} /> : people ? <><section className="rep-expenses" aria-labelledby="residents-title">
         <div className="rep-section-head"><h2 id="residents-title">Pessoas da casa</h2><span className="rep-demo">{members.length} moradores</span></div>
         <ul>{members.map(member => <li key={member.id} className="rh-row-enter"><div className="rep-expense-name"><div className="rep-avatar">{initials(member.usuario.nome)}</div><strong>{member.usuario.nome}</strong></div><span className="rep-role">{member.usuario.id === house.adminId ? 'Administrador' : 'Morador'}</span></li>)}</ul>
-      </section> : <section className="rep-expenses" id="despesas">
-        <div className="rep-section-head"><h2>{overview ? 'Atividade da casa' : 'Todas as despesas'}</h2><SegmentedControl aria-label="Filtrar despesas da casa" value={filter} items={filters.map(value => ({ value, label: value }))} onValueChange={value => setFilter(value as Filter)} /></div>
+      </section>{house.codigoEntrada && <section className="rep-invite" aria-labelledby="invite-title"><div><h2 id="invite-title"><UserRoundPlus size={19} aria-hidden="true" />Convide um morador</h2><p>Compartilhe o código com quem vai morar com você.</p></div><CopyInvite code={house.codigoEntrada} /></section>}</> : <section className="rep-expenses" id="despesas">
+        <div className="rep-section-head"><h2>Todas as despesas</h2><SegmentedControl aria-label="Filtrar despesas da casa" value={filter} items={filters.map(value => ({ value, label: value }))} onValueChange={value => setFilter(value as Filter)} /></div>
         {visible.length === 0 ? <p className="rep-empty">{expenses.length ? 'Nenhuma despesa neste filtro.' : 'Nenhuma despesa cadastrada na casa.'}</p> : <ul>{visible.map(expense => {
           const share = expense.rateios.find(item => item.membroId === user.membro?.id)
           return <li className="rh-row-enter" key={expense.id}>

@@ -4,6 +4,17 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/rephouse.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <style>:root{color-scheme:light;background:#f6f8f5}:root[data-theme=dark]{color-scheme:dark;background:#101b18}</style>
+    <script>
+      // Aplica a aparência antes da interface para evitar um clarão na abertura.
+      (() => {
+        let preference = 'system';
+        try { preference = localStorage.getItem('rephouse-appearance') || 'system'; } catch {}
+        document.documentElement.dataset.theme = preference === 'light' || preference === 'dark'
+          ? preference : matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      })();
+    </script>
     <title>RepHouse</title>
   </head>
   <body>

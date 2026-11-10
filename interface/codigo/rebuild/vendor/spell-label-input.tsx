@@ -86,7 +86,7 @@ export function LabelInput({
       <input
         id={inputId}
         className={cn(
-          "block outline-none peer text-primary w-full px-3.5 h-10 text-sm rounded-lg border focus:ring-2 dark:bg-neutral-950 dark:border-neutral-700/75 autofill:shadow-[inset_0_0_0px_1000px_var(--color-background)]",
+          "block outline-none peer text-foreground w-full px-3.5 h-10 text-sm rounded-lg border focus:ring-2 autofill:shadow-[inset_0_0_0px_1000px_var(--app-input-bg)]",
           isPasswordType && "pr-9",
           ringColorMap[ringColor],
         )}
@@ -94,7 +94,7 @@ export function LabelInput({
         type={inputType}
         {...props}
       />
-      {!outside && <label htmlFor={inputId} className="absolute block inset-y-0 px-2 bg-white dark:bg-neutral-950 text-sm left-[7px] h-fit my-auto -translate-y-[19px] peer-focus:-translate-y-[19px] text-muted-foreground pointer-events-none transition-transform motion-reduce:transition-none duration-200 scale-[.8] origin-top-left peer-placeholder-shown:scale-100 peer-focus:scale-[.8] peer-placeholder-shown:translate-y-0">
+      {!outside && <label htmlFor={inputId} className="spell-label-floating absolute block inset-y-0 px-2 text-sm left-[7px] h-fit my-auto -translate-y-[19px] peer-focus:-translate-y-[19px] text-muted-foreground pointer-events-none transition-transform motion-reduce:transition-none duration-200 scale-[.8] origin-top-left peer-placeholder-shown:scale-100 peer-focus:scale-[.8] peer-placeholder-shown:translate-y-0">
         {label}
       </label>}
       {isPasswordType && (

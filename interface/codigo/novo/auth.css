@@ -44,6 +44,20 @@
 .auth-heading a { font-weight: 650; color: var(--auth-green); text-decoration: underline; text-underline-offset: 5px; text-decoration-thickness: 1px; }
 .auth-form { display: grid; gap: 24px; }
 .auth-fields { display: grid; gap: 26px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.auth-house-choice { min-width: 0; margin: 0; padding: 0; border: 0; }
+.auth-house-choice legend { padding: 0; margin-bottom: 9px; font-size: 13px; font-weight: 650; }
+.auth-house-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.auth-house-options label { display: flex; align-items: center; gap: 9px; min-height: 60px; padding: 10px 12px; border: 1px solid #98aaa0; border-radius: 9px; font-size: 13px; font-weight: 550; line-height: 1.4; cursor: pointer; }
+.auth-house-options label:has(:checked) { border-color: var(--auth-green); background: #edf4e9; }
+.auth-house-options input { width: 16px; height: 16px; margin: 0; flex-shrink: 0; accent-color: var(--auth-green); }
+.auth-house-choice:disabled label { opacity: .7; cursor: wait; }
+.auth-house-choice p { margin: 9px 0 0; color: var(--auth-muted); font-size: 12px; line-height: 1.5; }
+.auth-page[data-mode='register'] .auth-heading { margin-bottom: 26px; }
+.auth-page[data-mode='register'] .auth-heading p { margin-top: 14px; }
+.auth-page[data-mode='register'] .auth-fields { gap: 18px; }
+.auth-page[data-mode='register'] .auth-form { gap: 18px; }
+.auth-page[data-mode='register'] .auth-content { padding-block: 12px; }
+.auth-page[data-mode='register'] .auth-reassurance { margin-top: 20px; }
 .auth-field .spell-label-outside { display: block; margin-bottom: 9px; font-size: 13px; font-weight: 650; line-height: 1.5; color: #354f45; }
 .auth-field input { display: block; width: 100%; height: 54px; padding: 0 16px; border: 1px solid #98aaa0; border-radius: 9px; font: inherit; font-size: 14px; color: var(--auth-ink); background: #fff; box-shadow: none; transition: border-color 150ms ease; }
 .auth-field input[type='password'], .auth-field input[autocomplete='current-password'], .auth-field input[autocomplete='new-password'] { padding-right: 52px; }
@@ -68,6 +82,13 @@
   .auth-support { margin-top: 22px; }
   .auth-house { width: min(100%, 270px); padding-top: 18px; }
   .auth-panel { padding-top: 28px; }
+  .auth-page[data-mode='register'] .auth-heading { margin-bottom: 18px; }
+  .auth-page[data-mode='register'] .auth-heading p { margin-top: 10px; }
+  .auth-page[data-mode='register'] .auth-fields { gap: 14px; }
+  .auth-page[data-mode='register'] .auth-form { gap: 16px; }
+  .auth-page[data-mode='register'] .auth-content { padding-block: 8px; }
+  .auth-page[data-mode='register'] .auth-reassurance { margin-top: 14px; }
+  .auth-page[data-mode='register'] .auth-panel-footer { margin-top: 18px; }
 }
 @media (max-width: 899px) {
   .auth-page { display: block; padding: 0; background: #fff; }

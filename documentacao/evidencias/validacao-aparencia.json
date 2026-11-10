@@ -1,0 +1,56 @@
+{
+  "dataLocal": "2026-11-10",
+  "versao": "2.1.0",
+  "mudanca": "Aparencia consistente nos temas claro, escuro e do sistema",
+  "causaCorrigida": "A variante dark dos rotulos Spell seguia o sistema independentemente dos fundos claros e produzia blocos pretos nos modais",
+  "comportamento": {
+    "padrao": "Sistema; acompanha alteracoes da preferencia do computador com a pagina aberta",
+    "escolhaManual": ["Claro", "Escuro"],
+    "persistencia": "Somente preferencia visual em localStorage rephouse-appearance, sincronizada entre abas",
+    "armazenamentoBloqueado": "Escolha mantida em memoria na aba atual",
+    "controles": "Seletor nativo com nome Aparencia; versao compacta com area de 44x44 px",
+    "abrangencia": ["home", "login", "cadastro", "escolha da republica", "painel", "despesas", "tarefas", "moradores", "MASTER", "modais", "calendario", "selecao de moradores", "avisos"],
+    "casinha": "SVG, painel verde e identidade preservados"
+  },
+  "validacaoLocal": {
+    "comando": "npm --prefix interface run verificar",
+    "saida": 0,
+    "testesAprovados": 25,
+    "falhas": 0,
+    "ignorados": 0,
+    "compilacaoETipagem": "Aprovadas; build final repetido apos o ultimo ajuste CSS",
+    "lint": { "erros": 0, "avisosFastRefreshPreexistentes": 5 },
+    "log": ".devops-local/aparencia/frontend.log",
+    "buildFinal": ".devops-local/aparencia/build-final.log",
+    "ambiente": "Edge headless, API HTTP real e PostgreSQL 18 dedicado rabbu_mvp_test com schemas descartaveis",
+    "regressao": ["cadastro", "login", "criacao e entrada em republica", "tarefas", "pagamento com comprovante", "MASTER", "logout", "rotas antigas"],
+    "novosCenarios": ["tema do sistema e mudanca em tempo real", "preferencia manual apos recarregar e navegar", "sincronizacao entre abas", "armazenamento bloqueado", "foco em cores forcadas", "modais de despesa, tarefa e pagamento nos dois temas", "rotulos com fundo igual ao campo", "calendario e selecao de moradores", "botoes secundarios e paginacao MASTER legiveis no escuro"],
+    "contrasteMedido": {
+      "textoNosControlesSelecionados": "Pelo menos 4.5:1",
+      "bordasDosCamposSelecionados": "Pelo menos 3:1",
+      "limite": "Medicoes automatizadas em elementos selecionados; nao equivalem a auditoria completa WCAG"
+    },
+    "responsividade": {
+      "paginasPublicas": [320, 390, 768, 1440],
+      "paginasInternas": [320, 390, 768, 1366, 1440],
+      "resultado": "Sem rolagem horizontal nos cenarios conferidos; preferencia de movimento reduzido respeitada"
+    }
+  },
+  "capturas": {
+    "diretorio": ".devops-local/interface/imagens/aparencia",
+    "inspecaoVisual": ["login escuro em computador", "modal Nova despesa claro e escuro", "moradores no celular escuro", "MASTER escuro"],
+    "historico": "Capturas anteriores preservadas em diretorios separados"
+  },
+  "servidorLocal": {
+    "url": "http://localhost:5173/login",
+    "statusHTTP": 200,
+    "checagemNavegador": ".devops-local/aparencia/servidor.json",
+    "resultado": "Tema escuro do sistema, escolha clara persistente apos reload, zero erros JavaScript; sem rolagem em 1366x768 e sem rolagem horizontal em 390 px",
+    "operacao": "Reiniciado somente frontend para invalidar cache do Vite; API e volumes preservados",
+    "healthEReady": 200,
+    "bancoDaEquipe": "Nenhum formulario enviado, seed, limpeza ou alteracao direta"
+  },
+  "compatibilidade": "Sem alteracoes no backend, API, banco, tipos publicos, dependencias ou versao",
+  "pendencias": ["auditoria completa de acessibilidade", "testes com leitores de tela e celular fisico"],
+  "naoExecutado": ["commit", "push", "CI remota", "deploy", "carga", "restauracao", "limpeza de volumes"]
+}

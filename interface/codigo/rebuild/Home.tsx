@@ -6,6 +6,7 @@ import { TiltCard } from './spell/tilt-card'
 import { BlurReveal } from './spell/blur-reveal'
 import AnimatedGradient from './spell/animated-gradient'
 import './home.css'
+import AppearanceControl from '../aparencia/AppearanceControl'
 
 const gradient = { preset: 'custom' as const, color1: '#e1ece5', color2: '#d3e8f0', color3: '#f5e8ca', speed: 6, swirl: 30, swirlIterations: 3, scale: 0.4, softness: 100 }
 const questions = [
@@ -43,8 +44,8 @@ export default function Home() {
     <header className="rh-header"><div className="rh-container rh-header-inner">
       <a className="rh-brand" href="/" aria-label="RepHouse, início"><img src="/rephouse.svg" alt="" /><span>RepHouse<span className="rh-brand-dot">.</span></span></a>
       <nav className="rh-desktop-nav" aria-label="Navegação principal"><a href="#recursos">O que tem por aqui</a><a href="#como-funciona">Como funciona</a><a href="#duvidas">Dúvidas</a></nav>
-      <div className="rh-header-actions"><a className="rh-login" href="/login">Entrar</a><GlisseButton href="/cadastro" className="rh-nav-cta">Criar conta <ArrowRight size={16} /></GlisseButton><button className="rh-menu-button" aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'} aria-expanded={menuOpen} aria-controls="rh-mobile-nav" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X /> : <Menu />}</button></div>
-    </div>{menuOpen && <nav id="rh-mobile-nav" className="rh-mobile-nav" aria-label="Navegação móvel" onClick={() => setMenuOpen(false)}><a href="#recursos">O que tem por aqui</a><a href="#como-funciona">Como funciona</a><a href="#duvidas">Dúvidas</a><a href="/cadastro">Criar minha conta</a></nav>}</header>
+      <div className="rh-header-actions"><span className="rh-theme-desktop"><AppearanceControl compact /></span><a className="rh-login" href="/login">Entrar</a><GlisseButton href="/cadastro" className="rh-nav-cta">Criar conta <ArrowRight size={16} /></GlisseButton><button className="rh-menu-button" aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'} aria-expanded={menuOpen} aria-controls="rh-mobile-nav" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X /> : <Menu />}</button></div>
+    </div>{menuOpen && <nav id="rh-mobile-nav" className="rh-mobile-nav" aria-label="Navegação móvel"><a href="#recursos" onClick={() => setMenuOpen(false)}>O que tem por aqui</a><a href="#como-funciona" onClick={() => setMenuOpen(false)}>Como funciona</a><a href="#duvidas" onClick={() => setMenuOpen(false)}>Dúvidas</a><a href="/cadastro">Criar minha conta</a><AppearanceControl /></nav>}</header>
     <main id="conteudo">
       <section className="rh-hero rh-container" aria-label="Apresentação do RepHouse">
         <div className="rh-hero-copy"><span className="rh-hero-label"><span /> A vida em república, bem resolvida.</span><BlurReveal as="h1" className="rh-hero-title" speedReveal={3} speedSegment={0.8}>Dividir a casa pode ser mais leve.</BlurReveal><p id="hero-title">As contas, as tarefas e os combinados em um só lugar. Para sobrar mais tempo para o melhor de morar junto.</p><div className="rh-hero-actions"><GlisseButton href="/cadastro">Organizar minha república <ArrowRight size={18} /></GlisseButton><a href="#como-funciona" className="rh-text-link">Conhecer o RepHouse <ArrowDown size={16} /></a></div><div className="rh-hero-reassurance"><ShieldCheck size={17} /><span>Cada um sabe sua parte. A casa segue em frente.</span></div></div>

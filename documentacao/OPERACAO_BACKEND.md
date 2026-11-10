@@ -1,10 +1,39 @@
 # Operação local do backend
 
-Esta entrega cobre execução compilada, CI, diagnóstico e recuperação local. Não realiza publicação, deploy, agendamento ou exclusão automática de backups. O Compose de desenvolvimento continua em `docker-compose.yml`; os comandos abaixo usam `docker-compose.backend.yml`, sem frontend e sem volumes compartilhados com o desenvolvimento.
+Na terceira apresentação, use o Compose principal com frontend, API e PostgreSQL. A versão permanece **2.1.0**. A validação exigida é compilação, tipos, contrato e testes funcionais; carga, recuperação e demonstração de backup/restauração são opcionais. Não é necessário preparar homologação separada ou planejar produção.
 
-O código já foi publicado na branch `homologacao`, sem publicação da aplicação. Para o ambiente persistente da equipe, use o [guia de homologação](HOMOLOGACAO_BACKEND.md): projeto `rephouse-homologacao`, porta 3403 e volume próprio. As evidências antigas de execução exclusivamente local continuam históricas.
+## Caminho principal: Docker local
 
-## Preparar e iniciar
+Na raiz, com Docker Desktop iniciado, prepare `.env` somente se ele ainda não existir: copie `.env.example`, configure as credenciais do banco e preencha `JWT_SECRET` com um segredo aleatório de pelo menos 32 caracteres. `npm run auth:secret`, após `npm ci`, fornece um valor para copiar ao arquivo; não o publique. Não sobrescreva um `.env` já configurado nem tente trocar credenciais de um volume existente pelas variáveis de inicialização.
+
+```powershell
+docker compose up -d --wait
+docker compose ps -a
+Invoke-RestMethod http://localhost:3000/api/health
+Invoke-RestMethod http://localhost:3000/api/ready
+```
+
+Abra `http://localhost:5173/login`. O Compose instala pelo lockfile, aplica migrations e inicia API e frontend. O PostgreSQL usa o volume `postgres_data` do projeto; contas, vínculos, tarefas e comprovantes persistem após reinício. Para diagnosticar, reiniciar ou encerrar:
+
+```powershell
+docker compose logs --tail 100 api frontend postgres
+docker compose restart api frontend
+docker compose down
+```
+
+`down` preserva os dados; `down -v` remove volumes e não faz parte do procedimento. Não execute reset ou limpeza de volumes. O [README](../README.md#testes-locais-e-github-actions) contém os comandos da regressão no PostgreSQL dedicado, sem escrever no banco da equipe.
+
+## GitHub Actions da entrega
+
+O workflow `backend.yml` executa em pushes e PRs para `main` e `homologacao`, além do acionamento manual sem parâmetros de carga. Usa Linux, Node.js 24, PostgreSQL 18 temporário, `npm ci`, migrations, `npm run verificar` e comparação do OpenAPI e dos tipos versionados. Mantém permissões de leitura e os testes financeiros e unitários operacionais existentes.
+
+Nenhum evento executa carga, recuperação, backup/restauração, publicação de artefatos dos ensaios ou deploy. Os testes de navegador são executados localmente. Uma checagem local do workflow não comprova execução no GitHub; evidências remotas anteriores continuam vinculadas aos respectivos commits.
+
+## Alternativas operacionais preservadas (opcionais)
+
+As seções seguintes documentam recursos de etapas anteriores, fora das exigências da terceira apresentação. Seus comandos são manuais e não são chamados pelo Actions atual. Dockerfile, configurações alternativas, scripts e evidências foram preservados. O [ambiente de homologação](HOMOLOGACAO_BACKEND.md) é outra opção, sem necessidade de preparar ou alterar seus volumes nesta entrega.
+
+### API compilada: preparar e iniciar (opcional)
 
 Requisitos: Docker com Compose e acesso ao registro de imagens. Para os comandos TypeScript de verificação e backup, instale Node.js 24 e execute `npm ci` na raiz. A API compilada não depende do Node, código ou `node_modules` do host.
 
@@ -20,11 +49,11 @@ Invoke-RestMethod http://localhost:3001/api/health
 Invoke-RestMethod http://localhost:3001/api/ready
 ```
 
-O build usa `npm ci`, gera o cliente Prisma e compila TypeScript. O serviço `migracoes` executa somente `prisma migrate deploy`, depois do PostgreSQL saudável e antes da API. A API executa `node dist/server.js` como UID 1000, sem instalar ou compilar no startup. A imagem usa etapas separadas para ferramentas e runtime. As sete migrations anteriores permanecem intactas; a oitava cria os comprovantes transacionais. Não há reset.
+O build usa `npm ci`, gera o cliente Prisma e compila TypeScript. O serviço `migracoes` executa somente `prisma migrate deploy`, depois do PostgreSQL saudável e antes da API. A API executa `node dist/server.js` como UID 1000, sem instalar ou compilar no startup. A imagem usa etapas separadas para ferramentas e runtime. As migrations versionadas incluem os comprovantes transacionais e a autenticação Google; migrations já aplicadas permanecem intactas. Não há reset.
 
 `APP_TIME_ZONE` define datas civis e o mês dos indicadores; seu padrão é **horário de Brasília**, `America/Sao_Paulo`. No Compose compilado, configure `BACKEND_TIME_ZONE`; no desenvolvimento, `APP_TIME_ZONE`. Datas civis enviadas como `YYYY-MM-DD` continuam sendo datas, sem conversão pelo navegador. A escolha de referência nacional não presume que todo o Brasil tenha o mesmo fuso.
 
-## Persistência e diagnóstico
+### API compilada: persistência e diagnóstico
 
 O volume `rephouse-validacao_banco` persiste registros e comprovantes. A API não depende de volume de arquivos; volumes legados permanecem preservados. Alterar `-p` cria outro projeto e outros volumes. Não use os nomes do projeto de desenvolvimento para ensaios de recuperação. Alterar a senha no arquivo não altera a senha de um cluster PostgreSQL já inicializado.
 
@@ -41,7 +70,7 @@ docker compose --env-file .env.backend -f docker-compose.backend.yml -p rephouse
 
 Os logs HTTP vão para stdout em JSON, com `timestamp`, `event`, `requestId`, `method`, `path`, `status` e `durationMs`. A resposta devolve o mesmo UUID em `X-Request-Id`, também exposto por CORS. O caminho é o padrão registrado (`/api/despesas/{id}`); caminhos desconhecidos viram `unmatched`. Query strings, identificadores enviados pelo cliente, bodies, headers, credenciais e conteúdo dos comprovantes não são registrados. Conexões interrompidas antes do término são registradas como 499.
 
-## Backup manual
+### Backup manual (opcional, fora da apresentação)
 
 Execute na raiz, com banco e API da configuração escolhida já iniciados:
 
@@ -68,7 +97,7 @@ A pasta fica fora do Git e do contexto Docker. Ela contém dados pessoais e hash
 
 O formato customizado é restaurado por `pg_restore`, conforme a [documentação oficial do PostgreSQL 18](https://www.postgresql.org/docs/18/backup-dump.html). Não se trata de snapshot físico, réplica ou recuperação contínua de WAL. As únicas roles necessárias neste ambiente local são o usuário definido no Compose; roles externas adicionais não são exportadas por `pg_dump`.
 
-## Restaurar exclusivamente em ambiente novo
+### Restauração e ensaio de recuperação (opcionais)
 
 Prepare um segundo arquivo de ambiente, mantendo nome do banco, usuário e fuso do manifesto, com nova senha, URL interna correspondente e porta livre, por exemplo `3302`. Use a mesma versão de imagem da captura ou uma versão cuja migração tenha sido revisada. Construa as imagens antes da restauração se ainda não estiverem disponíveis.
 
@@ -89,14 +118,14 @@ npm run test:devops
 
 O comando constrói ambas as imagens, cria quatro projetos aleatórios, usa senhas novas e as portas locais 3301/3302/3303, gera fixtures com os três perfis e histórico e envia um comprovante pela API. Compara o estado antes/depois do restart e da restauração, verifica download por SHA-256, indisponibilidade do banco e logs. Recusa sobrepagamento pela API e diretamente no banco restaurado. Por fim, remove **somente os projetos e volumes criados pelo ensaio**. Mantém backup e evidência em `.devops-local/<id>/resultado.json`. Portas alternativas podem ser informadas em `DEVOPS_PORT` e `DEVOPS_RESTORE_PORT`; a restauração legada usa a porta seguinte à DEVOPS_RESTORE_PORT. Não execute ensaios concorrentes nas mesmas portas.
 
-## CI e evidências
+## Evidências anteriores
 
-`.github/workflows/backend.yml` executa em push para `main` e `homologacao`, PR com destino a essas branches e acionamento manual. Usa Linux, Node 24 e PostgreSQL 18 temporário com credenciais exclusivas de teste. Executa `npm ci`, migrations no banco `rabbu_mvp_test`, `npm run verificar`, comparação do OpenAPI e dos tipos versionados e o ensaio completo `npm run test:devops`. Qualquer falha encerra o job. Permissão do token: apenas leitura do repositório. Não há publicação de imagem nem deploy.
+O workflow de etapas anteriores incluía `npm run test:devops`; isso descreve somente a configuração histórica. A configuração atual é a da seção GitHub Actions acima, sem esse ensaio nem carga em qualquer evento.
 
 Referências técnicas: [build em múltiplas etapas do Docker](https://docs.docker.com/build/building/multi-stage/), [serviço PostgreSQL no Actions](https://docs.github.com/en/actions/tutorials/use-containerized-services/create-postgresql-service-containers), [checkout](https://github.com/actions/checkout) e [setup-node](https://github.com/actions/setup-node).
 
 `npm run verificar` exige `TEST_DATABASE_URL` para o banco dedicado e não aceita a ausência de integração como sucesso. O ensaio Docker usa seus próprios bancos e não depende do PostgreSQL do host.
 
-As [evidências e pendências](VALIDACAO_MVP.md) registram os resultados locais separadamente da execução no GitHub. Criar o workflow localmente não prova uma execução remota. O guia de homologação aponta para o resultado desta nova etapa; os registros anteriores continuam descrevendo apenas o que havia sido executado em cada entrega. A primeira validação remota usa um PR para `homologacao`, sem depender de `workflow_dispatch`, cujo arquivo precisa estar na branch padrão.
+As [evidências e pendências](VALIDACAO_MVP.md) registram os resultados locais separadamente da execução no GitHub. Os registros de homologação e ensaios anteriores são históricos e não validam uma versão posterior do workflow.
 
-A [consolidação do backend](CONSOLIDACAO_BACKEND.md) documenta as proteções adicionais, a paginação 2.0.0 e os comandos `npm run test:carga` e `npm run test:carga:completo`. A carga curta e a completa ficam condicionadas ao acionamento manual com `carga_completa=true`; não executam automaticamente em pushes ou PRs. Nenhuma carga financeira é acionada nesta entrega. Backup/restauração usam trava exclusiva por projeto e validação estrita do manifesto. `npm run comprovantes:verificar` confere referências, tamanhos e hashes no PostgreSQL, sem exclusões. O [guia de comprovantes](COMPROVANTES_POSTGRESQL.md) detalha importação, compatibilidade e recuperação.
+A [consolidação do backend](CONSOLIDACAO_BACKEND.md) preserva os resultados e os comandos manuais de carga; o parâmetro `carga_completa` foi retirado do workflow. Backup/restauração mantêm trava exclusiva e validação de manifesto. `npm run comprovantes:verificar` continua disponível para inspeção sem exclusões. O [guia de comprovantes](COMPROVANTES_POSTGRESQL.md) registra importação, compatibilidade e recuperação opcionais. Nenhum desses ensaios é necessário para a apresentação.

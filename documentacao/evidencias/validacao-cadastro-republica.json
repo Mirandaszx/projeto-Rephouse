@@ -1,0 +1,56 @@
+{
+  "dataLocal": "2026-11-10",
+  "versao": "2.1.0",
+  "mudanca": "Escolha visivel no cadastro para criar republica ou entrar por codigo",
+  "fluxo": {
+    "opcoes": ["Quero criar uma república", "Já tenho um código"],
+    "padrao": "criar",
+    "ordem": "Criar conta; informar nome ou codigo na etapa seguinte; confirmar criacao ou entrada",
+    "orientacao": "Parametro temporario acao=criar ou acao=entrar; removido apos concluir o vinculo",
+    "payloadCadastro": ["nome", "email", "senha"],
+    "convite": "Codigo de entrada identificado na visao geral e em Moradores, com o botao de copiar existente"
+  },
+  "verificacao": {
+    "comando": "npm --prefix interface run verificar",
+    "saida": 0,
+    "compilacaoTipagemLint": "Aprovados; zero erros e cinco avisos preexistentes de Fast Refresh",
+    "testesAprovados": 18,
+    "falhas": 0,
+    "ignorados": 0,
+    "log": ".devops-local/cadastro-republica/frontend.log",
+    "ambiente": "API HTTP real, PostgreSQL 18 dedicado rabbu_mvp_test, schemas descartaveis e Edge headless"
+  },
+  "cenariosAdicionados": [
+    "Cadastro inicialmente sem vinculo e criacao confirmada da casa",
+    "Codigo gerado e vinculo preservados apos recarregar",
+    "Cadastro com convite e entrada na republica correta como NORMAL",
+    "Codigo invalido corrigido na mesma conta, sem repetir cadastro",
+    "Troca da opcao na etapa seguinte",
+    "Preferencia nao enviada a API e cadastro sem solicitacoes duplicadas",
+    "Selecao por teclado e bloqueio das opcoes durante envio",
+    "Responsividade da escolha da casa e rotulos sem cortes"
+  ],
+  "regressaoPreservada": ["tarefas reais", "pagamento com comprovante", "MASTER", "login e cadastro", "rotas e redirecionamentos"],
+  "visual": {
+    "larguras": [320, 390, 768, 1366, 1440],
+    "janelaBaixa": "1440x560",
+    "semRolagemHorizontal": true,
+    "loginECadastroSemRolagemVertical": ["1366x768", "1440x900"],
+    "capturas": ".devops-local/interface/imagens/cadastro-republica",
+    "inspecaoVisual": "Cadastro desktop e celular e etapa de criacao da republica conferidos nas capturas",
+    "preservado": "Painel verde, casinha, campos de 54 px, tecnologias e identidade existentes"
+  },
+  "servidoNaPorta5173": {
+    "url": "http://localhost:5173/cadastro",
+    "opcoesVisiveis": 2,
+    "errosJavaScript": 0,
+    "viewport": "1366x768",
+    "rolagemHorizontal": false,
+    "rolagemVertical": false,
+    "operacao": "Somente frontend reiniciado; aguardado o npm ci e o inicio do Vite",
+    "cadastroRealNoBancoDaEquipe": "Nao executado; somente pagina publica conferida",
+    "captura": ".devops-local/cadastro-republica/cadastro-servido-5173.png"
+  },
+  "contratoBancoBackend": "Sem alteracoes em APIs, tipos publicos, migrations, dependencias ou versao; autorizacao permanece no backend",
+  "naoExecutado": ["commit", "push", "CI remota", "deploy", "carga", "restauracao", "seed ou limpeza no banco da equipe"]
+}

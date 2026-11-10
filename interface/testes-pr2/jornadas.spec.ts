@@ -1,6 +1,7 @@
 import { test, expect, type Page, type APIRequestContext } from '@playwright/test'
 import type { components } from '../../integracao/api.js'
 import { mkdir } from 'node:fs/promises'
+import { contrast } from './auxiliares/contraste'
 
 type Schemas = components['schemas']
 const password = 'Senha-interface-teste-2026'
@@ -80,13 +81,19 @@ test('pagamento com arquivo pelo frontend persiste e pode ser baixado', async ({
 })
 
 test('MASTER consulta diretórios reais e morador não acessa administração', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' })
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message))
   await login(page, 'master')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
   await expect(page.getByText('Repúblicas cadastradas', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Repúblicas', exact: true }).first().click()
   await expect(page.getByText('Aurora integração PR2', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Usuários', exact: true }).first().click()
   await expect(page.getByText('ana@integracao.rephouse.test', { exact: true })).toBeVisible()
+  expect(await contrast(page.getByRole('button', { name: 'Sair', exact: true }))).toBeGreaterThanOrEqual(4.5)
+  expect(await contrast(page.locator('.rh-admin-pagination'))).toBeGreaterThanOrEqual(4.5)
+  await mkdir('../.devops-local/interface/imagens/aparencia', { recursive: true })
+  await page.screenshot({ path: '../.devops-local/interface/imagens/aparencia/master-escuro.png', fullPage: true })
   expect(republicId).toBeTruthy()
   await page.getByRole('button', { name: 'Sair', exact: true }).click()
   await expect(page).toHaveURL(original ? /\/novo\/login$/ : /\/login$/)

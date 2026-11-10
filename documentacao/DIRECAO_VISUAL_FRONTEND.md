@@ -22,6 +22,36 @@ As capturas desta etapa ficam separadas em `.devops-local/interface/imagens/logi
 
 Validação local: compilação, tipagem e lint aprovados, com os cinco avisos de Fast Refresh já presentes no PR. A suíte ativa passou com **10 testes**, sem falhas ou testes ignorados, incluindo a criação de tarefa com o campo flutuante interno. Login e cadastro foram abertos também no serviço real da porta 5173, sem erros JavaScript e sem rolagem em 1440×900. Os detalhes estão em [validacao-login-casinha-pr2.json](evidencias/validacao-login-casinha-pr2.json).
 
+## Cadastro com escolha da república — 10/11/2026
+
+O formulário de cadastro agora oferece duas opções com seleção por teclado: “Quero criar uma república” e “Já tenho um código”. O texto explica que o nome ou código será informado depois de criar a conta. A escolha não altera o contrato de cadastro e não cria vínculos automaticamente; orienta a opção inicial da próxima tela, onde a pessoa confirma a operação e pode mudar de escolha.
+
+O painel verde, a casinha, os campos de 54 px e o login foram preservados. O cadastro usa espaçamentos próprios para acomodar as opções em 1366×768; celulares e janelas baixas mantêm rolagem normal. A tela de escolha da casa ocupa a largura central no computador, sem reservar espaço para uma barra lateral ausente. Na visão geral e em Moradores, o convite recebeu o rótulo “Código de entrada”. Capturas desta etapa ficam em `.devops-local/interface/imagens/cadastro-republica/`, separadas das anteriores.
+
+Validação: **18 testes ativos aprovados**, sem falhas ou ignorados; build, tipagem e lint aprovados, com os cinco avisos preexistentes. Cadastro e escolha da casa conferidos em 320, 390, 768, 1366 e 1440 px. Login e cadastro cabem sem rolagem vertical em 1366×768 e 1440×900. O cadastro servido na porta 5173 foi conferido após reiniciar somente o frontend: opções visíveis, sem erros JavaScript ou rolagem em 1366×768, sem enviar formulário ao banco da equipe. Evidência em [validacao-cadastro-republica.json](evidencias/validacao-cadastro-republica.json).
+
+## Reorganização do painel — 10/11/2026
+
+O painel interno ganhou uma hierarquia comum: saudação e identificação da república, quatro indicadores agrupados e dois painéis com despesas recentes e tarefas pendentes. Títulos, bordas, espaçamentos e ações usam a mesma identidade verde e superfícies claras. O conteúdo financeiro não se repete em uma segunda linha de totais. O resumo limita os registros visíveis e oferece links para as páginas completas.
+
+A faixa superior dedicada apenas à saída foi removida. No computador, “Sair” fica junto ao perfil na lateral; no celular, o perfil e a saída ficam acima do conteúdo, mantendo a navegação inferior. O código de entrada fica em uma área própria de convite na página Moradores. Login, cadastro e casinha permanecem como estavam.
+
+Capturas desta etapa ficam em `.devops-local/interface/imagens/painel-organizado/`, separadas das etapas anteriores. A mudança usa apenas endpoints existentes, com controle de permissões preservado no backend.
+
+Validação local: **21 testes aprovados**, sem falhas ou ignorados; compilação, tipagem e lint aprovados, com cinco avisos preexistentes de Fast Refresh. Visão geral, despesas, tarefas e moradores conferidos em 320, 390, 768, 1366 e 1440 px, sem rolagem horizontal. As capturas finais da visão geral em computador e celular foram inspecionadas. A navegação inferior usa links de página com ícones Lucide e identificação da página atual, mantendo os rótulos visíveis. Não houve alteração em API, tipos públicos, banco, dependências ou versão 2.1.0. Veja [validacao-painel-organizado.json](evidencias/validacao-painel-organizado.json).
+
+## Aparência do sistema e escolha manual — 10/11/2026
+
+O tema passou a ter uma única preferência para home, login, cadastro, painel e MASTER. Por padrão, **Sistema** acompanha o modo do computador. O controle de aparência permite fixar **Claro** ou **Escuro**, preserva a escolha ao recarregar e a comunica às outras abas. Ele usa um seletor nativo com nome acessível e foco visível; a versão compacta mantém área de 44 × 44 px.
+
+No tema escuro, fundos usam `#101b18` e `#192922`, texto principal `#e9f3ed`, texto secundário `#b3c8bc` e destaques `#b4d991`. A casinha e o painel de boas-vindas mantêm sua ilustração e identidade. O tema claro conserva a composição anterior, com bordas dos campos mais perceptíveis. Os rótulos flutuantes usam o mesmo fundo do campo, corrigindo os blocos pretos que apareciam em modais claros quando o computador estava no modo escuro. Calendário, seleção de moradores, avisos e controles nativos seguem a preferência efetiva.
+
+O carregamento inicial aplica o tema antes de montar a interface. O modo de alto contraste do sistema conserva suas cores forçadas e o foco; a escolha funciona em memória quando o armazenamento está bloqueado. Isso não substitui uma auditoria completa de acessibilidade ou testes com tecnologias assistivas.
+
+Capturas e resultados desta etapa ficam em `.devops-local/interface/imagens/aparencia/` e [validacao-aparencia.json](evidencias/validacao-aparencia.json). As evidências anteriores permanecem históricas. Não há alteração em APIs, banco, autenticação, dependências ou versão 2.1.0.
+
+Verificação local aprovada com **25 testes**, zero falhas e ignorados, compilação e tipagem aprovadas e os cinco avisos de Fast Refresh já existentes. Os controles selecionados passaram nas medições de 4,5:1 para texto e 3:1 para bordas. Foram conferidos modais claros e escuros, preferência do sistema, escolha manual persistente, sincronização de abas, armazenamento bloqueado e foco em cores forçadas. A porta 5173 também foi conferida em navegador sem enviar formulários ao banco da equipe.
+
 ## Histórico das escolhas anteriores
 
 Escolha do usuário em 05/11/2026: **clara e acolhedora, com tons verdes e clima de casa**.

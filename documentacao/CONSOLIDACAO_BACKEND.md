@@ -1,5 +1,7 @@
 # Consolidação do backend — histórico 2.0.0
 
+> Histórico preservado. Na terceira apresentação, carga, metas de desempenho, relatórios de recursos e recuperação não são exigidos. Os scripts permanecem opcionais e fora do GitHub Actions, inclusive no acionamento manual. Veja o [guia operacional atual](OPERACAO_BACKEND.md). As descrições de workflow, publicação e resultados abaixo se referem à época da validação.
+
 A operação atual dos comprovantes e os novos resultados estão em [COMPROVANTES_POSTGRESQL.md](COMPROVANTES_POSTGRESQL.md). As medições e decisões abaixo registram a etapa anterior.
 
 A entrega anterior está preservada no commit `7781cfb`. Esta etapa fortalece o backend e prepara paginação e avaliação de crescimento. Por decisão do usuário, os commits ficam **somente locais**; push, PR e execução remota do GitHub Actions permanecem pendentes.

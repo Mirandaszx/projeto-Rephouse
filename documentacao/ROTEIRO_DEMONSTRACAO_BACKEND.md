@@ -1,10 +1,39 @@
 # Demonstração do backend
 
-Na versão 2.0.1 os comprovantes ficam no PostgreSQL; upload, download e permissões permanecem iguais. Tipos e exemplos estão em `integracao/`.
+## Roteiro principal da terceira apresentação — 2.1.0
+
+Inicie frontend, API e PostgreSQL pelo Compose principal, conforme o [guia operacional](OPERACAO_BACKEND.md#caminho-principal-docker-local). Use `http://localhost:5173` no navegador e `http://localhost:3000` como URL base no Insomnia, sem acrescentar `/api` à variável. Não é necessário preparar homologação separada, executar carga ou demonstrar backup, restauração e recuperação.
+
+Cadastre contas fictícias pela interface ou por `POST /api/auth/register`, com nome, e-mail exclusivo e senha de 12 a 128 caracteres. Não execute seed, limpeza ou reset no banco compartilhado. Repita com novos e-mails se as contas já existirem; não modifique contas de colegas para reproduzir a apresentação.
+
+| Etapa | Demonstração | Resultado esperado |
+| --- | --- | --- |
+| Acesso | Cadastro, login e `GET /api/me` | Cadastro 201, login e consulta 200; JWT necessário para operações protegidas |
+| República | Criar uma república e consultar o perfil | Criador passa a ADMIN; república e vínculo persistidos |
+| Moradores | Outra conta entra pelo código; consultar moradores | Entrada 201; somente moradores autorizados da república aparecem |
+| Tarefa | ADMIN cria e atribui tarefa; responsável consulta e conclui | Criação 201; conclusão 200 e estado CONCLUIDA no banco |
+| Permissões | Morador tenta criar tarefa ou concluir a de outro responsável | 403; a operação recusada não altera o estado |
+| Isolamento | Conta de outra república tenta acessar uma tarefa da primeira | 404; dados da outra república não são expostos |
+| Sessão | Logout e consulta com o token revogado | Logout 204 sem corpo; consulta posterior 401 |
+| Banco e testes | Mostrar uma consulta SQL e um teste automatizado | Relações e estado coerentes com as operações; teste explica a regra protegida |
+
+Para consultas MASTER, cadastre uma conta fictícia própria e provisione apenas essa conta pelo comando administrativo, nunca pelo cadastro público:
+
+```powershell
+docker compose exec api npm run master:provision -- --email master.apresentacao@example.test
+```
+
+Faça novo login: MASTER recebe 200 em `GET /api/master/usuarios`, enquanto NORMAL e ADMIN recebem 403. Dados anteriores à apresentação não devem ser alterados. O [roteiro detalhado de integração](JORNADAS_INTEGRACAO.md) e sua coleção Insomnia continuam disponíveis como referência opcional; no ambiente persistente, crie as contas pela API e ajuste `base_url` para a porta 3000. A sessão temporária descrita naquele guia é uma alternativa, não uma preparação obrigatória.
+
+As listagens em `/api` retornam `{dados,paginacao}`; o frontend usa o adaptador `/api/front/v1`. `usuarioId` identifica a conta e `membroId` o vínculo usado na atribuição da tarefa. Consulte `/api/me` após mudanças de vínculo ou administração. Nas falhas, anote método, rota, resposta esperada/recebida e `X-Request-Id`, sem token ou senha.
+
+## Roteiro financeiro anterior (opcional)
+
+O conteúdo abaixo preserva a demonstração financeira das versões 2.0.0/2.0.1, ainda compatível com a API 2.1.0. Não é preparação obrigatória para a terceira apresentação e só deve usar dados fictícios próprios em banco exclusivamente demonstrativo. Comprovantes ficam no PostgreSQL; tipos e exemplos estão em `integracao/`.
 
 Na versão 2.0.0, as respostas das listagens são paginadas: leia os registros em `dados` e os totais em `paginacao`. Use `?pagina=1&limite=20`; obtenha IDs de moradores em `dados`, mantendo as demais etapas abaixo.
 
-Execute em ambiente local de demonstração separado dos dados da equipe. Não é necessário frontend. Importe `documentacao/openapi.json` no Insomnia e configure `baseUrl` para `http://localhost:3000` no desenvolvimento ou `http://localhost:3001` no Compose compilado. Use o [guia operacional](OPERACAO_BACKEND.md) para iniciar a imagem compilada e ensaiar recuperação.
+Para este roteiro financeiro opcional, use um banco exclusivamente demonstrativo, separado dos dados da equipe. Importe `documentacao/openapi.json` no Insomnia e configure `baseUrl` para `http://localhost:3000` no Compose principal. Não há demonstração de recuperação neste roteiro.
 
 ## Preparar dados e variáveis
 
@@ -13,14 +42,6 @@ No desenvolvimento, com `DATABASE_URL` do ambiente escolhido e `DEMO_PASSWORD` d
 ```powershell
 npm run db:deploy
 npm run db:seed
-```
-
-No Compose compilado, a aplicação é `production` e não admite seed automaticamente. Se o projeto for exclusivamente demonstrativo, execute a seed como um processo de teste explícito, com uma senha fictícia fornecida no ambiente do terminal:
-
-```powershell
-$env:DEMO_PASSWORD='escolha_uma_senha_ficticia_longa'
-docker compose --env-file .env.backend -f docker-compose.backend.yml -p rephouse-validacao exec -T -e NODE_ENV=test -e DEMO_PASSWORD api node dist/comandos/semear-demonstracao.js
-Remove-Item Env:DEMO_PASSWORD
 ```
 
 A seed não limpa nem sobrescreve registros e não redefine senhas. A primeira execução produz os valores abaixo; se alguém já alterou as fixtures, use outro projeto/banco de demonstração. Não apague dados para forçar a repetição.
@@ -120,7 +141,7 @@ Para demonstrar entrada e troca, cadastre uma conta fictícia nova, entre por `D
 Abra o psql **do projeto selecionado**, sem escrever sua senha no comando:
 
 ```powershell
-docker compose --env-file .env.backend -f docker-compose.backend.yml -p rephouse-validacao exec postgres sh -c 'exec psql -X -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+docker compose exec postgres sh -c 'exec psql -X -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 ```
 
 ```sql
@@ -145,4 +166,4 @@ Espere soma de rateios igual ao total, soma de pagamentos igual ao pago por rate
 
 ## Repetição automatizada
 
-`npm run verificar` reproduz a jornada em fixtures exclusivas, incluindo expiração de token, centavos e concorrência; não precisa esperar uma hora pela expiração na apresentação. `npm run test:devops` ensaia restart, queda/retorno do banco e recuperação de banco e comprovantes em outro cluster, comparando o estado e o hash do download. Resultados remotos no GitHub são registrados separadamente dos locais na [matriz de validação](VALIDACAO_MVP.md).
+Siga os comandos de [testes locais](../README.md#testes-locais-e-github-actions) no banco dedicado. `npm run verificar` cobre expiração de token, centavos, concorrência e as regras financeiras existentes, sem chamar carga ou recuperação. A suíte ativa do frontend é executada separadamente com `npm --prefix interface run verificar`. Resultados locais e remotos são registrados separadamente; o histórico das etapas anteriores está na [matriz de validação](VALIDACAO_MVP.md).

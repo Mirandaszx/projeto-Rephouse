@@ -1,5 +1,7 @@
 # Comprovantes no PostgreSQL — versão 2.0.1
 
+> Referência da implementação e da transição da versão 2.0.1. Backup, restauração e ensaios de carga/recuperação descritos neste guia são recursos opcionais, fora da terceira apresentação e do Actions atual. Novas instalações usam as migrations normalmente; o procedimento de transição só se aplica a ambientes legados. Resultados anteriores permanecem históricos. Consulte o [guia operacional atual](OPERACAO_BACKEND.md) para execução e CI.
+
 Pagamento e comprovante agora são gravados na mesma transação serializável. Os arquivos ficam em `comprovantes.conteudo` (`bytea`), com pagamento único, MIME, tamanho, SHA-256 e data. O banco recusa tamanho inválido, hash divergente, MIME fora da lista e alterações/exclusões. O backend identifica o tipo pelo conteúdo. Não são gravados nome original nem caminho de arquivo nos novos pagamentos.
 
 As rotas continuam iguais. JSON aceita pagamento sem arquivo; multipart aceita um PDF, PNG, JPEG ou WEBP de até 5 MiB. O campo público `comprovanteUrl` continua sendo `/api/pagamentos/{id}/comprovante` ou `null`. Listagens e detalhes consultam somente a existência do comprovante. Apenas o download autorizado busca seus bytes, com nome genérico, tamanho, MIME, `nosniff`, `no-store` e `X-Request-Id`.

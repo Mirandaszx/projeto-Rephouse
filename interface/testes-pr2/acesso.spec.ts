@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { mkdir } from 'node:fs/promises'
 
 const password = 'Senha-interface-teste-2026'
-const captures = '../.devops-local/interface/imagens/login-casinha-pr2'
+const captures = '../.devops-local/interface/imagens/cadastro-republica'
 
 test('cadastro pelo novo formulário cria a conta e mantém a sessão real', async ({ page, request }) => {
   const email = `casinha-${randomUUID()}@integracao.rephouse.test`
@@ -16,7 +16,8 @@ test('cadastro pelo novo formulário cria a conta e mantém a sessão real', asy
   const response = page.waitForResponse(res => res.url().endsWith('/api/auth/register') && res.request().method() === 'POST')
   await page.getByRole('button', { name: 'Criar minha conta', exact: true }).click()
   expect((await response).status()).toBe(201)
-  await expect(page).toHaveURL(/\/republica\/?$/)
+  await expect(page).toHaveURL(/\/republica\?acao=criar$/)
+  await expect(page.getByLabel('Nome da república', { exact: true })).toBeVisible()
   const token = await page.evaluate(() => sessionStorage.getItem('rephouse-token'))
   expect(token).toBeTruthy()
   const account = await request.get('http://127.0.0.1:3405/api/me', { headers: { Authorization: `Bearer ${token}` } })
@@ -91,6 +92,18 @@ test('layout, casa, teclado e senha em tamanhos de celular e computador', async 
       await expect(page.getByLabel('Senha', { exact: true })).toHaveAttribute('type', 'text')
       await page.getByRole('button', { name: 'Ocultar senha', exact: true }).click()
       await expect(page.getByLabel('Senha', { exact: true })).toHaveAttribute('type', 'password')
+      if (register) {
+        const create = page.getByRole('radio', { name: 'Quero criar uma república', exact: true })
+        const join = page.getByRole('radio', { name: 'Já tenho um código', exact: true })
+        await expect(create).toBeChecked()
+        await create.focus()
+        await create.press('ArrowRight')
+        await expect(join).toBeChecked()
+        await expect(join).toBeFocused()
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+        await join.press('ArrowLeft')
+        await expect(create).toBeChecked()
+      }
       await page.screenshot({ path: `${captures}/${register ? 'cadastro' : 'login'}-${width}x${height}.png`, fullPage: true })
     }
   }

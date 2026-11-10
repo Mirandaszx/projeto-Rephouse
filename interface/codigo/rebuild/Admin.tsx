@@ -5,6 +5,7 @@ import { ArrowUpRight, Building2, Check, ChevronLeft, ChevronRight, ChevronsLeft
 import { getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table'
 import type { ColumnDef } from '@tanstack/react-table'
 import { brl, request } from '../api'
+import AppearanceControl from '../aparencia/AppearanceControl'
 import { GlisseButton } from './GlisseButton'
 import FilterCombobox from './FilterCombobox'
 import AnimatedTitle from './AnimatedTitle'
@@ -135,7 +136,7 @@ export default function Admin({ token, onLogout }: { token: string; onLogout: ()
   const activeHouses = data?.houses.filter(house => house.ativa).length ?? 0
   const summary = data?.summary
 
-  return <div className="rh-admin" data-theme="light" data-sidebar-collapsed={sidebarCollapsed}>
+  return <div className="rh-admin" data-sidebar-collapsed={sidebarCollapsed}>
     <aside className="rh-admin-rail">
       <a href="/" className="rh-admin-brand" aria-label="RepHouse, página inicial"><img src="/rephouse.svg" width="36" height="36" alt="" /><span>RepHouse</span></a>
       <nav aria-label="Administração master">
@@ -147,7 +148,7 @@ export default function Admin({ token, onLogout }: { token: string; onLogout: ()
       <header className="rh-admin-bar">
         {/* SiteHeader composition from Dashboard 01: trigger, separator, title, trailing actions. */}
         <div className="rh-admin-header-path"><GlisseButton variant="secondary" className="rh-admin-sidebar-trigger" aria-label={sidebarCollapsed ? 'Expandir navegação' : 'Recolher navegação'} aria-expanded={!sidebarCollapsed} onClick={() => setSidebarCollapsed(value => !value)}><PanelLeft size={17} /></GlisseButton><span className="rh-admin-header-separator" aria-hidden="true" /><span>Administração</span><ChevronRight size={13} aria-hidden="true" /><strong>{title}</strong></div>
-        <GlisseButton variant="secondary" onClick={onLogout} icon={<LogOut size={16} aria-hidden="true" />}>Sair</GlisseButton>
+        <div className="rh-admin-actions"><AppearanceControl compact /><GlisseButton variant="secondary" onClick={onLogout} icon={<LogOut size={16} aria-hidden="true" />}>Sair</GlisseButton></div>
       </header>
       <main className="rh-admin-main">
         <AnimatedTitle key={tab} className="rh-admin-title">{tab === 'resumo' ? 'Visão da plataforma' : title ?? 'Administração'}</AnimatedTitle>
