@@ -1,0 +1,25 @@
+{
+  "data": "2026-11-05",
+  "versao": "2.1.0",
+  "objetivo": "Preservar o painel esquerdo da foto enviada pelo usuário, corrigindo a recriação anterior.",
+  "painel": {
+    "verde": "#1d5140",
+    "raioPx": 17,
+    "marcaPx": 27,
+    "titulo": ["Dividir a casa.", "Compartilhar", "uma boa", "rotina."],
+    "casa": "mesmo SVG, tamanho e espaçamento anteriores",
+    "rodape": "ícone circular e texto originais"
+  },
+  "verificacao": {
+    "comando": "npm --prefix interface run verificar",
+    "compilacao": "aprovada",
+    "tipagem": "aprovada",
+    "eslint": "aprovado",
+    "playwright": {"aprovados": 20, "falhas": 0, "ignorados": 0, "flaky": 0},
+    "capturas": ".devops-local/interface/imagens/painel-original-restaurado/",
+    "log": ".devops-local/interface/verificacao-painel-original-restaurado.log",
+    "inspecaoVisual": "captura de login em 1440px conferida contra a composição da foto; a referência é uma fotografia em perspectiva, não uma captura com dimensões equivalentes"
+  },
+  "preservado": ["formulário atualizado", "Google", "telas internas", "backend", "contrato e tipos", "banco", "documentação técnica em PDF", "capturas e evidências anteriores"],
+  "commitPushPublicacao": false
+}

@@ -1,0 +1,36 @@
+{
+  "data": "2026-11-05",
+  "versao": "2.1.0",
+  "ambito": "local; revisão visual de login e cadastro",
+  "composicao": {
+    "margemExternaPx": 14,
+    "proporcaoPainelNaAreaUtil": 0.46,
+    "raioPainelPx": 20,
+    "marca": "somente painel no computador; acima do formulário abaixo de 900px",
+    "formularioMaximoPx": 440,
+    "alturaMinimaCamposPx": 54,
+    "tituloPainel": "Dividir a casa. Compartilhar uma boa rotina."
+  },
+  "verificacao": {
+    "comando": "npm --prefix interface run verificar",
+    "compilacao": "aprovada",
+    "tipagem": "aprovada",
+    "eslint": "aprovado",
+    "playwright": {"aprovados": 20, "falhas": 0, "ignorados": 0, "flaky": 0},
+    "largurasPx": [320, 390, 768, 1440],
+    "telasBaixas": ["390x500", "1440x500"],
+    "coberturaVisual": ["uma marca visível por tela", "proporção do painel", "campos com 54px ou mais", "foco e navegação Tab/Space", "mostrar e ocultar senha pelo teclado", "mensagens extensas", "casa e rodapé dentro do painel", "rolagem vertical sem corte de controles", "sem rolagem horizontal"],
+    "navegador": "Microsoft Edge headless; ambiente PostgreSQL dedicado",
+    "capturas": ".devops-local/interface/imagens/login-painel-foto/",
+    "log": ".devops-local/interface/verificacao-login-painel-foto.log"
+  },
+  "contraste": {
+    "criterio": "cores legíveis preservadas do formulário anterior; painel com texto branco e verde-claro sobre verde escuro",
+    "textoDoBotao": "9.57:1",
+    "placeholderSobreBranco": "5.17:1",
+    "bordaSobreBranco": "3.12:1"
+  },
+  "preservado": ["backend", "APIs", "tipos", "banco da equipe", "configuração Google", "versão 2.1.0", "evidências e capturas anteriores", "telas internas"],
+  "pendencias": ["Client ID e jornada real Google", "avaliação do grupo", "dispositivo físico"],
+  "naoExecutado": ["nova regressão do backend nesta revisão apenas visual", "CI remota", "commit", "push", "publicação"]
+}

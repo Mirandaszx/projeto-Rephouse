@@ -35,7 +35,7 @@ model Usuario {
   id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   nome        String      @db.VarChar(120)
   email       String      @unique @db.VarChar(254)
-  senhaHash   String      @map("senha_hash") @db.VarChar(255)
+  senhaHash   String?     @map("senha_hash") @db.VarChar(255)
   tipoUsuario TipoUsuario @default(USUARIO_NORMAL) @map("tipo_usuario")
   ativo       Boolean     @default(true)
   versaoToken Int         @default(0) @map("versao_token")
@@ -45,8 +45,32 @@ model Usuario {
   republicasAdministradas Republica[]       @relation("Administrador")
   membros                 MembroRepublica[]
   despesasCriadas         Despesa[]
+  identidadeGoogle        IdentidadeGoogle?
+  desafiosGoogle          DesafioGoogle[]
 
   @@map("usuarios")
+}
+
+model IdentidadeGoogle {
+  sub String @id @db.VarChar(255)
+  usuarioId String @unique @map("usuario_id") @db.Uuid
+  criadaEm DateTime @default(now()) @map("criada_em") @db.Timestamptz(3)
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  @@map("identidades_google")
+}
+
+model DesafioGoogle {
+  id String @id @db.Uuid
+  nonceHash String @map("nonce_hash") @db.Char(64)
+  cookieHash String @map("cookie_hash") @db.Char(64)
+  finalidade String @db.VarChar(20)
+  usuarioId String? @map("usuario_id") @db.Uuid
+  versaoToken Int? @map("versao_token")
+  expiraEm DateTime @map("expira_em") @db.Timestamptz(3)
+  consumidoEm DateTime? @map("consumido_em") @db.Timestamptz(3)
+  usuario Usuario? @relation(fields: [usuarioId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  @@index([expiraEm])
+  @@map("desafios_google")
 }
 
 model Republica {

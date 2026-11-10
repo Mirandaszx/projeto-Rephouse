@@ -1,0 +1,76 @@
+{
+  "dataLocal": "2026-11-09",
+  "ambiente": "local Windows, Node.js 24, PostgreSQL 18 e Edge headless",
+  "versaoBackend": "2.1.0",
+  "frontend": {
+    "pr": "https://github.com/Mirandaszx/projeto-Rephouse/pull/2",
+    "commit": "8e8ae9aeb84ad2404ee8afc474efa3c9b7986476",
+    "execucao": "copia isolada; codigo do PR preservado",
+    "build": "aprovado",
+    "lint": { "erros": 0, "avisosFastRefresh": 5 }
+  },
+  "contratos": {
+    "principal": "/api",
+    "compatibilidade": "/api/front/v1",
+    "caminhosPrincipais": 41,
+    "caminhosAdaptador": 38,
+    "openapiETiposSincronizados": true,
+    "limiteColecaoAdaptador": 1000,
+    "acimaDoLimite": "409 FRONT_COLLECTION_LIMIT, sem truncamento"
+  },
+  "regressaoBackend": {
+    "comando": "npm run verificar",
+    "httpEUnidade": 37,
+    "banco": 101,
+    "total": 138,
+    "falhas": 0,
+    "ignorados": 0,
+    "logLocal": ".devops-local/revisao-pr2/regressao-backend.log"
+  },
+  "regressaoInterfaceAnterior": {
+    "comando": "npm --prefix interface run verificar",
+    "buildTipagemELint": "aprovados",
+    "testesAprovados": 20,
+    "falhas": 0,
+    "ignorados": 0,
+    "logLocal": ".devops-local/revisao-pr2/regressao-interface.log"
+  },
+  "frontendPRComAPIReal": {
+    "comando": "npm --prefix interface run test:pr2",
+    "testesAprovados": 3,
+    "falhas": 0,
+    "ignorados": 0,
+    "interceptacaoDeAPI": false,
+    "banco": "rabbu_mvp_test, schemas descartaveis",
+    "jornadas": [
+      "login, listagem de 25 tarefas e conclusao persistida",
+      "pagamento multipart parcial, saldo persistido e download com bytes identicos",
+      "diretorios MASTER, logout e rejeicao de area administrativa para morador"
+    ],
+    "relatorioLocal": ".devops-local/revisao-pr2/resultado-http-real.json"
+  },
+  "coberturaHTTPAdicional": [
+    "cadastro, perfil e exclusao logica pelos dois contratos",
+    "colecao vazia, limite de 1000 e rejeicao de parametros desconhecidos",
+    "inativos, isolamento entre republicas e escopos MASTER",
+    "idempotencia compartilhada entre os dois namespaces",
+    "comprovantes protegidos por proprietario, administrador de origem e MASTER",
+    "CORS, requestId, no-store e token revogado",
+    "limitador de autenticacao compartilhado"
+  ],
+  "previaDisponibilizada": {
+    "url": "http://127.0.0.1:5182/novo/login",
+    "api": "http://127.0.0.1:3000",
+    "health": 200,
+    "readiness": 200,
+    "metodosPeloProxy": 200,
+    "observacao": "inspecoes de disponibilidade somente leitura; sem seed no banco da equipe"
+  },
+  "pendencias": [
+    "incorporar a interface e as alteracoes locais em uma branch de integracao, em etapa separada",
+    "controles visuais ausentes no PR para algumas operacoes existentes do backend",
+    "unificar tratamento de requestId, Retry-After, armazenamento da sessao e Google no frontend",
+    "definir o grafico MASTER real antes de substituir o campo ilustrativo"
+  ],
+  "naoExecutado": ["commit", "push", "merge", "CI remota", "deploy", "novo ensaio de carga", "autenticacao Google real"]
+}

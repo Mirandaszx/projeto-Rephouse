@@ -26,8 +26,10 @@ import { createMasterController } from './modulos/administracao/master.controlle
 import { openApiDocument } from './openapi.js'
 import { requestLog, type LogSink } from './compartilhado/http/request-log.js'
 import { isReady } from './modulos/saude/readiness.js'
+import type { GoogleOptions } from './modulos/autenticacao/google.service.js'
+import { createFrontendCompatibilityRouter, FRONT_PREFIX } from './modulos/integracao/frontend-compat.js'
 
-interface AppOptions { database?: PrismaClient; jwtSecret?: string; corsOrigins?: string[]; log?: LogSink; readiness?: () => Promise<unknown> }
+interface AppOptions { database?: PrismaClient; jwtSecret?: string; corsOrigins?: string[]; log?: LogSink; readiness?: () => Promise<unknown>; google?: GoogleOptions }
 
 // Monta HTTP sem abrir porta ou conexão: reutilizável nos testes.
 export function createApp(options: AppOptions = {}): Express {
@@ -54,7 +56,7 @@ export function createApp(options: AppOptions = {}): Express {
   if (options.database) {
     if (!options.jwtSecret || options.jwtSecret.length < 32) throw new Error('JWT_SECRET precisa ter ao menos 32 caracteres.')
     const db = options.database
-    const auth = createAuthController(createAuthService(db, options.jwtSecret))
+    const auth = createAuthController(createAuthService(db, options.jwtSecret, options.google), options.corsOrigins, options.google)
     const republicas = createRepublicasService(db)
     const rc = createRepublicasController(republicas)
     const financeiro = createFinanceiroService(db)
@@ -63,7 +65,7 @@ export function createApp(options: AppOptions = {}): Express {
     const dashboard = createDashboardService(db)
     const master = createMasterController(createMasterService(db))
     const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024, files: 1, fields: 4 } })
-    app.use('/api/auth', createAuthRouter(auth))
+    const authRouter = createAuthRouter(auth)
     const api = express.Router()
     api.use(auth.authenticate)
     api.get('/me', auth.me).patch('/me', auth.edit).delete('/me', auth.deleteAccount)
@@ -86,6 +88,8 @@ export function createApp(options: AppOptions = {}): Express {
     api.use('/master/republicas/:republicaId/despesas', createFinanceiroRouter(createFinanceiroController(financeiro, true)))
     api.use('/master/republicas/:republicaId/tarefas', createTarefasRouter(createTarefasController(tarefas, true)))
     api.get('/master/republicas/:republicaId/dashboard', createDashboardController(dashboard, true).get)
+    app.use(FRONT_PREFIX, createFrontendCompatibilityRouter(authRouter, api))
+    app.use('/api/auth', authRouter)
     app.use('/api', api)
   }
   app.use(notFoundHandler)

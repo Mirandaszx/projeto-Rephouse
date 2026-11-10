@@ -2,7 +2,7 @@
 
 Aplicação web para organização de repúblicas e residências compartilhadas.
 
-O backend está na versão **2.0.1**: listagens retornam `{dados,paginacao}`, com `pagina=1` e `limite=20` por padrão. Veja o [guia de integração](documentacao/INTEGRACAO_BACKEND.md) e a [consolidação do backend](documentacao/CONSOLIDACAO_BACKEND.md) para segurança, contratos e ensaios de carga. A versão validada foi publicada em `homologacao`; essa branch reúne a integração antes de promover alterações para `main` por PR.
+O backend local está na versão **2.1.0**: as listagens da API principal retornam `{dados,paginacao}`, com `pagina=1` e `limite=20` por padrão. Veja o [guia de integração](documentacao/INTEGRACAO_BACKEND.md) e a [consolidação do backend](documentacao/CONSOLIDACAO_BACKEND.md) para segurança, contratos e ensaios de carga. A versão **2.0.1** validada anteriormente foi publicada em `homologacao`; essa branch reúne a integração antes de promover alterações para `main` por PR.
 
 Para integrar conta, repúblicas, moradores, tarefas e MASTER, siga o [roteiro sem operações financeiras](documentacao/JORNADAS_INTEGRACAO.md). Ele inclui coleção Insomnia, exemplos fetch e demonstração isolada por `npm run integracao:demo`.
 
@@ -28,7 +28,9 @@ As pastas usam português sem acentos: `codigo`, `modulos`, `infraestrutura`,
 `node_modules`, `dist` e `.git` conservam os nomes das ferramentas.
 Os módulos auth, repúblicas, financeiro, tarefas, dashboard e master já possuem
 rotas e serviços. A migração inclui pagamentos parciais, cobrança após saída da
-república e exclusão lógica da própria conta. A interface React fica para a próxima etapa.
+república e exclusão lógica da própria conta. A primeira interface React já integra
+acesso, perfil, repúblicas, moradores e tarefas. Consulte o [guia do frontend](interface/README.md)
+e a [direção visual escolhida](documentacao/DIRECAO_VISUAL_FRONTEND.md).
 Veja [MIGRACAO_DJANGO.md](documentacao/MIGRACAO_DJANGO.md) para as regras e os endpoints.
 O [guia de integração do backend](documentacao/INTEGRACAO_BACKEND.md) explica
 o contrato importável, CORS, contas de demonstração e a verificação automatizada.
@@ -103,3 +105,9 @@ O Compose acima é para desenvolvimento. A execução compilada, somente com API
 A [matriz de validação](documentacao/VALIDACAO_MVP.md) relaciona requisitos, implementação e evidências. O [roteiro de demonstração](documentacao/ROTEIRO_DEMONSTRACAO_BACKEND.md) inclui requisições e estado esperado no banco. `npm run test:devops` ensaia a recuperação em Docker; o workflow do GitHub executa a verificação sem publicar imagens nem fazer deploy. A execução remota só conta como validada depois de ocorrer no GitHub.
 
 Comprovantes são armazenados no PostgreSQL, junto ao pagamento, na mesma transação. Veja [migração e operação](documentacao/COMPROVANTES_POSTGRESQL.md) e os [tipos e exemplos para integração](integracao/README.md).
+
+Na versão 2.1.0, o backend oferece suporte ao Google. Consulte o [guia de configuração e validação](documentacao/AUTENTICACAO_GOOGLE.md). A interface principal agora usa o design do PR #2 e ainda precisa incorporar o botão Google; a validação real com o provedor também depende do Client ID e das contas de teste.
+
+## Integração do novo frontend
+
+O design do [PR #2](https://github.com/Mirandaszx/projeto-Rephouse/pull/2) foi adotado na pasta `interface` e é servido em **http://localhost:5173**. O login está em `/login`, o cadastro em `/cadastro` e o painel em `/republica`. Os caminhos antigos com `/novo` redirecionam para os atuais. Ele usa o adaptador `/api/front/v1`; a API 2.1.0 em `/api` mantém a paginação. Consulte o [guia da interface](interface/README.md) e o [guia de integração](documentacao/INTEGRACAO_FRONTEND_PR2.md).

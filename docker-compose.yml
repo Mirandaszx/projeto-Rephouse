@@ -25,6 +25,7 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: development
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       APP_TIME_ZONE: ${APP_TIME_ZONE:-America/Sao_Paulo}
       PORT: 3000
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
@@ -46,6 +47,8 @@ services:
   frontend:
     image: node:24-bookworm-slim
     working_dir: /app
+    environment:
+      API_PROXY_TARGET: http://api:3000
     command: sh -c "npm ci && npm run dev -- --host 0.0.0.0"
     restart: unless-stopped
     ports:
@@ -53,6 +56,7 @@ services:
     volumes:
       - ./interface:/app
       - frontend_node_modules:/app/node_modules
+      - ./integracao:/integracao:ro
 
 volumes:
   postgres_data:

@@ -1,0 +1,89 @@
+{
+  "data": "2026-11-05",
+  "versao": "2.1.0",
+  "ambito": "local",
+  "backend": {
+    "comando": "npm run verificar",
+    "banco": "rabbu_mvp_test",
+    "resultado": "aprovado",
+    "testes": 128,
+    "testesGerais": 34,
+    "testesPostgreSQL": 94,
+    "novosTestesGoogleIncluindoGrupo": 16,
+    "falhas": 0,
+    "ignorados": 0,
+    "openapiETiposSincronizados": true,
+    "logLocal": ".devops-local/google/backend-verificacao.log",
+    "criptografiaGoogle": "JWT RS256 assinado com chaves locais controladas; validação de assinatura, emissor, audiência, expiração, email verificado, nonce e azp",
+    "cobertura": [
+      "configuração ausente e acesso por senha",
+      "criação NORMAL sem senha e retorno pelo mesmo sub",
+      "vinculação exigindo senha correta, preservação de vínculo, tarefa e perfil após transferência",
+      "assinatura inválida, token expirado, audiência e emissor incorretos, email não verificado e claims obrigatórios",
+      "origem, cookie, nonce, expiração, uso único e finalidade do desafio",
+      "cadastro e vinculação concorrentes sem contas ou identidades duplicadas",
+      "bloqueio, exclusão lógica, revogação de sessão e não reativação",
+      "exclusão por Google próprio com restrições de administração, último MASTER e dívida após saída",
+      "limitadores compartilhados, Retry-After, cookies Secure e CORS",
+      "indisponibilidade da chave remota classificada como 503",
+      "logs sem credencial, cookie, senha ou JWT",
+      "constraint diferida e rollback sem conta sem método de acesso"
+    ]
+  },
+  "interface": {
+    "comando": "npm --prefix interface run verificar",
+    "resultado": "aprovado",
+    "compilacao": true,
+    "tipagemAplicacaoETestes": true,
+    "eslint": true,
+    "testes": 20,
+    "falhas": 0,
+    "ignorados": 0,
+    "navegador": "Microsoft Edge headless no Windows",
+    "larguras": [320, 390, 768, 1440],
+    "capturasLocais": ".devops-local/interface/imagens/auth-*.png",
+    "logLocal": ".devops-local/google/interface-verificacao.log",
+    "controleGoogle": "SDK e respostas de login Google substituídos nos testes de navegador; /me e jornadas existentes usam HTTP e PostgreSQL reais",
+    "cobertura": [
+      "callback e sessão somente em memória",
+      "vinculação com senha correta ou incorreta e cancelamento sem repetição automática",
+      "erro de carregamento do SDK e nova tentativa",
+      "erro 503 sem repetição automática de autenticação",
+      "botão oculto sem configuração",
+      "botão redimensionado após mudança de largura",
+      "login e cadastro nas quatro larguras, foco, campos de pelo menos 54px e ausência de rolagem horizontal",
+      "regressão de cadastro, perfil, repúblicas, moradores, tarefas, administração, paginação, sessão e erros"
+    ]
+  },
+  "contraste": {
+    "metodo": "razão de luminância relativa sRGB, além de inspeção das capturas",
+    "textoDoBotao": 9.57,
+    "placeholderSobreBranco": 5.17,
+    "bordaSobreBranco": 3.12,
+    "tituloSobrePainelVerde": 7.61,
+    "limite": "não substitui auditoria completa de acessibilidade ou teste em dispositivo físico"
+  },
+  "ambienteDesenvolvimento": {
+    "api": "2.1.0",
+    "urlInterface": "http://localhost:5173",
+    "health": 200,
+    "readiness": 200,
+    "metodos": {"status": 200, "googleHabilitado": false},
+    "openapi": {"status": 200, "versao": "2.1.0"},
+    "bancoMigrado": "rabbu_mvp",
+    "backupPreventivo": ".devops-local/google/backup-antes-2.1.0-2026-11-05T16-05-29-164Z",
+    "backup": {"formato": 2, "hashConferido": true, "dumpLegivel": true, "restauracaoExecutadaNestaEtapa": false},
+    "contagensAntesEDepois": {"usuarios": 0, "vinculos": 0, "tarefas": 0, "pagamentos": 0, "comprovantes": 0},
+    "bancoLegadoBancoProjetoAlterado": false,
+    "volumesPreservados": true,
+    "reinicio": "somente API; montagem existente; sem reset"
+  },
+  "schemasTemporariosIntegracaoRestantes": 0,
+  "pendencias": [
+    "Responsável configurar Client ID e contas de teste no Google Cloud.",
+    "Executar e registrar jornada real com Google em http://localhost:5173; ainda não validada.",
+    "Revisão com o grupo, dispositivo físico e testes de usabilidade."
+  ],
+  "naoExecutado": ["commit", "push", "PR", "CI remota", "publicação", "novo ensaio de carga"],
+  "evidenciasAnteriores": "preservadas; não representam validação do provedor Google"
+}

@@ -1,0 +1,20 @@
+name: rephouse-interface-test
+services:
+  postgres:
+    image: postgres:18
+    command: ["postgres", "-c", "fsync=on", "-c", "synchronous_commit=on", "-c", "full_page_writes=on"]
+    environment:
+      POSTGRES_USER: rephouse_interface_test
+      POSTGRES_PASSWORD: rephouse_interface_test_local
+      POSTGRES_DB: rabbu_mvp_test
+    ports:
+      - "127.0.0.1:5544:5432"
+    volumes:
+      - banco:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rephouse_interface_test -d rabbu_mvp_test"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+volumes:
+  banco:

@@ -13,7 +13,9 @@ async function startServer(): Promise<void> {
     await database.$connect()
     const inventory=await receiptInventory(database)
     if(inventory.referenciasLegadasPendentes||inventory.invalidos)throw new Error('Conclua a importação e a conferência dos comprovantes antes de iniciar a API.')
-    const server = createApp({ database, readiness: () => probe.check(), jwtSecret: env.JWT_SECRET, corsOrigins: env.CORS_ORIGINS }).listen(env.PORT, env.HOST, () => {
+    const server = createApp({ database, readiness: () => probe.check(), jwtSecret: env.JWT_SECRET, corsOrigins: env.CORS_ORIGINS,
+      google: env.GOOGLE_CLIENT_ID ? { clientId: env.GOOGLE_CLIENT_ID, secureCookies: env.NODE_ENV === 'production' } : undefined,
+    }).listen(env.PORT, env.HOST, () => {
       stdoutLog({ event: 'started', port: env.PORT })
     })
     let encerrando = false

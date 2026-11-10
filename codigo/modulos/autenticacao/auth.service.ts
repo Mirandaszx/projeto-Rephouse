@@ -7,14 +7,16 @@ import { AppError } from '../../compartilhado/http/app-error.js'
 import { z } from 'zod'
 import { AuthRepository } from './auth.repository.js'
 import type { CadastroInput, LoginInput } from './auth.types.js'
+import { createGoogleService, type GoogleOptions, type GoogleProof } from './google.service.js'
 
 function publicUser(user: Usuario) {
   const { id, nome, email, tipoUsuario, ativo, criadoEm } = user
   return { id, nome, email, tipoUsuario, ativo, criadoEm }
 }
 
-export function createAuthService(db: PrismaClient, secret: string) {
+export function createAuthService(db: PrismaClient, secret: string, googleOptions?: GoogleOptions) {
   const repository = new AuthRepository()
+  const google = createGoogleService(db, googleOptions)
   const key = new TextEncoder().encode(secret)
   async function token(user: Usuario) {
     return new SignJWT({ ver: user.versaoToken }).setProtectedHeader({ alg: 'HS256' })
@@ -22,6 +24,12 @@ export function createAuthService(db: PrismaClient, secret: string) {
       .setExpirationTime('1h').sign(key)
   }
   return {
+    methods: google.methods,
+    challenge: google.challenge.bind(google),
+    async googleLogin(proof: GoogleProof, cookie?: string) {
+      const user = await google.login(proof, cookie)
+      return { token: await token(user), usuario: publicUser(user) }
+    },
     async register(input: CadastroInput) {
       // Hash é calculado fora do retry: a callback transacional contém apenas acesso ao banco.
       const senhaHash = await hash(input.senha, { type: argon2id })
@@ -32,7 +40,7 @@ export function createAuthService(db: PrismaClient, secret: string) {
     },
     async login(input: LoginInput) {
       const user = await repository.buscarPorEmail(db, input.email)
-      if (!user || !user.ativo || user.excluidoEm || !await verify(user.senhaHash, input.senha).catch(() => false)) {
+      if (!user || !user.ativo || user.excluidoEm || !user.senhaHash || !await verify(user.senhaHash, input.senha).catch(() => false)) {
         throw new AppError(401, 'INVALID_CREDENTIALS', 'E-mail ou senha inválidos.')
       }
       return { token: await token(user), usuario: publicUser(user) }
@@ -54,12 +62,20 @@ export function createAuthService(db: PrismaClient, secret: string) {
     logout: (actor: Actor) => withActor(db, actor, async (tx, user) => {
       await repository.invalidarTokens(tx, user.id)
     }),
-    async deleteAccount(actor: Actor, senha: string) {
+    async deleteAccount(actor: Actor, confirmation: string | GoogleProof, cookie?: string) {
       const original = await repository.buscarPorId(db, actor.id)
-      if (!original || !await verify(original.senhaHash, senha).catch(() => false)) {
+      const proof = typeof confirmation === 'string' ? undefined : await google.prepare(confirmation, cookie)
+      if (!proof && (!original?.senhaHash || typeof confirmation !== 'string' || !await verify(original.senhaHash, confirmation).catch(() => false))) {
         throw new AppError(401, 'INVALID_CREDENTIALS', 'Confirme sua senha para excluir a conta.')
       }
       return withActor(db, actor, async (tx, user) => {
+        if (proof) {
+          const identity = await tx.identidadeGoogle.findUnique({ where: { sub: proof.identity.sub } })
+          if (identity?.usuarioId !== user.id) throw new AppError(403, 'GOOGLE_REAUTH_REQUIRED', 'Confirme o Google vinculado à sua própria conta.')
+          await google.consume(tx, proof, actor)
+        } else if (user.senhaHash !== original?.senhaHash) {
+          throw new AppError(401, 'INVALID_CREDENTIALS', 'Confirme sua senha para excluir a conta.')
+        }
         if (await repository.administra(tx, user.id)) {
           throw new AppError(409, 'TRANSFER_ADMIN_REQUIRED', 'Transfira a administração antes de excluir sua conta.')
         }

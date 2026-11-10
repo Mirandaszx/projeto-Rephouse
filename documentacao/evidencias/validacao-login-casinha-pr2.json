@@ -1,0 +1,51 @@
+{
+  "dataLocal": "2026-11-09",
+  "ambiente": "local Windows, Node.js 24, PostgreSQL 18 e Edge headless",
+  "versao": "2.1.0",
+  "referencia": "WhatsApp Image 2026-11-09 at 18.55.55.jpeg",
+  "implementacao": {
+    "telas": ["login", "cadastro"],
+    "composicao": "painel verde de 46%, margem 12px, cantos 18px, formulario de ate 440px e campos de 54px",
+    "ilustracao": "SVG local com casa, telhado, duas janelas, porta, duas plantas e circulo lateral",
+    "tecnologias": ["React", "TypeScript", "Tailwind/CSS", "Glisse", "Spell UI", "Lucide", "Motion"],
+    "varianteCampoInterno": "flutuante preservada; variante externa usada somente no acesso",
+    "entrada": "180ms, opacidade e deslocamento de 6px, respeitando movimento reduzido",
+    "mudancasEmAPIsTiposPublicosOuBanco": false
+  },
+  "verificacao": {
+    "build": "aprovado",
+    "tipagem": "aprovada",
+    "lint": { "erros": 0, "avisosFastRefreshPreexistentes": 5 },
+    "testesAprovados": 10,
+    "falhas": 0,
+    "ignorados": 0,
+    "comandoBuildTipagemLintETestes": "npm --prefix interface run verificar",
+    "regressaoFinalComCenarioAdicional": "npm --prefix interface run typecheck; npm --prefix interface run test:e2e",
+    "logVerificacao": ".devops-local/revisao-pr2/login-casinha-verificacao-final.log",
+    "logRegressaoFinal": ".devops-local/revisao-pr2/login-casinha-regressao-final.log"
+  },
+  "cenarios": [
+    "cadastro e sessao com API e PostgreSQL reais",
+    "credencial incorreta, recuperacao do formulario e erro longo controlado",
+    "bloqueio de campos e de submissao duplicada durante requisicao pendente real",
+    "teclado, mostrar e ocultar senha, movimento reduzido e contraste do botao de pelo menos 4.5:1",
+    "layout em 320x740, 390x844, 768x900, 1366x768, 1440x900 e 1440x560",
+    "sem rolagem horizontal; casa contida no painel; sem rolagem vertical em 1366x768 e 1440x900",
+    "tarefas, pagamentos com comprovante, MASTER e isolamento por perfil",
+    "criacao de tarefa pelo campo flutuante interno preservado"
+  ],
+  "servicoRealNaPorta5173": {
+    "login": "http://localhost:5173/novo/login",
+    "cadastro": "http://localhost:5173/novo/cadastro",
+    "titulosConferidos": ["Bem-vindo de volta.", "Sinta-se em casa."],
+    "textoBotao": "rgb(25, 55, 50)",
+    "fundoBotao": "rgb(210, 236, 156)",
+    "rolagemHorizontalOuVerticalEm1440x900": false,
+    "errosJavaScript": 0,
+    "readinessBackendHTTP": 200,
+    "operacao": "somente frontend reiniciado para recarregar o volume do Windows"
+  },
+  "capturas": ".devops-local/interface/imagens/login-casinha-pr2/",
+  "documentacao": "documentacao/DIRECAO_VISUAL_FRONTEND.md",
+  "naoExecutado": ["backup do layout substituido", "commit", "push", "merge", "publicacao", "CI remota", "nova regressao completa do backend", "Google real"]
+}

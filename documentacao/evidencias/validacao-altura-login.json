@@ -1,0 +1,17 @@
+{
+  "data": "2026-11-05",
+  "versao": "2.1.0",
+  "objetivo": "Eliminar rolagem excedente de login e cadastro no desktop, preservando o painel aprovado.",
+  "verificacao": {
+    "comando": "npm --prefix interface run verificar",
+    "compilacao": "aprovada",
+    "tipagem": "aprovada",
+    "eslint": "aprovado",
+    "testes": {"aprovados": 20, "falhas": 0, "ignorados": 0},
+    "desktopSemRolagemEmLoginECadastro": ["1366x768", "1536x864", "1440x900", "1440x1000", "1920x1080"],
+    "controlesPreservados": ["campos com pelo menos 54px", "ilustração visível", "rodapé dentro da tela", "foco e teclado", "rolagem para mensagens longas e janelas pequenas"],
+    "log": ".devops-local/interface/verificacao-altura-login.log"
+  },
+  "alteracoes": "CSS de autenticação e cobertura visual dos testes existentes; sem alteração no backend, contrato ou banco da equipe.",
+  "commitPushPublicacao": false
+}

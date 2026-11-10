@@ -4,7 +4,7 @@ import type { FinanceiroService } from './financeiro.service.js'
 import {prepareReceipt,paymentPublic,receiptTypes} from '../../infraestrutura/armazenamento/comprovantes.js'
 import type { Actor } from '../../compartilhado/context.js'
 import { dateOnly, endpoint, idParam, money, uuid } from '../../compartilhado/http/validation.js'
-import {pagination} from '../../compartilhado/http/pagination.js'
+import { collectionEndpoint } from '../integracao/frontend-compat.js'
 
 const expenseSchema = z.object({ titulo: z.string().trim().min(1).max(160), categoria: z.string().trim().min(1).max(80),
   valorTotal: money, vencimento: dateOnly, membroIds: z.array(uuid).min(1) }).strict()
@@ -31,10 +31,10 @@ export function createFinanceiroController(service: FinanceiroService, master = 
   }
   return {
     create: endpoint((req, actor) => service.create(actor, expenseSchema.parse(req.body), scope(req)), 201),
-    list: endpoint((req, actor) => service.list(actor,pagination(req.query), scope(req))),
+    list: collectionEndpoint((req, actor, page) => service.list(actor, page, scope(req))),
     detail: endpoint((req, actor) => service.detail(actor, idParam(req), scope(req))),
     edit: endpoint((req, actor) => service.edit(actor, idParam(req), expenseSchema.partial().parse(req.body), scope(req))),
-    personal: endpoint((req, actor) => service.personal(actor,undefined,pagination(req.query))),
+    personal: collectionEndpoint((_req, actor, page) => service.personal(actor, undefined, page)),
     personalDetail: endpoint((req, actor) => service.personal(actor, idParam(req))),
     pay, receipt,
   }

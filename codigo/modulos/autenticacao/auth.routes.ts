@@ -8,6 +8,12 @@ export function createAuthRouter(controller: ReturnType<typeof createAuthControl
     message: { error: { code: 'TOO_MANY_REQUESTS', message: 'Aguarde antes de tentar novamente.' } } })
   router.post('/register', limit, controller.register)
   router.post('/login', limit, controller.login)
+  router.get('/metodos', controller.methods)
+  router.post('/google', limit, controller.googleLogin)
+  router.post('/google/desafio', rateLimit({ windowMs: 15 * 60 * 1000, limit: 60,
+    standardHeaders: 'draft-8', legacyHeaders: false,
+    message: { error: { code: 'TOO_MANY_REQUESTS', message: 'Aguarde antes de solicitar outro desafio.' } },
+  }), controller.challenge)
   router.post('/logout', controller.authenticate, controller.logout)
   return router
 }

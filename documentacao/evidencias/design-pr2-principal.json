@@ -1,0 +1,45 @@
+{
+  "dataLocal": "2026-11-09",
+  "decisao": "Adotar o design do PR #2 como interface principal, sem backup do layout anterior",
+  "referencia": {
+    "pr": "https://github.com/Mirandaszx/projeto-Rephouse/pull/2",
+    "commit": "8e8ae9aeb84ad2404ee8afc474efa3c9b7986476",
+    "arquivosCodigoIdenticosAoPRPorSHA256": 48
+  },
+  "interface": {
+    "pasta": "interface",
+    "home": "http://localhost:5173/",
+    "login": "http://localhost:5173/novo/login",
+    "versao": "2.1.0",
+    "proxy": "/api -> /api/front/v1"
+  },
+  "validacaoLocal": {
+    "comando": "npm --prefix interface run verificar",
+    "build": "aprovado",
+    "tipagemEstrita": "aprovada",
+    "lint": { "erros": 0, "avisosFastRefreshDoPR": 5 },
+    "suiteAtiva": "interface/testes-pr2",
+    "testesAprovados": 4,
+    "falhas": 0,
+    "ignorados": 0,
+    "jornadasReais": ["25 tarefas e conclusao persistida", "pagamento parcial com comprovante e download identico", "MASTER e rejeicao por perfil"],
+    "visual": { "telas": ["home", "login", "cadastro"], "larguras": [320, 390, 768, 1440], "rolagemHorizontal": false },
+    "banco": "rabbu_mvp_test, schemas descartaveis, sem seed no banco da equipe",
+    "log": ".devops-local/revisao-pr2/interface-principal.log",
+    "reconferenciaVisualAposAguardarAnimacoes": "1 teste aprovado; .devops-local/revisao-pr2/visual-interface-principal.log"
+  },
+  "servicoPrincipalConferidoNoNavegador": {
+    "homeHTTP": 200,
+    "loginHTTP": 200,
+    "metodosAutenticacaoPeloProxyHTTP": 200,
+    "errosJavaScript": 0,
+    "captura": ".devops-local/interface/imagens/pr2-principal/home-servida-5173.png"
+  },
+  "observacoes": [
+    "A API e o banco nao foram modificados nesta substituicao visual.",
+    "Somente o servico Docker frontend foi recriado; os volumes foram preservados.",
+    "Os 20 testes da interface anterior sao evidencia historica, nao a suite ativa deste layout.",
+    "Google, perfil e algumas acoes administrativas ainda precisam de controles no novo frontend.",
+    "Nao houve commit, push, merge ou publicacao."
+  ]
+}

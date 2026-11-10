@@ -61,6 +61,10 @@ const schemas: Record<string, Schema> = {
   PainelMaster: object({ ...painelFields, usuarios: { type: 'integer', minimum: 0 }, republicas: { type: 'integer', minimum: 0 } }),
   Cadastro: object({ nome: nameInput, email: { type: 'string', format: 'email', maxLength: 254 }, senha: password }),
   Login: object({ email: { type: 'string', format: 'email', maxLength: 254 }, senha: password }),
+  MetodosAutenticacao: object({ google: object({ habilitado: { type: 'boolean' }, clientId: nullable({ type: 'string' }) }) }),
+  DesafioGoogleInput: object({ finalidade: { enum: ['login', 'exclusao'], default: 'login' } }, []),
+  DesafioGoogle: object({ desafioId: uuid, nonce: { type: 'string' }, expiraEm: timestamp }),
+  LoginGoogle: object({ credential: { type: 'string', minLength: 1, maxLength: 16000, writeOnly: true }, desafioId: uuid, senha: password }, ['credential', 'desafioId']),
   CriarRepublica: object({ nome: nameInput, endereco: { type: 'string', maxLength: 255 } }, ['nome']),
   EditarRepublica: object({ nome: nameInput, endereco: nullable({ type: 'string', maxLength: 255 }) }, []),
   CodigoEntrada: object({ codigoEntrada: { type: 'string', pattern: '^[A-Za-z0-9]{6,32}$', description: 'Espaços nas pontas são removidos e letras são convertidas para maiúsculas.' } }),
@@ -95,7 +99,7 @@ function add(path: string, method: string, summary: string, options: Options = {
   }
   for (const [code, [error, message]] of Object.entries(erros)) {
     if (options.public && ['401', '403', '503'].includes(code)) continue
-    if (code === '429' && !['/api/auth/register', '/api/auth/login'].includes(path)) continue
+    if (code === '429' && !path.startsWith('/api/auth/')) continue
     responses[code] = { description: message, content: { 'application/json': { schema: ref('Error'), example: { error: { code: error, message } } } } }
   }
   const operation: Operation = {
@@ -116,15 +120,23 @@ const taskInput = { titulo: 'Limpar cozinha', responsavelId: membro.id, prazo: '
 add('/api/health', 'get', 'Verificar o processo HTTP', { public: true, tag: 'Documentação', response: object({ status: { const: 'ok' } }), output: { status: 'ok' } })
 const ready = add('/api/ready', 'get', 'Verificar conexão ao PostgreSQL', { public: true, tag: 'Documentação', description: 'Consulta SELECT 1; responde em até dois segundos, sem detalhes da conexão.', response: object({ status: { const: 'ok' } }), output: { status: 'ok' } })
 ready.responses['503'] = { description: 'PostgreSQL indisponível.', content: { 'application/json': { schema: object({ status: { const: 'unavailable' } }), example: { status: 'unavailable' } } } }
-add('/api/openapi.json', 'get', 'Obter o contrato OpenAPI', { public: true, tag: 'Documentação', response: { type: 'object', required: ['openapi', 'info', 'paths', 'components'] }, output: { openapi: '3.1.0', info: { title: 'RepHouse API', version: '2.0.1' }, paths: {}, components: {} } })
+add('/api/openapi.json', 'get', 'Obter o contrato OpenAPI', { public: true, tag: 'Documentação', response: { type: 'object', required: ['openapi', 'info', 'paths', 'components'] }, output: { openapi: '3.1.0', info: { title: 'RepHouse API', version: '2.1.0' }, paths: {}, components: {} } })
 const cadastro = add('/api/auth/register', 'post', 'Cadastrar conta independente', { public: true, tag: 'Autenticação', status: 201, body: ref('Cadastro'), input: { nome: usuario.nome, email: usuario.email, senha: 'SuaSenhaDeTeste123!' }, response: ref('Sessao'), output: { token: 'JWT_RECEBIDO_DA_API', usuario }, description: 'Sempre cria NORMAL; campos de privilégio são rejeitados. O e-mail é normalizado. E-mail já utilizado, inclusive por conta excluída, retorna 409.' })
 const login = add('/api/auth/login', 'post', 'Autenticar por e-mail e senha', { public: true, tag: 'Autenticação', body: ref('Login'), input: { email: usuario.email, senha: 'SuaSenhaDeTeste123!' }, response: ref('Sessao'), output: { token: 'JWT_RECEBIDO_DA_API', usuario }, description: 'Token de uma hora. Contas bloqueadas ou excluídas não autenticam. Ao expirar, faça login novamente; não há refresh token.' })
 login.responses['401'] = { description: 'Credenciais incorretas ou conta indisponível.', content: { 'application/json': { schema: ref('Error'), example: { error: { code: 'INVALID_CREDENTIALS', message: 'E-mail ou senha inválidos.' } } } } }
 cadastro.description += ' Cadastro e login compartilham limite de 20 tentativas por IP a cada 15 minutos.'
 add('/api/auth/logout', 'post', 'Invalidar todos os tokens da conta', { status: 204, tag: 'Autenticação' })
+add('/api/auth/metodos', 'get', 'Consultar métodos de autenticação', { public: true, tag: 'Autenticação', response: ref('MetodosAutenticacao'), output: { google: { habilitado: false, clientId: null } } })
+const googleChallenge = add('/api/auth/google/desafio', 'post', 'Criar desafio Google de cinco minutos', { public: true, tag: 'Autenticação', body: ref('DesafioGoogleInput'), input: { finalidade: 'login' }, response: ref('DesafioGoogle'), output: { desafioId: id(9, 1), nonce: 'NONCE_ALEATORIO_RECEBIDO', expiraEm: agora }, description: 'Exige Origin configurada. Cookie rephouse_google HttpOnly; SameSite=Lax; Path=/api; Secure em produção. Use /api na mesma origem. Exclusão exige Bearer vigente; vincula usuário e versão da sessão. 60 desafios/IP/15min. Nonce e cookie têm somente hashes no banco.' })
+const googleLogin = add('/api/auth/google', 'post', 'Entrar ou vincular Google', { public: true, tag: 'Autenticação', body: ref('LoginGoogle'), input: { credential: 'CREDENCIAL_GOOGLE', desafioId: id(9, 1) }, response: ref('Sessao'), output: { token: 'JWT_RECEBIDO_DA_API', usuario }, description: 'Exige Origin autorizada, cookie do desafio e nonce válido. Primeiro acesso cria NORMAL sem senha; sub identifica a conta. 409 GOOGLE_LINK_REQUIRED pede a senha da conta existente; reenvie a mesma credencial/desafio com senha antes de expirar. Erros revertem o consumo; sucesso consome uma vez. Compartilha 20 tentativas/IP/15min com login e cadastro. Não reativa contas. 503 GOOGLE_UNAVAILABLE ou GOOGLE_DISABLED.' })
+for (const operation of [googleChallenge, googleLogin]) {
+  for (const status of ['401', '403', '503']) operation.responses[status] = { description: status === '503' ? 'Google não configurado ou indisponível.' : 'Credencial, origem, sessão ou desafio inválido.', content: { 'application/json': { schema: ref('Error'), example: { error: { code: status === '503' ? 'GOOGLE_UNAVAILABLE' : status === '403' ? 'GOOGLE_ORIGIN_FORBIDDEN' : 'GOOGLE_INVALID_CREDENTIAL', message: 'Não foi possível confirmar o acesso Google.' } } } } }
+  operation.responses['429']!.headers = { 'Retry-After': { schema: { type: 'string' }, description: 'Segundos até nova tentativa.' } }
+}
+googleChallenge.responses['200']!.headers = { 'Set-Cookie': { schema: { type: 'string' }, description: 'Cookie transitório HttpOnly; nunca disponibilizado ao JavaScript.' } }
 add('/api/me', 'get', 'Consultar conta e vínculo atual', { tag: 'Conta', response: ref('MinhaConta'), output: { ...usuario, membro: { ...membro, republica } } })
 add('/api/me', 'patch', 'Editar o próprio nome', { tag: 'Conta', body: object({ nome: nameInput }), input: { nome: 'Ana Silva' }, response: ref('Usuario'), output: { ...usuario, nome: 'Ana Silva' } })
-add('/api/me', 'delete', 'Excluir logicamente a própria conta', { status: 204, tag: 'Conta', body: object({ senha: password }), input: { senha: 'SuaSenhaDeTeste123!' }, description: 'Confirma a senha. 409: OUTSTANDING_DEBT, TRANSFER_ADMIN_REQUIRED ou LAST_MASTER. Preserva histórico e e-mail; encerra vínculos e revoga tokens. Conta excluída não pode ser reativada.' })
+add('/api/me', 'delete', 'Excluir logicamente a própria conta', { status: 204, tag: 'Conta', body: { oneOf: [object({ senha: password }), object({ credential: { type: 'string', minLength: 1, maxLength: 16000, writeOnly: true }, desafioId: uuid })] }, input: { senha: 'SuaSenhaDeTeste123!' }, description: 'Confirma senha ou Google vinculado à própria conta (desafio finalidade exclusao, cookie e Origin). 409: OUTSTANDING_DEBT, TRANSFER_ADMIN_REQUIRED ou LAST_MASTER. Preserva histórico e e-mail; encerra vínculos e revoga tokens. Conta excluída não pode ser reativada.' })
 add('/api/me/financeiro', 'get', 'Listar os próprios rateios atuais e antigos', { tag: 'Financeiro', response: array(ref('RateioPessoal')), output: [personal], description: 'A saída da república mantém acesso somente ao próprio histórico, sem consultar os demais moradores.' })
 add('/api/me/financeiro/{id}', 'get', 'Consultar um rateio próprio', { tag: 'Financeiro', response: ref('RateioPessoal'), output: personal })
 add('/api/republicas', 'post', 'Criar república e assumir a administração', { status: 201, body: ref('CriarRepublica'), input: { nome: republica.nome, endereco: republica.endereco }, response: ref('Republica'), output: republica, description: 'Exige ausência de vínculo ativo. Promove para ADMIN e cria o vínculo na mesma transação; MASTER mantém o perfil.' })
@@ -180,6 +192,28 @@ for(const operations of Object.values(paths)){
     operation!.description+=' Resposta paginada: dados e paginacao. Página além do resultado retorna dados vazio. Parâmetros inválidos ou desconhecidos retornam 400.'
   }
 }
+// A API principal continua paginada. Somente este namespace atende os arrays
+// esperados pelo frontend do PR #2, compartilhando as mesmas operações.
+for (const [path, operations] of Object.entries(paths)) {
+  if (['/api/health', '/api/ready', '/api/openapi.json'].includes(path)) continue
+  const compatible = structuredClone(operations)
+  for (const operation of Object.values(compatible)) {
+    operation.operationId = `frontV1_${operation.operationId}`
+    operation.tags = ['Frontend (compatibilidade)']
+    operation.description += ' Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.'
+    const media = operation.responses['200']?.content?.['application/json']
+    const properties = media?.schema.properties as Record<string, Schema> | undefined
+    if (media && properties?.dados?.type === 'array') {
+      media.schema = properties.dados
+      media.example = (media.example as { dados: unknown }).dados
+      operation.parameters = operation.parameters?.filter(parameter => !['pagina', 'limite'].includes((parameter as { name: string }).name))
+      operation.description = operation.description.replace('Listagem paginada.', '').replace('Resposta paginada: dados e paginacao. Página além do resultado retorna dados vazio. Parâmetros inválidos ou desconhecidos retornam 400.', '')
+      operation.description += ' Array completo, até 1.000 registros. Acima disso retorna 409 FRONT_COLLECTION_LIMIT, sem truncamento. Não aceita pagina ou limite; use a API principal para paginação.'
+      operation.responses['409'] = { description: 'Coleção acima do limite do adaptador.', content: { 'application/json': { schema: ref('Error'), example: { error: { code: 'FRONT_COLLECTION_LIMIT', message: 'Há registros demais para esta tela. Utilize a interface com paginação.' } } } } }
+    }
+  }
+  paths[path.replace(/^\/api/, '/api/front/v1')] = compatible
+}
 // Identificador presente inclusive em erros e downloads; nenhum segredo é registrado.
 for (const operations of Object.values(paths)) for (const operation of Object.values(operations)) {
   for (const response of Object.values(operation.responses)) {
@@ -189,9 +223,9 @@ for (const operations of Object.values(paths)) for (const operation of Object.va
 
 export const openApiDocument = {
   openapi: '3.1.0',
-  info: { title: 'RepHouse API', version: '2.0.1', description: 'Backend TypeScript. Listagens retornam {dados,paginacao}. Dinheiro é string decimal. Datas de entrada usam YYYY-MM-DD; datas civis de saída usam ISO à meia-noite UTC. Relatórios e vencimentos seguem APP_TIME_ZONE, padrão horário de Brasília (America/Sao_Paulo). Exemplos são ilustrativos. Endpoints protegidos usam Authorization: Bearer TOKEN; CORS não substitui autorização.' },
+  info: { title: 'RepHouse API', version: '2.1.0', description: 'Backend TypeScript. Listagens retornam {dados,paginacao}. Dinheiro é string decimal. Datas de entrada usam YYYY-MM-DD; datas civis de saída usam ISO à meia-noite UTC. Relatórios e vencimentos seguem APP_TIME_ZONE, padrão horário de Brasília (America/Sao_Paulo). Exemplos são ilustrativos. Endpoints protegidos usam Authorization: Bearer TOKEN; CORS não substitui autorização.' },
   servers: [{ url: 'http://localhost:3000', description: 'Desenvolvimento local; ajuste ao ambiente da equipe.' }],
-  tags: ['Documentação', 'Autenticação', 'Conta', 'Repúblicas', 'Financeiro', 'Tarefas', 'Painel', 'MASTER'].map(name => ({ name })),
+  tags: ['Documentação', 'Autenticação', 'Conta', 'Repúblicas', 'Financeiro', 'Tarefas', 'Painel', 'MASTER', 'Frontend (compatibilidade)'].map(name => ({ name })),
   security: [{ bearerAuth: [] }],
   components: { securitySchemes: { bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' } }, schemas },
   paths,

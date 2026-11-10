@@ -1,0 +1,87 @@
+{
+  "referencia": "2026-11-05",
+  "ambiente": "local",
+  "contratoApi": "2.0.1",
+  "direcaoVisual": "Clara e acolhedora, com tons verdes e clima de casa; escolhida pelo usuário.",
+  "frontend": {
+    "comando": "npm --prefix interface run verificar",
+    "build": "aprovado",
+    "tipagemAplicacaoETestes": "aprovada",
+    "lint": "aprovado",
+    "navegador": "Microsoft Edge headless",
+    "playwright": { "aprovados": 12, "falhas": 0, "ignorados": 0, "flaky": 0 },
+    "relatorioLocal": ".devops-local/interface/resultado-playwright.json",
+    "capturasLocais": ".devops-local/interface/imagens/",
+    "tracesEVideos": false
+  },
+  "regressaoBackend": {
+    "comando": "npm run verificar",
+    "testesSemBanco": 34,
+    "testesComPostgresql": 78,
+    "aprovados": 112,
+    "falhas": 0,
+    "ignorados": 0,
+    "contratoETiposSincronizados": true,
+    "relatorioLocal": ".devops-local/interface/regressao-backend.log",
+    "preparacao": "O banco de testes novo precisou receber as oito migrations antes da regressão. A primeira tentativa sem essa preparação falhou; o resultado acima é da repetição após aplicar as migrations."
+  },
+  "isolamento": {
+    "projetoDocker": "rephouse-interface-test",
+    "volume": "rephouse-interface-test_banco",
+    "banco": "rabbu_mvp_test",
+    "portaPostgresqlLocal": 5544,
+    "portaApiTeste": 3405,
+    "portaViteTeste": 5174,
+    "schemaPorExecucao": true,
+    "schemasIntegrationRestantesAposEncerramento": 0,
+    "seedFinanceiraExecutada": false,
+    "bancoDaEquipeUsadoPelosTestes": false,
+    "volumesAnterioresPreservados": true
+  },
+  "coberturaRealDeNavegador": [
+    "Cadastro e login com e-mail e senha; ausência de persistência do token no navegador.",
+    "Criação de república; entrada por código e mensagem para código inválido.",
+    "Criação e atribuição de tarefa por membroId; prazo civil preservado.",
+    "Conclusão pelo responsável com confirmação do status no PostgreSQL.",
+    "Listagem de moradores, transferência e retirada dos poderes do administrador anterior.",
+    "Edição de perfil, saída da república, logout 204 e rejeição do token revogado.",
+    "Paginação de 21 tarefas e ausência de tarefa de outra república.",
+    "Ocultação de ações de administração e de conclusão de tarefa de outro morador.",
+    "Viewports de 1440x1000 e 390x844, ausência de rolagem horizontal, foco e fechamento por Escape."
+  ],
+  "validacoesSimuladas": [
+    "Apresentação dos erros 400, 401, 403, 404, 409, 429 e 503; Retry-After e requestId.",
+    "Resposta HTML de proxy não exposta como mensagem interna.",
+    "Caso conhecido de data civil e instante próximo à meia-noite, conferido no navegador."
+  ],
+  "acessoLocal": {
+    "frontend": "http://localhost:5173",
+    "proxy": "http://api:3000",
+    "verificadoPorLeitura": { "paginaInicial": 200, "health": 200, "ready": 200, "openapi": 200 },
+    "contratoEncontrado": "2.0.1",
+    "observacao": "As gravações das jornadas foram executadas apenas no ambiente exclusivo de testes. O ambiente persistente existente recebeu a nova interface; seus volumes e dados foram preservados."
+  },
+  "dependencias": {
+    "viteValidado": "8.3.6",
+    "alertasAltosOuCriticosAposAtualizacao": 0,
+    "alertasModeradosFerramentasDesenvolvimento": 10,
+    "alertasDependenciasProducao": 0,
+    "pendencia": "Rever separadamente a cadeia de minimatch/ESLint/typescript-eslint; a correção sugerida pelo npm envolve mudanças incompatíveis e não foi aplicada com force."
+  },
+  "refero": {
+    "referencias": "documentacao/DIRECAO_VISUAL_FRONTEND.md",
+    "catalogoPublicoConsultado": true,
+    "imagensCompletasInspecionadas": false,
+    "telasCopiadas": false
+  },
+  "pendencias": [
+    "Escolher com o grupo as telas de referência do Refero e avaliar a interface com moradores.",
+    "Conferir em aparelho físico; os testes de celular desta etapa usam viewport emulado.",
+    "Área global MASTER, exclusão de conta pela interface e telas financeiras ainda não implementadas.",
+    "Login Google, Pix, hospedagem e publicação continuam para etapas próprias.",
+    "O token fica em memória; recarregar a página exige novo login."
+  ],
+  "commitRealizado": false,
+  "pushRealizado": false,
+  "ciRemotaExecutada": false
+}
