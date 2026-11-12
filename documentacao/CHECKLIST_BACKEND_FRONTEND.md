@@ -17,45 +17,47 @@ Levantamento local em **10/11/2026**, versão **2.1.0**, baseado no código atua
 - [x] Docker local, OpenAPI, tipos gerados, health/readiness e logs com identificador de requisição.
 - [x] Workflow do backend presente; a versão simplificada está alterada localmente.
 
-## Funcionalidades para completar nas telas
+## Funcionalidades implementadas nas telas
+
+As dez funcionalidades abaixo foram acrescentadas após o levantamento inicial. [Guia de uso e permissões](FUNCIONALIDADES_INTERFACE.md). O levantamento inicial permanece no histórico do Git.
 
 | Item | Backend atual | Frontend atual / trabalho restante |
 | --- | --- | --- |
-| Meu perfil | `GET/PATCH /api/me`; edição do nome | Falta página de perfil e formulário de edição. Não presumir alteração de e-mail/senha: a edição atual aceita nome. |
-| Exclusão da conta | `DELETE /api/me`; exclusão lógica e restrições existentes | Falta confirmação por senha, explicação das restrições e encerramento da sessão após sucesso. Exclusão já fazia parte do escopo aprovado. |
-| Sair ou trocar de república | `/api/republicas/sair` e `/trocar` | Faltam ações, confirmação, mensagens e atualização de `/me`. “Sair” atual é logout da conta. |
-| Administração da república | Edição de nome/endereço, transferência de administração e desativação de vínculo existentes | Faltam configurações da casa, transferência e controles de moradores com confirmação. Desativar vínculo não é excluir a conta. |
-| Moradores inativos | Filtro `inativos=true` com autorização | Falta filtro restrito aos perfis autorizados. |
-| Edição de despesas | `PATCH /api/despesas/{id}` com regras financeiras | Falta abrir detalhe/edição e explicar recusas quando já há pagamento. |
-| Detalhes financeiros | Detalhes de despesas, pagamentos e financeiro pessoal/histórico existentes | Falta uma área para consultar rateios e pagamentos anteriores, inclusive após saída/troca. Diferenciar pendente, vencida e paga; a tela atual filtra Todas/Pendentes/Pagas. |
-| Comprovantes já enviados | Download binário protegido implementado | Falta ação visual para baixar comprovantes de pagamentos anteriores. O teste atual verifica o download pela API, não por um botão na tela. |
-| Edição de tarefas | `PATCH /api/tarefas/{id}` aceita dados e status conforme autorização | A interface cria, conclui e permite reabrir conforme perfil; falta edição de título, responsável, descrição e prazo. |
-| Ações MASTER | Bloqueio/desbloqueio de contas/repúblicas e operações por república existentes | As telas atuais consultam; faltam ações, detalhes e confirmações com autorização. |
+| Meu perfil | `GET/PATCH /api/me`; edição do nome | Implementado em `/republica/perfil`; e-mail somente de consulta. |
+| Exclusão da conta | `DELETE /api/me`; exclusão lógica e restrições existentes | Implementada com senha, confirmação explícita, mensagens de restrição e encerramento da sessão no sucesso. |
+| Sair ou trocar de república | `/api/republicas/sair` e `/trocar` | Implementado em Configurações, com confirmação e recarga de contexto. O botão “Sair” junto ao perfil continua sendo logout. |
+| Administração da república | Edição de nome/endereço, transferência de administração e desativação de vínculo existentes | Dados e transferência em Configurações; desativação em Moradores. A conta e o histórico são preservados. |
+| Moradores inativos | Filtro `inativos=true` com autorização | Filtro implementado para administração; vínculos inativos identificados. |
+| Edição de despesas | `PATCH /api/despesas/{id}` com regras financeiras | Detalhe pelo título e edição administrativa. Valor e participantes bloqueados após pagamento; API revalida concorrência. |
+| Detalhes financeiros | Detalhes de despesas, pagamentos e financeiro pessoal/histórico existentes | Meu financeiro mostra origem, partes, pagamentos, saldos e situação, mesmo sem vínculo ativo. |
+| Comprovantes já enviados | Download binário protegido implementado | Botões no detalhe da despesa e financeiro pessoal; download autenticado com nome genérico e bytes conferidos no navegador. |
+| Edição de tarefas | `PATCH /api/tarefas/{id}` aceita dados e status conforme autorização | Edição administrativa de título, responsável, descrição e prazo; criação e conclusão preservadas. |
+| Ações MASTER | Bloqueio/desbloqueio de contas/repúblicas existentes | Ações nos diretórios, com confirmação; contas excluídas não recebem ação de reativação. |
 
 As ações deverão respeitar os perfis existentes. Nenhum botão deve substituir a autorização do backend. Ao mudar vínculo ou administração, consultar novamente `/api/me` e os dados do contexto.
 
 ## Integração e robustez do frontend
 
-- [ ] Centralizar tratamento de erros com `status`, `error.code`, `X-Request-Id` e `Retry-After`; apresentar identificação para suporte e espera em `429`, sem repetição automática de pagamentos.
+- [x] Centralizar tratamento de erros das chamadas pelo cliente HTTP com `status`, `error.code`, `X-Request-Id` e `Retry-After`; sem repetição automática de pagamentos.
 - [ ] Cobrir expiração/revogação em todas as áreas, inclusive MASTER, além de erros `400`, `403`, `404`, `409` e `503` nos novos fluxos.
 - [ ] Reutilizar os tipos de `integracao/api.d.ts` ou derivar tipos do contrato do adaptador; as telas atuais ainda declaram vários formatos manualmente.
 - [ ] Preparar consumo paginado da API principal. O adaptador atual devolve arrays até 1.000 registros e retorna `409 FRONT_COLLECTION_LIMIT` acima disso; não ampliar o limite como solução.
 - [ ] Conferir sessão e documentação: a interface atual usa `sessionStorage`, enquanto há orientações antigas descrevendo token somente em memória. Registrar uma política coerente antes de alterar esse comportamento.
-- [ ] Acrescentar testes de navegador para cada ação nova, verificando permissões e estado persistido.
+- [x] Acrescentar jornadas de navegador para as ações novas, com API real, download e consultas ao PostgreSQL dedicado.
 - [ ] Continuar a revisão de acessibilidade com teclado, foco de modais, leitor de tela, zoom e celular físico. Os testes de tema e contraste selecionado já passaram; não equivalem à auditoria completa.
 - [ ] Corrigir os cinco avisos preexistentes de Fast Refresh como melhoria de manutenção.
 
 ## Backend: fechamento e validações restantes
 
-- [ ] Conferir o contrato de cada nova tela com as rotas existentes e corrigir divergências demonstradas por testes, preservando a API 2.1.0.
-- [ ] Reexecutar a regressão completa ao integrar as próximas funcionalidades. A última evidência registrada do backend tem **138 testes aprovados**; este checklist não executou novamente a suíte.
-- [ ] Atualizar o resumo da matriz para a suíte atual do frontend, sem apagar os resultados históricos de 4, 13, 18 e 21 testes.
+- [x] Conferir as novas telas com as rotas existentes, preservando a API 2.1.0.
+- [x] Reexecutar a regressão do backend nesta implementação: **138 testes aprovados**, sem falhas ou ignorados; contrato e tipos sincronizados.
+- [x] Atualizar o resumo da matriz para a suíte atual de 36 testes do frontend, preservando as evidências anteriores.
 - [ ] Consolidar documentação de sessão, integração e fluxos realmente disponíveis na interface.
 - [ ] Revisar e registrar as mudanças locais; commit e push dependem de pedido específico.
 - [ ] Após publicar as mudanças do workflow, verificar sua execução real no GitHub. A aprovação da configuração local não comprova execução remota.
 - [ ] Considerar incluir build, tipos e testes ativos do frontend no GitHub Actions. O workflow atual verifica o backend e contrato/tipos; não executa a suíte da interface.
 
-O levantamento não encontrou necessidade de reimplementar autenticação, regras financeiras, banco ou o adaptador para disponibilizar as ações já existentes. A maior parte das lacunas funcionais está nos controles do frontend.
+As ações foram acrescentadas reutilizando autenticação, regras financeiras, banco e adaptador existentes. Não houve alteração de APIs, migrations ou versão.
 
 ## Itens de outra etapa
 
@@ -66,13 +68,11 @@ O levantamento não encontrou necessidade de reimplementar autenticação, regra
 
 Hospedagem, domínio, HTTPS público, carga, demonstração de recuperação/backup e homologação separada continuam opcionais ou fora da terceira apresentação. Docker e GitHub Actions permanecem.
 
-## Ordem proposta
+## Próximas prioridades
 
-1. Perfil e exclusão de conta.
-2. Saída/troca de república, transferência de administração e gestão de moradores.
-3. Detalhes/edição de despesas, histórico pessoal e download de comprovantes.
-4. Edição de tarefas e ações MASTER.
-5. Padronização de erros, tipos e paginação junto de cada implementação; regressão e roteiro final da apresentação.
+1. Paginação das listas atuais e adoção dos tipos gerados nas partes ainda manuais.
+2. Revisão adicional de acessibilidade e testes com o grupo.
+3. Consolidação da documentação de sessão e verificação remota das próximas mudanças quando autorizada.
 
 Google, Pix e recuperação de senha entram em planejamento separado se forem priorizados pelo grupo.
 
@@ -83,5 +83,6 @@ Google, Pix e recuperação de senha entram em planejamento separado se forem pr
 - [Matriz do MVP](VALIDACAO_MVP.md).
 - [Backend: 138 testes na última verificação registrada](evidencias/validacao-simplificacao-entrega.json).
 - [Frontend: 25 testes na última verificação registrada](evidencias/validacao-aparencia.json), sem falhas ou ignorados; build/tipos aprovados, lint sem erros e com cinco avisos preexistentes.
+- [Atualização de gestão: 138 testes de backend e 36 de frontend](evidencias/validacao-gestao-interface.json). Os registros acima identificam etapas anteriores.
 
-Este levantamento não executou testes, migrações, commit, push ou alterações no banco da equipe. Somente este checklist foi acrescentado.
+O levantamento inicial não executou testes nem alterou o banco. A implementação seguinte tem resultados próprios em [validacao-gestao-interface.json](evidencias/validacao-gestao-interface.json), sem substituir as evidências anteriores. O banco da equipe permanece fora dos ensaios.

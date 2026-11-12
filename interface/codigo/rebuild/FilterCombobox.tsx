@@ -16,7 +16,7 @@ export default function FilterCombobox({ value, onChange, items, label }: Props)
       <ComboboxInput aria-label={label} placeholder={label} />
       <ComboboxTrigger type="button" aria-label={label + ' — abrir opções'}><ChevronDown size={15} aria-hidden="true" /></ComboboxTrigger>
     </div>
-    <ComboboxContent container={anchor?.closest('dialog') ?? undefined} className="rep-combobox-popup">
+    <ComboboxContent container={anchor?.closest<HTMLElement>('dialog, .rep-internal') ?? undefined} className="rep-combobox-popup">
       <ComboboxEmpty className="rep-combobox-empty">Nenhum resultado.</ComboboxEmpty>
       <ComboboxList>{(item: Item) => <ComboboxItem className="rep-combobox-item" key={item.value} value={item}>{item.label}</ComboboxItem>}</ComboboxList>
     </ComboboxContent>

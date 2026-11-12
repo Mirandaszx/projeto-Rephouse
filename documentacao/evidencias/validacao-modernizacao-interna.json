@@ -1,0 +1,144 @@
+{
+  "dataLocal": "2026-11-11",
+  "fuso": "America/Sao_Paulo",
+  "versao": "2.1.0",
+  "origem": "local",
+  "baseGit": "fc36796",
+  "alteracoesLocais": true,
+  "escopo": [
+    "Visão geral",
+    "Despesas",
+    "Tarefas",
+    "Moradores",
+    "Perfil",
+    "Financeiro pessoal",
+    "Configurações",
+    "Entrada/criação de república",
+    "MASTER"
+  ],
+  "identidade": {
+    "direcao": "Acolhedora e editorial",
+    "lateral": "#205448",
+    "fundo": "#f7f5ef",
+    "texto": "#193732",
+    "destaque": "#d2ec9c",
+    "fonte": "Inter local",
+    "sidebarDesktop": 248,
+    "sidebarTablet": 208,
+    "tituloDesktop": 36,
+    "tituloCelular": 28
+  },
+  "verificacao": {
+    "comando": "npm --prefix interface run verificar",
+    "saida": 0,
+    "testesAprovados": 40,
+    "falhas": 0,
+    "ignorados": 0,
+    "instaveisNaExecucaoFinal": 0,
+    "inicioUTC": "2026-11-12T00:15:11.791Z",
+    "duracaoTestesMs": 268293.339,
+    "compilacao": "Aprovada",
+    "tipagem": "Aprovada",
+    "lint": {
+      "erros": 0,
+      "avisosFastRefreshPreexistentes": 5
+    },
+    "log": ".devops-local/modernizacao-aprovacao.log",
+    "relatorio": ".devops-local/interface/resultado-playwright.json",
+    "banco": "PostgreSQL 18 exclusivo rephouse-interface-test, porta 5544; schemas descartáveis do harness"
+  },
+  "cenariosVisuais": {
+    "tipo": "Navegador Edge real com respostas HTTP controladas para cenários visuais; não é evidência de dados reais da equipe.",
+    "teste": "interface/testes-pr2/modernizacao.spec.ts",
+    "larguras": [
+      320,
+      390,
+      768,
+      1024,
+      1366,
+      1440
+    ],
+    "temas": [
+      "claro",
+      "escuro"
+    ],
+    "combinacoesPrincipais": 96,
+    "capturas": ".devops-local/interface/imagens/modernizacao-interna",
+    "cobertura": [
+      "Largura útil do conteúdo e da lateral, sem rolagem horizontal global",
+      "Nomes e e-mails longos, valores elevados, listas vazias, carregamento, falha longa e recuperação",
+      "Datas civis, aviso de tarefa atrasada, financeiro agrupado e indicação do vínculo anterior",
+      "Teclado, foco em cores forçadas, movimento reduzido e controles finais acima da navegação fixa após rolar",
+      "Contraste de badges, navegação selecionada e exclusão da conta de pelo menos 4,5:1",
+      "Modais: campos e ações com contraste; bordas selecionadas com pelo menos 3:1",
+      "Janela baixa em 1366×600 e reflow 720×450 equivalente a 1440×900 com zoom de 200%",
+      "Captura do login idêntica antes e depois do carregamento do CSS interno"
+    ]
+  },
+  "jornadasReais": {
+    "tipo": "Testes existentes com API HTTP e PostgreSQL dedicados, preservados na regressão completa.",
+    "cobertura": [
+      "Cadastro, criação e entrada por código, correção de código inválido e persistência",
+      "Perfil, confirmação e exclusão lógica, revogação e restrições",
+      "Transferência, saída/troca de república e vínculos inativos",
+      "Edição de despesas e proteção de valores com histórico",
+      "Pagamento parcial, histórico após troca e comprovante com bytes/hash preservados",
+      "Criação, edição, atribuição e conclusão de tarefas; autorização e isolamento",
+      "MASTER: consulta, filtros, paginação e bloqueio/desbloqueio"
+    ]
+  },
+  "servidor5173": {
+    "url": "http://localhost:5173",
+    "paginas": [
+      "/republica",
+      "/republica/financeiro",
+      "/admin"
+    ],
+    "larguras": [
+      390,
+      1440
+    ],
+    "larguraPrincipalDesktop": 1192,
+    "larguraFinanceiroDesktop": 940,
+    "rolagemHorizontal": false,
+    "errosJavaScript": 0,
+    "dados": "Todas as chamadas à API interceptadas por respostas controladas; nenhum acesso ao banco da equipe e nenhuma escrita pela API.",
+    "registro": ".devops-local/modernizacao-servidor.json",
+    "capturas": ".devops-local/interface/imagens/modernizacao-interna/servidor-5173"
+  },
+  "ocorrenciasResolvidas": [
+    "Filtros extrapolavam a largura em 320 px; largura de três opções adaptada ao espaço disponível.",
+    "Sobreposição da lateral no limite de 720 px; layout e posicionamento da faixa de tablet explicitados.",
+    "Configurações não identificava a página atual na lateral; aria-current e destaque adicionados.",
+    "Rótulos das duas escolhas de república cortados no celular; largura específica restaurada e cenário existente aprovado.",
+    "Inspeção visual encontrou status quebrado na tabela MASTER e contraste insuficiente no botão de exclusão escuro; ambos ajustados e contrastes conferidos."
+  ],
+  "ocorrenciaIsolada": {
+    "descricao": "Timeout de carregamento de /cadastro antes de preencher o nome em uma execução anterior. Não se reproduziu nas três repetições específicas nem na execução completa final.",
+    "causa": "Não determinada; a compilação concorrente foi eliminada como variável na execução final. Não foram adicionadas repetições automáticas nem ignorados testes.",
+    "repeticoesEspecificas": 3,
+    "aprovadas": 3,
+    "log": ".devops-local/modernizacao-cadastro-estabilidade.log"
+  },
+  "preservado": [
+    "Home, login, cadastro e casinha",
+    "APIs, tipos públicos, autenticação, regras financeiras e versão 2.1.0",
+    "Banco e volumes da equipe",
+    "Alterações locais e evidências anteriores"
+  ],
+  "limites": [
+    "Acessibilidade conferida nos cenários descritos; não equivale a auditoria completa com tecnologias assistivas.",
+    "Reflow equivalente a 200% foi testado; zoom nativo do navegador e celular físico não foram exercitados.",
+    "As telas e os números controlados não constituem ensaio de carga.",
+    "O backend não foi alterado nem teve sua suíte própria repetida nesta etapa; a integração foi exercitada pela regressão da interface."
+  ],
+  "naoExecutado": [
+    "commit",
+    "push",
+    "merge",
+    "CI remota",
+    "publicação",
+    "carga financeira",
+    "backup/restauração"
+  ]
+}

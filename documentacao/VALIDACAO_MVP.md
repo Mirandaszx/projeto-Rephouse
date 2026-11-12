@@ -6,6 +6,10 @@ Exige funcionalidades, arquitetura, banco, Docker local e testes. O GitHub Actio
 
 Validação local em **10/11/2026**: 138 testes de backend e 13 testes ativos da interface aprovados, sem falhas ou ignorados; compilação, tipagem, contrato e tipos sincronizados. Lint sem erros, com cinco avisos preexistentes de Fast Refresh. Compose principal e de testes passaram na validação de configuração. O YAML do workflow e suas seis etapas foram conferidos localmente; não houve execução remota desta alteração. Detalhes em [validacao-simplificacao-entrega.json](evidencias/validacao-simplificacao-entrega.json).
 
+## Complemento de interface — 10/11/2026
+
+As dez ações de gestão que faltavam nas telas foram acrescentadas usando as APIs existentes: perfil e exclusão, saída/troca de casa, configurações/transferência, moradores inativos/desativação, detalhes/edição de despesas, histórico financeiro e comprovantes, edição de tarefas e bloqueios MASTER. Regressão local aprovada com **138 testes do backend e 36 testes ativos da interface**, sem falhas ou ignorados. Consultas diretas ao PostgreSQL dedicado conferiram alterações e preservação do histórico; o navegador conferiu download com hash idêntico após troca de casa. Capturas em quatro larguras e dois temas ficam em diretório próprio. Veja [guia](FUNCIONALIDADES_INTERFACE.md) e [evidência](evidencias/validacao-gestao-interface.json). Não houve alteração do contrato, migrations, dependências ou versão 2.1.0.
+
 ## Evidências históricas
 
 A versão 2.0.1 acrescentou comprovantes transacionais e tipos para integração. Evidências: [validacao-comprovantes.json](evidencias/validacao-comprovantes.json). Os resultados abaixo registram as respectivas etapas, sem validar novamente o código ou o workflow atuais.

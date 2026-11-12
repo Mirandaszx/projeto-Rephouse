@@ -2,12 +2,15 @@ import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { CalendarDays, ClipboardCheck, Plus, UserRound } from 'lucide-react'
 import { SegmentedControl } from 'glisse'
-import { request } from '../api'
+import { apiRequest, request } from '../api'
+import ActionDialog from '../gestao/ActionDialog'
 import { GlisseButton } from '../rebuild/GlisseButton'
 import { AnimatedField, DateField } from '../rebuild/Fields'
 import FilterCombobox from '../rebuild/FilterCombobox'
 import { SpellTaskCheckbox } from './SpellTaskCheckbox'
-import { AnimatedList } from './UnlumenTaskList'
+import { Badge, EmptyState } from '../interno/WorkspaceUI'
+import { brasilDay } from '../interno/presentation'
+import { useWorkspaceTransition } from '../interno/useWorkspaceTransition'
 import './tasks.css'
 
 type Status = 'ABERTA' | 'CONCLUIDA'
@@ -30,10 +33,12 @@ export default function Tasks({ token, members, memberId, canManage, onExpired }
   const [notice, setNotice] = useState('')
   const [revision, setRevision] = useState(0)
   const [filter, setFilter] = useState<Filter>('todas')
+  const results = useWorkspaceTransition(filter)
   const [busy, setBusy] = useState(false)
   const [formError, setFormError] = useState('')
   const [responsible, setResponsible] = useState('')
   const [formRevision, setFormRevision] = useState(0)
+  const [editingTask, setEditingTask] = useState<Task | null>(null)
   const dialog = useRef<HTMLDialogElement>(null)
   const saving = useRef(false)
 
@@ -55,13 +60,7 @@ export default function Tasks({ token, members, memberId, canManage, onExpired }
     setNotice('')
     try {
       const status: Status = checked ? 'CONCLUIDA' : 'ABERTA'
-      const response = await fetch('/api/tarefas/' + encodeURIComponent(task.id), {
-        method: 'PATCH',
-        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      })
-      const result = await response.json().catch(() => null)
-      if (!response.ok || !result) throw Object.assign(new Error(result?.error?.message || 'Não foi possível atualizar a tarefa.'), { status: response.status })
+      await apiRequest('PATCH', '/tarefas/' + encodeURIComponent(task.id), token, { status })
       setTasks(current => current?.map(item => item.id === task.id ? { ...item, status } : item) ?? null)
       setNotice(checked ? 'Tarefa concluída.' : 'Tarefa reaberta.')
     } catch (failure) {
@@ -110,12 +109,13 @@ export default function Tasks({ token, members, memberId, canManage, onExpired }
   const items = tasks ?? []
   const completed = items.filter(item => item.status === 'CONCLUIDA').length
   const visible = items.filter(item => filter === 'todas' || item.status === filter)
+  const today = brasilDay()
 
   return <section className="rep-tasks" aria-labelledby="rep-tasks-label">
     <div className="rep-tasks-head">
       <div className="rep-tasks-heading">
         <span className="rep-task-symbol" aria-hidden="true"><ClipboardCheck size={21} /></span>
-        <div><h2 id="rep-tasks-label">Rotina compartilhada</h2><p>{tasks ? `${items.length - completed} abertas · ${completed} concluídas` : 'Organize os afazeres da casa.'}</p></div>
+        <div><h2 id="rep-tasks-label">Rotina compartilhada</h2><p>{tasks ? `${items.length - completed} ${items.length - completed === 1 ? 'aberta' : 'abertas'} · ${completed} ${completed === 1 ? 'concluída' : 'concluídas'}` : 'Organize os afazeres da casa.'}</p></div>
       </div>
       {canManage && members.length > 0 && <GlisseButton disabled={busy || !tasks} onClick={() => { setFormError(''); setResponsible(''); setFormRevision(value => value + 1); dialog.current?.showModal() }} icon={<Plus size={16} aria-hidden="true" />}>Nova tarefa</GlisseButton>}
     </div>
@@ -123,12 +123,14 @@ export default function Tasks({ token, members, memberId, canManage, onExpired }
     {error && <div className="rep-task-state"><p role="alert">{error}</p>{!tasks && <GlisseButton variant="secondary" onClick={() => { setError(''); setRevision(value => value + 1) }}>Tentar novamente</GlisseButton>}</div>}
     {notice && <p className="rep-task-feedback" role="status">{notice}</p>}
     {!tasks && !error && <p className="rep-task-state" role="status">Carregando tarefas…</p>}
-    {tasks && visible.length === 0 && <p className="rep-task-state">{items.length ? 'Nenhuma tarefa neste filtro.' : 'Nenhuma tarefa cadastrada na casa.'}</p>}
-    {tasks && <AnimatedList items={visible} maxVisible={items.length} gap={8} className="rep-task-list" renderItem={task => {
+    <div ref={results} className="workspace-results">
+    {tasks && visible.length === 0 && <EmptyState title={items.length ? 'Nenhuma tarefa neste filtro.' : 'Nenhuma tarefa cadastrada na casa.'} />}
+    {tasks && <ul className="rep-task-list">{visible.map(task => {
       const checked = task.status === 'CONCLUIDA'
       const canToggle = canManage || (!checked && memberId === task.responsavelId)
       const person = members.find(member => member.id === task.responsavelId)
-      return <div className="rep-task-row">
+      const overdue = !checked && Boolean(task.prazo && task.prazo.slice(0, 10) < today)
+      return <li className="rep-task-row" key={task.id}>
         <div>
           <SpellTaskCheckbox title={task.titulo} checked={checked} disabled={busy || !canToggle} onCheckedChange={next => void changeStatus(task, next)} />
           {task.descricao && <p className="rep-task-description">{task.descricao}</p>}
@@ -137,9 +139,10 @@ export default function Tasks({ token, members, memberId, canManage, onExpired }
             {task.prazo && <span><CalendarDays size={14} aria-hidden="true" /><time dateTime={task.prazo.slice(0, 10)}>{formatDue(task.prazo)}</time></span>}
           </div>
         </div>
-        <span className="rep-task-status" data-done={checked}>{checked ? 'Concluída' : 'Aberta'}</span>
-      </div>
-    }} />}
+        <div className="rep-task-actions"><Badge tone={checked ? 'success' : overdue ? 'danger' : 'warning'}>{checked ? 'Concluída' : overdue ? 'Em atraso' : 'Aberta'}</Badge>{canManage && <GlisseButton variant="secondary" disabled={busy} aria-label={`Editar tarefa ${task.titulo}`} onClick={() => setEditingTask(task)}>Editar</GlisseButton>}</div>
+      </li>
+    })}</ul>}
+    </div>
     <dialog ref={dialog} className="rep-dialog rep-task-dialog" aria-labelledby="rep-task-dialog-title" onCancel={event => { if (busy) event.preventDefault() }}>
       <form key={formRevision} onSubmit={createTask}>
         <h2 id="rep-task-dialog-title">Nova tarefa</h2>
@@ -153,5 +156,18 @@ export default function Tasks({ token, members, memberId, canManage, onExpired }
         <footer><GlisseButton variant="secondary" disabled={busy} onClick={() => dialog.current?.close()}>Cancelar</GlisseButton><GlisseButton type="submit" disabled={busy}>{busy ? 'Salvando…' : 'Criar tarefa'}</GlisseButton></footer>
       </form>
     </dialog>
+    {editingTask && <ActionDialog title="Editar tarefa" confirm="Salvar tarefa" onClose={() => setEditingTask(null)} onSubmit={async data => {
+      const updated = await apiRequest<Task>('PATCH', `/tarefas/${editingTask.id}`, token, {
+        titulo: String(data.get('titulo')).trim(), responsavelId: String(data.get('responsavelId')),
+        descricao: String(data.get('descricao')).trim(), prazo: String(data.get('prazo')) || null,
+      })
+      setTasks(current => current?.map(task => task.id === updated.id ? updated : task) ?? null)
+      setNotice('Tarefa atualizada.')
+    }}>
+      <label>Título<input name="titulo" required maxLength={160} defaultValue={editingTask.titulo} /></label>
+      <label>Responsável<select name="responsavelId" aria-label="Responsável" required defaultValue={editingTask.responsavelId}>{!members.some(member => member.id === editingTask.responsavelId) && <option value={editingTask.responsavelId}>Responsável anterior</option>}{members.map(member => <option key={member.id} value={member.id}>{member.usuario.nome}</option>)}</select></label>
+      <label>Prazo opcional<input type="date" name="prazo" defaultValue={editingTask.prazo?.slice(0, 10) ?? ''} /></label>
+      <label>Descrição opcional<textarea name="descricao" rows={3} maxLength={5000} defaultValue={editingTask.descricao ?? ''} /></label>
+    </ActionDialog>}
   </section>
 }

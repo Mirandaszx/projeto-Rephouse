@@ -1,0 +1,90 @@
+{
+  "dataLocal": "2026-11-10",
+  "versao": "2.1.0",
+  "escopo": "Disponibilizar dez funcionalidades existentes do backend na interface principal",
+  "funcionalidades": [
+    "Perfil e edicao do nome",
+    "Exclusao logica com senha e confirmacao",
+    "Saida e troca de republica",
+    "Edicao da casa e transferencia da administracao",
+    "Desativacao de vinculos e consulta de inativos",
+    "Detalhes, rateios e edicao de despesas",
+    "Financeiro pessoal com historico de casas anteriores",
+    "Download autenticado de comprovantes",
+    "Edicao de titulo, responsavel, descricao e prazo de tarefas",
+    "Bloqueio e desbloqueio de contas e republicas pelo MASTER"
+  ],
+  "backend": {
+    "comando": "npm run verificar",
+    "saida": 0,
+    "testesUnidadeHTTP": 37,
+    "testesPostgreSQL": 101,
+    "totalAprovados": 138,
+    "falhas": 0,
+    "ignorados": 0,
+    "contratoETipos": "Sincronizados, sem diferencas",
+    "log": ".devops-local/gestao-backend.log"
+  },
+  "frontend": {
+    "comando": "npm --prefix interface run verificar",
+    "saida": 0,
+    "testesAprovados": 36,
+    "falhas": 0,
+    "ignorados": 0,
+    "compilacaoETipagem": "Aprovadas; repetidas apos o ultimo ajuste CSS",
+    "lint": { "erros": 0, "avisosFastRefreshPreexistentes": 5 },
+    "log": ".devops-local/gestao-frontend.log",
+    "buildFinal": ".devops-local/gestao-build-final.log",
+    "conferenciaComplementar": {
+      "comando": "npm --prefix interface run test:e2e -- testes-pr2/gestao.spec.ts",
+      "testesAprovados": 11,
+      "falhas": 0,
+      "ignorados": 0,
+      "motivo": "Verificar tambem alteracao efetiva do responsavel da tarefa e resposta HTTP 409 na exclusao com divida",
+      "log": ".devops-local/gestao-testes.log"
+    }
+  },
+  "evidenciasFuncionais": [
+    "Nome alterado pela tela e conferido diretamente em usuarios no PostgreSQL",
+    "Senha incorreta conserva sessao; administracao pendente e divida recusam exclusao",
+    "Exclusao permitida retorna 204, marca exclusao logica e revoga token",
+    "Dados da casa persistem; cancelamento de desativacao nao altera o vinculo",
+    "Desativacao preserva conta ativa e permite consultar vinculo inativo",
+    "Edicao anterior ao pagamento atualiza valor total e rateio; edicao financeira posterior recebe 409 e mantem valor",
+    "Titulo, descricao, prazo e novo responsavel da tarefa persistem; morador recebe 403 em edicao indevida",
+    "Outra republica recebe 404 em despesa e comprovante nao autorizados",
+    "Transferencia altera perfis e admin_id; administrador antigo perde controles e recebe 403 na API",
+    "Codigo invalido mantem vinculo; troca valida preserva historico e download com SHA-256 identico",
+    "Pagamento do historico permanece disponivel depois da troca; soma e quantidade de pagamentos conferidas",
+    "Saida retorna 204, encerra somente o vinculo e permite consultar perfil e historico",
+    "Bloqueio MASTER revoga sessao; desbloqueio preserva dados; republica bloqueada recebe 403 nas operacoes",
+    "Envio pendente desabilita campos e botao e produz somente uma requisicao"
+  ],
+  "ambiente": {
+    "api": "HTTP real em 3405",
+    "frontend": "Vite em 5174 e Edge headless",
+    "banco": "PostgreSQL 18 dedicado rabbu_mvp_test em 5544; schemas integration_test descartaveis",
+    "preparacao": "Contas e sessoes reais preparadas pelo servico no harness isolado; limitador HTTP permanece ativo",
+    "conferenciaSQL": "Conexao somente de leitura e parametros, restrita ao schema dedicado",
+    "credenciais": "Somente ficticias; sessoes temporarias em .devops-local ignorado pelo Git"
+  },
+  "visual": {
+    "larguras": [320, 390, 768, 1440],
+    "temas": ["claro", "escuro"],
+    "capturas": ".devops-local/interface/imagens/gestao",
+    "resultado": "Sem rolagem horizontal da pagina; tabela MASTER pode rolar internamente; dialogos e foco por Escape conferidos",
+    "inspecaoVisual": ["perfil claro no celular", "configuracoes claras no celular", "financeiro escuro no celular", "MASTER no computador"],
+    "historico": "Evidencias anteriores preservadas; novas capturas em diretorio proprio"
+  },
+  "servidorLocal": {
+    "url": "http://localhost:5173/republica",
+    "operacao": "Somente frontend reiniciado",
+    "verificacao": "Sete modulos de gestao e CSS final respondem 200; rotas privadas redirecionam ao login sem sessao; zero erros JavaScript",
+    "healthEReady": 200,
+    "registro": ".devops-local/gestao-servidor.json",
+    "bancoDaEquipe": "Nenhum formulario enviado, seed, limpeza ou alteracao direta"
+  },
+  "compatibilidade": "Sem mudancas em codigo do backend, APIs, banco, migrations, tipos publicos, dependencias ou versao; harness de testes ampliado",
+  "pendenciasSeparadas": ["Google real no layout atual", "Pix", "recuperacao de senha", "paginacao das listas da interface", "auditoria completa com leitor de tela e celular fisico"],
+  "naoExecutado": ["commit", "push", "CI remota", "deploy", "carga", "restauracao", "reset", "limpeza de volumes"]
+}

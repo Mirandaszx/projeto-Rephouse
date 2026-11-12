@@ -4,11 +4,13 @@ import { TabBar } from 'glisse'
 import { ArrowUpRight, Building2, Check, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ClipboardList, LayoutGrid, LogOut, PanelLeft, Search, ShieldCheck, Users, Wallet } from 'lucide-react'
 import { getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table'
 import type { ColumnDef } from '@tanstack/react-table'
-import { brl, request } from '../api'
+import { apiRequest, brl, request } from '../api'
+import ActionDialog from '../gestao/ActionDialog'
 import AppearanceControl from '../aparencia/AppearanceControl'
 import { GlisseButton } from './GlisseButton'
 import FilterCombobox from './FilterCombobox'
-import AnimatedTitle from './AnimatedTitle'
+import { Badge, PageHeading, WorkspaceBrand } from '../interno/WorkspaceUI'
+import { useWorkspaceTransition } from '../interno/useWorkspaceTransition'
 import FinanceChart from './FinanceChart'
 import type { FinancePoint } from './FinanceChart'
 import { cn } from './vendor/cn'
@@ -17,8 +19,8 @@ import './admin.css'
 
 type Summary = { usuarios: number; republicas: number; totalPendente: string; tarefasAbertas: number; historicoIlustrativo?: FinancePoint[] }
 type House = { id: string; nome: string; ativa: boolean }
-type User = { id: string; nome: string; email: string; ativo: boolean }
-type RecordRow = { id: string; name: string; email?: string; active: boolean }
+type User = { id: string; nome: string; email: string; ativo: boolean; excluidoEm: string | null }
+type RecordRow = { id: string; name: string; email?: string; active: boolean; deleted?: boolean }
 const directoryColumns: ColumnDef<RecordRow>[] = [
   { accessorKey: 'name', header: 'Nome' },
   { accessorKey: 'active', header: 'Status' },
@@ -56,8 +58,8 @@ function SectionCards({ summary, houses, users }: { summary: Summary; houses: Ho
   const activeHouses = houses.filter(house => house.ativa).length
   const activeUsers = users.filter(user => user.ativo).length
   const metrics = [
-    { label: 'Repúblicas cadastradas', value: summary.republicas.toLocaleString('pt-BR'), icon: Building2, detail: `${activeHouses} ativas`, note: `${houses.length - activeHouses} inativas entre os registros consultados`, tone: 'green' },
-    { label: 'Usuários cadastrados', value: summary.usuarios.toLocaleString('pt-BR'), icon: Users, detail: `${activeUsers} contas ativas`, note: `${users.length - activeUsers} inativas entre os registros consultados`, tone: 'blue' },
+    { label: 'Repúblicas cadastradas', value: summary.republicas.toLocaleString('pt-BR'), icon: Building2, detail: `${activeHouses} ${activeHouses === 1 ? 'ativa' : 'ativas'}`, note: `${houses.length - activeHouses} inativas entre os registros consultados`, tone: 'green' },
+    { label: 'Usuários cadastrados', value: summary.usuarios.toLocaleString('pt-BR'), icon: Users, detail: `${activeUsers} ${activeUsers === 1 ? 'conta ativa' : 'contas ativas'}`, note: `${users.length - activeUsers} inativas entre os registros consultados`, tone: 'blue' },
     { label: 'Rateios em aberto', value: brl.format(Number(summary.totalPendente)), icon: Wallet, detail: 'Pagamentos a registrar', note: 'Saldo pendente informado pela plataforma', tone: 'amber' },
     { label: 'Tarefas abertas', value: summary.tarefasAbertas.toLocaleString('pt-BR'), icon: ClipboardList, detail: 'Responsabilidades da casa', note: 'Tarefas que aguardam conclusão', tone: 'neutral' },
   ]
@@ -68,7 +70,7 @@ function normalize(text: string) {
   return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim()
 }
 
-function Directory({ rows, people }: { rows: RecordRow[]; people: boolean }) {
+function Directory({ rows, people, onToggle }: { rows: RecordRow[]; people: boolean; onToggle: (row: RecordRow) => void }) {
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all')
   const label = people ? 'Usuários' : 'Repúblicas'
@@ -93,13 +95,14 @@ function Directory({ rows, people }: { rows: RecordRow[]; people: boolean }) {
       </div>
     </div>
     <Table aria-label={label}>
-      <TableHeader><TableRow><TableHead scope="col">Nome</TableHead><TableHead scope="col">Status</TableHead></TableRow></TableHeader>
+      <TableHeader><TableRow><TableHead scope="col">Nome</TableHead><TableHead scope="col">Status</TableHead><TableHead scope="col">Ações</TableHead></TableRow></TableHeader>
       <TableBody>
         {table.getRowModel().rows.map(({ original: row }) => <TableRow key={row.id}>
           <TableCell><div className="rh-admin-record"><span aria-hidden="true">{people ? row.name.trim().slice(0, 2).toUpperCase() : <Building2 size={17} />}</span><div><strong>{row.name}</strong><small>{row.email || `ID ${row.id}`}</small></div></div></TableCell>
-          <TableCell><span className="rh-admin-badge" data-active={row.active}>{row.active ? people ? 'Ativo' : 'Ativa' : people ? 'Inativo' : 'Inativa'}</span></TableCell>
+          <TableCell><Badge tone={row.deleted ? 'neutral' : row.active ? 'success' : 'warning'}>{row.deleted ? 'Excluída' : row.active ? people ? 'Ativo' : 'Ativa' : people ? 'Inativo' : 'Inativa'}</Badge></TableCell>
+          <TableCell><div className="rh-admin-record-actions">{row.deleted ? <span>Conta excluída</span> : <GlisseButton variant="secondary" aria-label={`${row.active ? 'Bloquear' : 'Desbloquear'} ${row.name}`} onClick={() => onToggle(row)}>{row.active ? 'Bloquear' : 'Desbloquear'}</GlisseButton>}</div></TableCell>
         </TableRow>)}
-        {visible.length === 0 && <TableRow><TableCell colSpan={2} className="rh-admin-empty">{rows.length ? 'Nenhum registro corresponde aos filtros.' : 'Nenhum registro disponível.'}</TableCell></TableRow>}
+        {visible.length === 0 && <TableRow><TableCell colSpan={3} className="rh-admin-empty">{rows.length ? 'Nenhum registro corresponde aos filtros.' : 'Nenhum registro disponível.'}</TableCell></TableRow>}
       </TableBody>
     </Table>
     {/* Pagination ported from dashboard-01/components/data-table.tsx; no row selection because there is no bulk action. */}
@@ -109,8 +112,10 @@ function Directory({ rows, people }: { rows: RecordRow[]; people: boolean }) {
 
 export default function Admin({ token, onLogout }: { token: string; onLogout: () => void }) {
   const [tab, setTab] = useState<Tab>('resumo')
+  const content = useWorkspaceTransition(tab)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [attempt, setAttempt] = useState(0)
+  const [action, setAction] = useState<{ row: RecordRow; people: boolean } | null>(null)
   const [error, setError] = useState('')
   const [data, setData] = useState<{ summary: Summary; houses: House[]; users: User[] }>()
 
@@ -131,14 +136,15 @@ export default function Admin({ token, onLogout }: { token: string; onLogout: ()
   const people = tab === 'usuarios'
   const title = tabs.find(item => item.value === tab)?.label
   const rows = people
-    ? data?.users.map(user => ({ id: user.id, name: user.nome, email: user.email, active: user.ativo }))
+    ? data?.users.map(user => ({ id: user.id, name: user.nome, email: user.email, active: user.ativo, deleted: Boolean(user.excluidoEm) }))
     : data?.houses.map(house => ({ id: house.id, name: house.nome, active: house.ativa }))
   const activeHouses = data?.houses.filter(house => house.ativa).length ?? 0
   const summary = data?.summary
 
-  return <div className="rh-admin" data-sidebar-collapsed={sidebarCollapsed}>
+  return <div className="rh-admin rep-internal" data-sidebar-collapsed={sidebarCollapsed}>
+    <a className="workspace-skip" href="#conteudo-master">Ir para o conteúdo</a>
     <aside className="rh-admin-rail">
-      <a href="/" className="rh-admin-brand" aria-label="RepHouse, página inicial"><img src="/rephouse.svg" width="36" height="36" alt="" /><span>RepHouse</span></a>
+      <WorkspaceBrand href="/" />
       <nav aria-label="Administração master">
         {tabs.map(({ value, label, icon: Icon }) => <GlisseButton key={value} variant="secondary" className="rh-admin-nav-action" aria-label={label} title={sidebarCollapsed ? label : undefined} aria-current={value === tab ? 'page' : undefined} onClick={() => setTab(value)} icon={<Icon size={18} aria-hidden="true" />}><span>{label}</span></GlisseButton>)}
       </nav>
@@ -148,16 +154,15 @@ export default function Admin({ token, onLogout }: { token: string; onLogout: ()
       <header className="rh-admin-bar">
         {/* SiteHeader composition from Dashboard 01: trigger, separator, title, trailing actions. */}
         <div className="rh-admin-header-path"><GlisseButton variant="secondary" className="rh-admin-sidebar-trigger" aria-label={sidebarCollapsed ? 'Expandir navegação' : 'Recolher navegação'} aria-expanded={!sidebarCollapsed} onClick={() => setSidebarCollapsed(value => !value)}><PanelLeft size={17} /></GlisseButton><span className="rh-admin-header-separator" aria-hidden="true" /><span>Administração</span><ChevronRight size={13} aria-hidden="true" /><strong>{title}</strong></div>
-        <div className="rh-admin-actions"><AppearanceControl compact /><GlisseButton variant="secondary" onClick={onLogout} icon={<LogOut size={16} aria-hidden="true" />}>Sair</GlisseButton></div>
+        <div className="rh-admin-actions"><a href="/republica/perfil">Meu perfil</a><AppearanceControl compact /><GlisseButton variant="secondary" onClick={onLogout} icon={<LogOut size={16} aria-hidden="true" />}>Sair</GlisseButton></div>
       </header>
-      <main className="rh-admin-main">
-        <AnimatedTitle key={tab} className="rh-admin-title">{tab === 'resumo' ? 'Visão da plataforma' : title ?? 'Administração'}</AnimatedTitle>
-        <p>{tab === 'resumo' ? 'Acompanhe a operação das repúblicas em um só lugar.' : people ? 'Consulte as contas e o status de acesso.' : 'Consulte as casas cadastradas na plataforma.'}</p>
-        {error ? <section className="rh-admin-state"><p role="alert">{error}</p><GlisseButton onClick={() => { setError(''); setAttempt(value => value + 1) }}>Tentar novamente</GlisseButton></section> : !data ? <section className="rh-admin-state" aria-busy="true"><p role="status">Carregando administração…</p></section> : <>
+      <main className="rh-admin-main" id="conteudo-master" tabIndex={-1}>
+        <PageHeading title={tab === 'resumo' ? 'Visão da plataforma' : title ?? 'Administração'} context="Administração master" description={tab === 'resumo' ? 'Acompanhe a operação das repúblicas em um só lugar.' : people ? 'Consulte as contas e o status de acesso.' : 'Consulte as casas cadastradas na plataforma.'} />
+        <div ref={content} className="workspace-results">{error ? <section className="rh-admin-state"><p role="alert">{error}</p><GlisseButton onClick={() => { setError(''); setAttempt(value => value + 1) }}>Tentar novamente</GlisseButton></section> : !data ? <section className="rh-admin-state" aria-busy="true"><p role="status">Carregando administração…</p></section> : <>
           {tab === 'resumo' && summary && <SectionCards summary={summary} houses={data.houses} users={data.users} />}
-          {tab === 'resumo' && <FinanceChart points={summary?.historicoIlustrativo} />}
+          {tab === 'resumo' && Boolean(summary?.historicoIlustrativo?.length) && <FinanceChart points={summary?.historicoIlustrativo} />}
           <div className={tab === 'resumo' ? 'rh-admin-overview' : ''}>
-            <Directory key={tab} rows={rows ?? []} people={people} />
+            <Directory key={tab} rows={rows ?? []} people={people} onToggle={row => setAction({ row, people })} />
             {tab === 'resumo' && <section className="rh-admin-health">
               <div className="rh-admin-health-heading"><Building2 size={22} aria-hidden="true" /><span>Cadastros</span></div><h2>Situação das repúblicas</h2>
               <p>Distribuição das casas cadastradas.</p>
@@ -168,11 +173,15 @@ export default function Admin({ token, onLogout }: { token: string; onLogout: ()
             </section>}
           </div>
           <div className="rh-admin-data-caption"><Check size={13} aria-hidden="true" />Valores e situações informados pela plataforma.</div>
-        </>}
+        </>}</div>
       </main>
     </div>
     <div className="rh-admin-dock">
       <TabBar aria-label="Área de administração" value={tab} onValueChange={value => setTab(value as Tab)} items={tabs.map(({ value, label, icon: Icon }) => ({ value, label, icon: <Icon size={18} aria-hidden="true" /> }))} />
     </div>
+    {action && <ActionDialog title={`${action.row.active ? 'Bloquear' : 'Desbloquear'} ${action.people ? 'usuário' : 'república'}`} confirm={action.row.active ? 'Confirmar bloqueio' : 'Confirmar desbloqueio'} danger={action.row.active} onClose={() => setAction(null)} onSubmit={async () => {
+      await apiRequest('PATCH', `/master/${action.people ? 'usuarios' : 'republicas'}/${action.row.id}/status`, token, action.people ? { ativo: !action.row.active } : { ativa: !action.row.active })
+      setAttempt(value => value + 1)
+    }}><p>{action.row.name}: {action.row.active ? action.people ? 'o acesso dessa conta será bloqueado e suas sessões serão revogadas.' : 'as operações dessa república ficarão bloqueadas.' : 'o acesso permitido pelas regras da plataforma será restabelecido.'}</p><p>Os registros e o histórico serão preservados.</p></ActionDialog>}
   </div>
 }

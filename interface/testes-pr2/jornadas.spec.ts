@@ -89,6 +89,7 @@ test('MASTER consulta diretórios reais e morador não acessa administração', 
   await page.getByRole('button', { name: 'Repúblicas', exact: true }).first().click()
   await expect(page.getByText('Aurora integração PR2', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Usuários', exact: true }).first().click()
+  await page.getByRole('searchbox', { name: 'Buscar usuários', exact: true }).fill('ana@integracao.rephouse.test')
   await expect(page.getByText('ana@integracao.rephouse.test', { exact: true })).toBeVisible()
   expect(await contrast(page.getByRole('button', { name: 'Sair', exact: true }))).toBeGreaterThanOrEqual(4.5)
   expect(await contrast(page.locator('.rh-admin-pagination'))).toBeGreaterThanOrEqual(4.5)
@@ -103,7 +104,7 @@ test('MASTER consulta diretórios reais e morador não acessa administração', 
   expect(errors).toEqual([])
 })
 
-test('campo flutuante interno continua criando tarefa após a variante do login', async ({ page, request }) => {
+test('campo interno com rótulo externo continua criando tarefa', async ({ page, request }) => {
   await login(page, 'admin.aurora')
   await page.getByRole('link', { name: 'Tarefas', exact: true }).first().click()
   await page.getByRole('button', { name: 'Nova tarefa', exact: true }).click()

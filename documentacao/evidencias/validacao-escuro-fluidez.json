@@ -1,0 +1,119 @@
+{
+  "dataLocal": "2026-11-11",
+  "fuso": "America/Sao_Paulo",
+  "versao": "2.1.0",
+  "origem": "local",
+  "baseGit": "fc36796",
+  "escopo": [
+    "Correção da cascata e dos fundos no modo escuro interno",
+    "Acabamento e contraste dos painéis da visão geral",
+    "Estados vazios sem casinhas repetidas",
+    "Transições de filtros, abas MASTER, menus e diálogos",
+    "Distinção entre ponteiro e teclado; respeito a movimento reduzido"
+  ],
+  "verificacaoFinal": {
+    "comando": "npm --prefix interface run verificar",
+    "saida": 0,
+    "compilacao": "Aprovada",
+    "tipagem": "Aprovada",
+    "lint": { "erros": 0, "avisosFastRefreshPreexistentes": 5 },
+    "inicioUTC": "2026-11-12T00:52:07.729Z",
+    "duracaoTestesMs": 274658.091,
+    "testesAprovados": 43,
+    "falhas": 0,
+    "ignorados": 0,
+    "instaveisNaExecucaoFinal": 0,
+    "retriesAutomaticos": 0,
+    "log": ".devops-local/escuro-fluidez-final.log",
+    "relatorio": ".devops-local/interface/resultado-playwright.json",
+    "banco": "PostgreSQL 18 exclusivo rephouse-interface-test, porta 5544; schemas descartáveis do harness"
+  },
+  "novosCenarios": {
+    "arquivo": "interface/testes-pr2/escuro-fluidez.spec.ts",
+    "quantidade": 3,
+    "dados": "Respostas HTTP controladas exclusivamente no navegador de testes",
+    "conferencias": [
+      "Visão geral vazia em 320, 390, 768 e 1440 px: sem rolagem horizontal ou ícones repetidos",
+      "Painéis com superfícies distintas do fundo, cantos, borda e espaçamento interno",
+      "Contraste de texto de pelo menos 4,5:1 nos elementos selecionados do resumo e dos painéis",
+      "Ausência de casinhas nos estados vazios de despesas, tarefas e financeiro pessoal",
+      "Filtros entregam os resultados imediatamente e interrompem a animação anterior",
+      "Teclado e movimento reduzido dispensam a transição dos resultados",
+      "Ativar movimento reduzido durante uma transição cancela o efeito em andamento",
+      "Menu MASTER usa 150 ms por ponteiro e zero por teclado, mesmo com foco automático no campo",
+      "Diálogo MASTER anima por ponteiro, mantém foco e contraste e abre imediatamente por teclado"
+    ]
+  },
+  "regressaoPreservada": [
+    "Cadastro, login, sessão e logout",
+    "Tarefas e permissões por perfil",
+    "Pagamentos e comprovantes com API e PostgreSQL reais de testes",
+    "Perfil, exclusão lógica e troca de administração",
+    "Saída e troca de república com preservação do histórico",
+    "Bloqueios MASTER",
+    "Matriz visual existente de 96 combinações, extremos, janela baixa e reflow equivalente a 200%",
+    "Comparação visual do login antes e após carregar os estilos internos"
+  ],
+  "movimento": {
+    "resultadosEAbas": "Web Animations API; opacidade, 160 ms, cubic-bezier(.23,1,.32,1); sem remontagem ou deslocamento de dados",
+    "menus": "Transições CSS Base UI; opacidade e escala .98, 150 ms; origem no acionador",
+    "dialogos": "Entrada CSS do painel e do backdrop, 180 ms; sem retardar o foco ou a ação",
+    "botoes": "Feedback de pressão existente de 140 ms",
+    "tarefas": "Feedback Motion de 160 ms, com curva compartilhada; sem animação ao reordenar a lista",
+    "preferencias": "Teclado identificado por eventos, sem confundir foco automático com uso do teclado; movimento reduzido respeitado"
+  },
+  "servidor5173": {
+    "url": "http://localhost:5173/republica",
+    "resultado": "Aprovado após reiniciar somente o frontend",
+    "tipo": "Navegador Edge com todas as chamadas API interceptadas por respostas controladas; sem leitura ou escrita no banco da equipe",
+    "paginas": ["/republica", "/republica/tarefas", "/admin"],
+    "larguras": [390, 1440],
+    "temas": ["claro", "escuro"],
+    "vistasConferidas": 12,
+    "errosJavaScript": 0,
+    "rolagemHorizontal": false,
+    "iconesEmEstadosVazios": 0,
+    "menu": { "herdaTokensInternos": true, "fundoEscuro": "rgb(30, 41, 36)", "duracaoPorPonteiro": "0.15s, 0.15s", "escape": "Aprovado" },
+    "registro": ".devops-local/escuro-fluidez-servidor.json",
+    "capturas": ".devops-local/interface/imagens/escuro-fluidez/servidor-5173",
+    "inspecaoVisual": ["Visão geral escura em 1440 px", "Visão geral escura em 390 px", "Menu MASTER escuro em 1440 px"],
+    "diagnostico": "Antes do reinício, o Vite do contêiner ainda servia os módulos antigos, embora os arquivos montados já estivessem atualizados. O reinício do frontend resolveu a divergência. API, PostgreSQL e volumes não foram recriados."
+  },
+  "ocorrenciasDuranteValidacao": [
+    {
+      "fase": "Primeira execução completa",
+      "resultado": "36 aprovados, uma falha de navegação e seis testes subsequentes não executados por dependência serial",
+      "evento": "ERR_ABORTED em page.goto('/login') durante a troca de contas no teste de edição de tarefa",
+      "causa": "Não determinada; não foi atribuída às animações nem a um defeito funcional sem reprodução",
+      "acompanhamento": "A jornada passou isoladamente; a repetição completa passou com 43 testes. Após o ajuste adicional de modalidade de entrada, os três testes direcionados e a verificação completa final também passaram.",
+      "testeOriginal": "Sem mudanças, sem retries automáticos e sem enfraquecimento das verificações",
+      "log": ".devops-local/escuro-fluidez-verificacao.log",
+      "relatorioPreservado": ".devops-local/escuro-fluidez-primeira-execucao.json",
+      "jornadaIsolada": ".devops-local/escuro-fluidez-tarefa-isolada.log",
+      "repeticaoCompleta": ".devops-local/escuro-fluidez-aprovacao.log"
+    },
+    {
+      "fase": "Conferência de modalidade de entrada",
+      "evento": "A detecção apenas por :focus-visible desativava a animação de menus abertos por mouse quando o campo recebia foco automático",
+      "correcao": "Modalidade identificada por eventos de ponteiro e teclado; acrescentadas asserções para menu e diálogo nos dois modos",
+      "logDirecionado": ".devops-local/escuro-fluidez-modalidade.log"
+    }
+  ],
+  "preservacao": {
+    "homeLoginCadastroECasinha": "Sem alteração nesta revisão",
+    "marca": "Preservada",
+    "apisTiposPublicosBancoEVersao": "Sem alteração nesta revisão",
+    "alteracoesLocaisAnteriores": "Preservadas",
+    "volumes": "Preservados",
+    "commit": false,
+    "push": false,
+    "publicacao": false,
+    "ciRemota": false
+  },
+  "limites": [
+    "Resultados de navegador automatizado local; dispositivo físico e avaliação humana de conforto das animações não foram exercitados",
+    "Contraste medido nos elementos selecionados; não constitui auditoria completa de acessibilidade",
+    "A causa da interrupção isolada da primeira execução continua não determinada",
+    "Backend independente não foi reexecutado nesta revisão visual; a suíte frontend manteve suas jornadas HTTP e PostgreSQL reais de testes"
+  ]
+}

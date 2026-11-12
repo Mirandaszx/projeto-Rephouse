@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { ArrowUpRight, CheckCheck, ClipboardCheck, Clock3, ReceiptText, Wallet } from 'lucide-react'
 import { request, brl as money } from '../api'
 import { GlisseButton } from '../rebuild/GlisseButton'
+import { Badge, EmptyState, PersonMark, SectionHeading } from '../interno/WorkspaceUI'
+import { brasilDay } from '../interno/presentation'
 import './overview.css'
 
 export type Share = { id: string; membroId: string; valorDevido: string; valorPago: string }
@@ -37,34 +39,38 @@ export default function Overview({ token, revision, memberId, members, expenses,
 
   const shares = expenses.flatMap(expense => expense.rateios.filter(share => share.membroId === memberId))
   const personal = shares.reduce((total, share) => total + balance(share), 0)
+  const openShares = shares.filter(share => balance(share) > 0).length
   // A API ordena despesas por vencimento. O resumo usa criação, sem alterar a lista original.
   const recent = [...expenses].sort((a, b) => b.criadaEm.localeCompare(a.criadaEm) || a.id.localeCompare(b.id)).slice(0, 5)
   const pending = tasks?.filter(task => task.status === 'ABERTA').sort((a, b) => (a.prazo ?? '9999').localeCompare(b.prazo ?? '9999') || a.id.localeCompare(b.id)).slice(0, 4)
+  const today = brasilDay()
 
   return <>
     <section className="rep-metrics" aria-label="Resumo da república">
-      <div className="rep-metric rep-metric-personal"><span className="rep-metric-label"><Wallet size={18} aria-hidden="true" />Sua parte a pagar</span><strong>{money.format(personal / 100)}</strong><small>{shares.filter(share => balance(share) > 0).length} rateios em aberto</small></div>
+      <div className="rep-metric rep-metric-personal"><span className="rep-metric-label"><Wallet size={20} aria-hidden="true" />Sua parte a pagar</span><strong>{money.format(personal / 100)}</strong><div className="rep-personal-foot"><small>{openShares} {openShares === 1 ? 'rateio' : 'rateios'} em aberto</small><a href="/republica/financeiro">Meu financeiro <ArrowUpRight size={17} aria-hidden="true" /></a></div></div>
+      <div className="rep-metric-strip">
       <div className="rep-metric"><span className="rep-metric-label"><ReceiptText size={18} aria-hidden="true" />Em aberto na casa</span><strong>{money.format(Number(dashboard.totalPendente))}</strong><small>Pendências da república</small></div>
       <div className="rep-metric"><span className="rep-metric-label"><CheckCheck size={18} aria-hidden="true" />Pago neste mês</span><strong>{money.format(Number(dashboard.totalPagoNoMes))}</strong><small>Pagamentos da casa</small></div>
       <div className="rep-metric"><span className="rep-metric-label"><ClipboardCheck size={18} aria-hidden="true" />Tarefas abertas</span><strong>{dashboard.tarefasAbertas}</strong><a href="/republica/tarefas">Acompanhar tarefas <ArrowUpRight size={14} aria-hidden="true" /></a></div>
+      </div>
     </section>
     <div className="rep-overview-grid">
       <section className="rep-overview-panel" aria-labelledby="recent-expenses-title">
-        <header className="rep-panel-heading"><div><h2 id="recent-expenses-title">Despesas recentes</h2><p>Os últimos registros da casa.</p></div><a href="/republica/despesas" aria-label="Ver todas as despesas">Ver todas <ArrowUpRight size={15} aria-hidden="true" /></a></header>
-        {!recent.length ? <div className="rep-panel-empty"><ReceiptText size={26} aria-hidden="true" /><p>Nenhuma despesa por aqui.</p><small>As despesas cadastradas aparecerão neste espaço.</small></div> : <ul className="rep-recent-expenses">{recent.map(expense => {
+        <SectionHeading id="recent-expenses-title" title="Despesas recentes" description="Os últimos registros da casa."><a href="/republica/despesas" aria-label="Ver todas as despesas">Ver todas <ArrowUpRight size={15} aria-hidden="true" /></a></SectionHeading>
+        {!recent.length ? <EmptyState title="Nenhuma despesa por aqui." description="As despesas cadastradas aparecerão neste espaço." /> : <ul className="rep-recent-expenses">{recent.map(expense => {
           const share = expense.rateios.find(item => item.membroId === memberId)
           const paid = expense.rateios.every(item => balance(item) === 0)
           return <li key={expense.id}>
             <div className="rep-recent-name"><strong>{expense.titulo}</strong><small>{expense.categoria} · Vence em {date(expense.vencimento)}</small></div>
             <div className="rep-recent-amount"><strong>{money.format(Number(expense.valorTotal))}</strong><small>{share ? 'Sua parte: ' + money.format(balance(share) / 100) : 'Fora do seu rateio'}</small></div>
-            <div className="rep-recent-action">{share && balance(share) > 0 ? <GlisseButton variant="secondary" disabled={disabled} onClick={() => onPay(expense, share)}>Pagar</GlisseButton> : <span className="rep-paid">{paid ? 'Paga' : share ? 'Sua parte paga' : 'Pendente'}</span>}</div>
+            <div className="rep-recent-action">{share && balance(share) > 0 ? <GlisseButton variant="secondary" disabled={disabled} onClick={() => onPay(expense, share)}>Pagar</GlisseButton> : <Badge tone={paid || share ? 'success' : 'warning'}>{paid ? 'Paga' : share ? 'Sua parte paga' : 'Pendente'}</Badge>}</div>
           </li>
         })}</ul>}
       </section>
       <section className="rep-overview-panel" aria-labelledby="pending-tasks-title">
-        <header className="rep-panel-heading"><div><h2 id="pending-tasks-title">Tarefas pendentes</h2><p>Próximos afazeres da casa.</p></div><a href="/republica/tarefas" aria-label="Ver todas as tarefas">Ver todas <ArrowUpRight size={15} aria-hidden="true" /></a></header>
-        {error ? <div className="rep-panel-empty"><p role="alert">{error}</p><GlisseButton variant="secondary" onClick={() => { setError(''); setTasks(null); setAttempt(value => value + 1) }}>Tentar carregar tarefas</GlisseButton></div> : !pending ? <p className="rep-panel-loading" role="status">Carregando tarefas…</p> : !pending.length ? <div className="rep-panel-empty"><ClipboardCheck size={26} aria-hidden="true" /><p>Tudo em dia nas tarefas.</p><small>As próximas tarefas abertas aparecerão aqui.</small></div> : <ul className="rep-pending-tasks">{pending.map(task => <li key={task.id}>
-          <span className="rep-task-symbol"><ClipboardCheck size={18} aria-hidden="true" /></span><div><strong>{task.titulo}</strong><small>{task.responsavelId === memberId ? 'Você' : members.find(member => member.id === task.responsavelId)?.usuario.nome ?? 'Responsável indisponível'}</small><span><Clock3 size={12} aria-hidden="true" />{task.prazo ? date(task.prazo) : 'Sem prazo definido'}</span></div>
+        <SectionHeading id="pending-tasks-title" title="Tarefas pendentes" description="Próximos afazeres da casa."><a href="/republica/tarefas" aria-label="Ver todas as tarefas">Ver todas <ArrowUpRight size={15} aria-hidden="true" /></a></SectionHeading>
+        {error ? <div className="rep-panel-empty"><p role="alert">{error}</p><GlisseButton variant="secondary" onClick={() => { setError(''); setTasks(null); setAttempt(value => value + 1) }}>Tentar carregar tarefas</GlisseButton></div> : !pending ? <p className="rep-panel-loading" role="status">Carregando tarefas…</p> : !pending.length ? <EmptyState title="Tudo em dia nas tarefas." description="As próximas tarefas abertas aparecerão aqui." /> : <ul className="rep-pending-tasks">{pending.map(task => <li key={task.id}>
+          <PersonMark name={members.find(member => member.id === task.responsavelId)?.usuario.nome ?? '?'} /><div><strong>{task.titulo}</strong><small>{task.responsavelId === memberId ? 'Você' : members.find(member => member.id === task.responsavelId)?.usuario.nome ?? 'Responsável indisponível'}</small><span><Clock3 size={14} aria-hidden="true" />{task.prazo ? date(task.prazo) : 'Sem prazo definido'}</span>{task.prazo && task.prazo.slice(0, 10) < today && <Badge tone="danger">Em atraso</Badge>}</div>
         </li>)}</ul>}
       </section>
     </div>

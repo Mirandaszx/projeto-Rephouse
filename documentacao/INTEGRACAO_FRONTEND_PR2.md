@@ -73,11 +73,11 @@ Os testes do PR executam no navegador contra **HTTP e PostgreSQL reais**, sem in
 
 ## Limites das telas atuais
 
-Algumas funcionalidades do backend ainda não têm controles nessas telas: edição de perfil, exclusão de conta, transferência de administração e certas ações de bloqueio. O adaptador disponibiliza as operações, mas não cria esses controles visuais.
+Na revisão de 10/11/2026, foram acrescentados controles de perfil, exclusão de conta, saída/troca de república, dados da casa, transferência, desativação/consulta de vínculos inativos, detalhes/edição de despesas, financeiro pessoal com histórico, download de comprovantes, edição de tarefas e bloqueios MASTER. O [guia das funcionalidades](FUNCIONALIDADES_INTERFACE.md) identifica caminhos, permissões e validação. As regras e o contrato do adaptador foram preservados.
 
 O gráfico MASTER usa o campo ilustrativo opcional do protótipo. O backend não preenche esse campo com números fictícios; sem dados para o gráfico, a tela apresenta a mensagem de ausência de histórico. Um gráfico real exige definir um contrato próprio e ajustar a identificação na tela.
 
-O frontend adotado guarda o JWT em `sessionStorage`, conforme o PR. Logout e revogação no banco permanecem efetivos. O tratamento de `requestId`, `Retry-After` e o acesso Google ainda precisam ser incorporados ao novo layout.
+O frontend adotado guarda o JWT em `sessionStorage`, conforme o PR. Logout e revogação no banco permanecem efetivos. O cliente HTTP passou a apresentar `requestId` nas falhas e `Retry-After` em respostas `429`, tratando `204` sem corpo. O acesso Google ainda depende de integração no layout atual e configuração real.
 
 O trabalho permanece local. Merge, mudança do destino do PR, publicação de commits e execução remota de CI são etapas separadas.
 

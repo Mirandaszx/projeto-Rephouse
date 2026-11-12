@@ -8,7 +8,7 @@ import { Calendar } from './vendor/shadcn-calendar'
 import './fields.css'
 
 export function AnimatedField({ label, ...props }: InputHTMLAttributes<HTMLInputElement> & { label: string }) {
-  return <LabelInput {...props} label={label} containerClassName="rep-animated-field" ringColor="green" />
+  return <LabelInput {...props} label={label} labelPlacement="outside" containerClassName="rep-animated-field" ringColor="green" />
 }
 
 export function DateField({ name, label, required }: { name: string; label: string; required?: boolean }) {

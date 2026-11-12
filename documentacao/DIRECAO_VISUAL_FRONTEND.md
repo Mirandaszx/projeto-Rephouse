@@ -1,5 +1,56 @@
 # Direção visual do RepHouse
 
+## Deslize do filtro de despesas — 12/11/2026
+
+O destaque de Todas/Pendentes/Pagas desliza horizontalmente em 350 ms, com aceleração e desaceleração suaves. A duração maior atende à preferência visual escolhida; os dados filtrados continuam disponíveis imediatamente. A marcação usa uma transição CSS de `transform`, restrita a esse filtro, preservando o controle Glisse e sua navegação por teclado. Por escolha explícita do usuário, o clique mantém esse deslize mesmo quando o Windows solicita movimento reduzido. Teclado continua imediato; as demais animações seguem a preferência do sistema.
+
+A primeira conferência registrou o comportamento inicial, que desativava o deslize com movimento reduzido, em `.devops-local/deslize-filtro.json`. A revisão da exceção solicitada tem evidências separadas em `.devops-local/deslize-filtro-clique.json` e `.devops-local/interface/imagens/deslize-filtro-clique/`. Os resultados das suítes completas abaixo pertencem às revisões anteriores.
+
+A exceção passou em oito combinações: 390/1440 px, claro/escuro e movimento normal/reduzido. Foram conferidos quadros intermediários do clique, posição final, teclado imediato, ausência de rolagem horizontal e preservação da redução dos demais efeitos. A preferência real do Windows também retornou movimento reduzido com duração de 350 ms apenas no destaque. Build e tipagem passaram; lint terminou sem erros, com cinco avisos preexistentes de Fast Refresh.
+
+## Transição entre páginas — 12/11/2026
+
+A navegação da área interna agora troca o conteúdo dentro do mesmo documento. Entre visão geral, despesas, tarefas, moradores e configurações, a lateral permanece montada; o conteúdo pronto entra com opacidade e deslocamento de 8 px, em 200 ms, usando Motion. Perfil e financeiro mantêm seu cabeçalho de conta e recebem a mesma entrada ao navegar por links internos.
+
+A sessão e os dados são consultados novamente a cada destino. Enquanto a consulta está pendente, os formulários da página anterior deixam de aparecer. Falhas oferecem nova tentativa; sessão revogada encaminha ao login. Voltar, avançar e recarregar continuam funcionando. Links públicos, externos, com fragmento, download, nova aba ou teclas modificadoras mantêm o comportamento nativo. A navegação por teclado abre o conteúdo imediatamente e move o foco ao conteúdo; movimento reduzido desativa a entrada.
+
+O frontend combina Tailwind CSS 4 nos componentes, CSS próprio para a identidade e os temas e Motion para a entrada de página. As rotas públicas, APIs, tipos públicos, banco e versão 2.1.0 permanecem como estavam.
+
+Validação local: **46 testes aprovados**, zero falhas ou ignorados, build e tipagem aprovados e lint sem erros, com cinco avisos preexistentes. A captura na porta 5173 conferiu oito combinações de 390/1440 px, claro/escuro e movimento normal/reduzido: o documento e a lateral foram preservados; os quatro cenários com movimento normal apresentaram quadros intermediários, e os quatro com movimento reduzido apareceram diretamente. Capturas e medições ficam em `.devops-local/interface/imagens/navegacao-fluida/` e `evidencias/validacao-navegacao-fluida.json`.
+
+## Ajustes do modo escuro e fluidez — 11/11/2026
+
+Os painéis de despesas recentes e tarefas pendentes passam a usar bordas, cantos e espaçamento interno consistentes nos dois temas. No escuro, o fundo fica mais neutro, as superfícies se distinguem do conteúdo principal e o resumo pessoal mantém seu verde e seu contraste. Regras específicas das telas internas impedem que os estilos antigos voltem a preencher os indicadores secundários com retângulos de outra cor. Menus de filtro permanecem no contêiner interno para herdar os mesmos tokens.
+
+| Antes | Depois | Motivo |
+| --- | --- | --- |
+| Casinha repetida nos estados vazios | Título e explicação sem ícone | Reduzir a repetição visual; a marca e a casa do login continuam presentes |
+| Fundos escuros sobrepostos aos estilos novos | Superfícies com bordas, cantos e respiro definidos | Corrigir a cascata e manter uma hierarquia legível |
+| Troca instantânea de resultados por ponteiro | Opacidade de 160 ms, sem deslocar linhas | Suavizar a substituição sem atrasar o resultado ou remontar formulários |
+| Painel do modal aparecia separado do fundo | Entrada coordenada de painel e backdrop em 180 ms | Dar continuidade à abertura e manter o acesso imediato |
+
+Filtros de despesas e tarefas e abas MASTER usam uma transição interrompível pela Web Animations API. Mudanças rápidas cancelam a anterior; teclado e movimento reduzido dispensam o efeito. A abertura de menus usa as transições do Base UI, de 150 ms, com origem no acionador; botões mantêm pressão discreta e a conclusão de tarefa mantém o feedback Motion de 160 ms. Não há animação contínua, entrada de cada linha ou alteração dos valores financeiros durante a leitura.
+
+As evidências desta revisão ficam em `evidencias/validacao-escuro-fluidez.json`; as capturas novas ficam em `.devops-local/interface/imagens/escuro-fluidez/`. Os resultados anteriores abaixo são históricos. Home, login, cadastro, APIs, banco e versão 2.1.0 permanecem preservados.
+
+Verificação completa final: **43 testes aprovados**, sem falhas ou ignorados; build, tipagem e lint aprovados, com cinco avisos preexistentes de Fast Refresh. A primeira execução teve uma navegação interrompida no teste de edição de tarefa; a jornada passou isoladamente e a repetição completa passou sem mudanças no teste ou retries. A causa desse evento isolado não foi determinada e permanece registrada na evidência.
+
+## Modernização das telas internas — 11/11/2026
+
+A direção escolhida para esta etapa é acolhedora e editorial: lateral em verde profundo `#205448`, fundo claro mais quente `#f7f5ef`, superfícies brancas, texto `#193732` e seleção em verde-claro `#d2ec9c`. Home, login, cadastro e a casinha conservam sua composição. As regras novas são limitadas ao contêiner das telas internas, incluindo seus temas claro e escuro.
+
+A lateral separa os destinos da casa das opções da conta. Tem 248 px no computador e 208 px entre 720 e 1023 px; abaixo disso permanecem os quatro destinos na navegação inferior. Perfil e financeiro mantêm um cabeçalho compacto e continuam disponíveis sem república ativa. A fonte Inter local é compartilhada, com títulos de 36/28 px, texto principal de 16 px e informações secundárias de 14 px.
+
+O resumo pessoal ganha o destaque principal; os indicadores da casa formam uma faixa secundária. Despesas e tarefas usam listas e divisórias em vez de cartões repetidos. Os estados financeiros e os atrasos de tarefas têm texto, além da cor. Moradores aparecem com iniciais, perfil e situação; o convite continua separado. O financeiro pessoal agrupa os registros por república e identifica vínculos anteriores. No MASTER, os diretórios conservam busca, filtros, paginação e bloqueios; um gráfico só é apresentado quando a resposta contém uma série disponível.
+
+Cabeçalhos, marca, estados vazios, iniciais e badges ficam em `interface/codigo/interno`. Os botões continuam Glisse; campos e checkboxes reutilizam Spell UI; popovers continuam Base UI, ícones Lucide e feedback discreto Motion/CSS. Os formulários internos usam rótulos externos. Filtros e navegação não recebem animações de entrada de listas; o feedback de conclusão é curto, com movimento reduzido respeitado.
+
+As orientações de Taste e Emil foram adaptadas ao aplicativo de uso diário e ao escopo aprovado: composição, consistência, conteúdo real, legibilidade e resposta às interações. As receitas de landing page e efeitos decorativos não fazem parte desta etapa. Não houve mudança em API, tipos públicos, banco ou versão 2.1.0.
+
+As novas capturas ficam em `.devops-local/interface/imagens/modernizacao-interna/`. A evidência desta etapa distingue cenários visuais com respostas controladas das jornadas HTTP com PostgreSQL dedicado; resultados e limitações ficam em `evidencias/validacao-modernizacao-interna.json`.
+
+Validação final local: **40 testes aprovados**, zero falhas e zero ignorados; compilação e tipagem aprovadas, lint sem erros e com os cinco avisos preexistentes de Fast Refresh. A interface servida na porta 5173 foi conferida com respostas controladas em 390 e 1440 px, sem erros JavaScript ou rolagem horizontal. O reflow equivalente a zoom de 200% foi testado; zoom nativo e celular físico não foram exercitados. Não houve commit, push ou publicação.
+
 ## Design atual: PR #2
 
 Em 09/11/2026, o usuário escolheu o design do [PR #2](https://github.com/Mirandaszx/projeto-Rephouse/pull/2) para substituir a interface anterior. Home, login, cadastro, república, tarefas e MASTER dessa referência estão na pasta `interface` e são servidos em `http://localhost:5173`. Não foi criada uma cópia de segurança do layout anterior.
@@ -51,6 +102,12 @@ O carregamento inicial aplica o tema antes de montar a interface. O modo de alto
 Capturas e resultados desta etapa ficam em `.devops-local/interface/imagens/aparencia/` e [validacao-aparencia.json](evidencias/validacao-aparencia.json). As evidências anteriores permanecem históricas. Não há alteração em APIs, banco, autenticação, dependências ou versão 2.1.0.
 
 Verificação local aprovada com **25 testes**, zero falhas e ignorados, compilação e tipagem aprovadas e os cinco avisos de Fast Refresh já existentes. Os controles selecionados passaram nas medições de 4,5:1 para texto e 3:1 para bordas. Foram conferidos modais claros e escuros, preferência do sistema, escolha manual persistente, sincronização de abas, armazenamento bloqueado e foco em cores forçadas. A porta 5173 também foi conferida em navegador sem enviar formulários ao banco da equipe.
+
+## Gestão de conta e república — 10/11/2026
+
+Perfil, financeiro pessoal e configurações foram organizados em páginas próprias, mantendo a paleta verde, superfícies e preferência de aparência. Os atalhos ficam junto ao perfil no computador e no topo no celular. A navegação inferior conserva as quatro páginas principais. As ações de edição ficam no contexto do registro, e ações que encerram vínculos ou alteram acesso recebem confirmação.
+
+Formulários usam campos nativos rotulados, foco visível e bloqueio durante envio. A tabela MASTER mantém as ações com texto inteiro e permite rolar a tabela em telas estreitas sem ampliar a página. Capturas novas ficam em `.devops-local/interface/imagens/gestao/`, separadas das anteriores. Consulte [as funcionalidades e permissões](FUNCIONALIDADES_INTERFACE.md) e [a validação desta etapa](evidencias/validacao-gestao-interface.json).
 
 ## Histórico das escolhas anteriores
 

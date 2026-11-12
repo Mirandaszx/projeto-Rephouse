@@ -2,7 +2,11 @@
 
 O design do [PR #2](https://github.com/Mirandaszx/projeto-Rephouse/pull/2), commit `8e8ae9aeb84ad2404ee8afc474efa3c9b7986476`, é a interface principal desde 09/11/2026. Ele substitui o layout anterior na pasta `interface`, sem cópia de segurança.
 
-Login e cadastro foram refinados com o painel verde e a casinha da referência aprovada, usando os componentes e a paleta do PR. As telas internas mantêm o design adotado. Veja a [direção visual atual](../documentacao/DIRECAO_VISUAL_FRONTEND.md).
+Login e cadastro foram refinados com o painel verde e a casinha da referência aprovada, usando os componentes e a paleta do PR. As telas internas receberam a modernização acolhedora e editorial: lateral verde profunda, fundo mais quente, tipografia legível e listas com menos cartões. Veja a [direção visual atual](../documentacao/DIRECAO_VISUAL_FRONTEND.md).
+
+A revisão do modo escuro corrige a sobreposição dos estilos antigos, define o acabamento dos painéis e remove as casinhas dos estados vazios. Filtros e abas MASTER recebem uma transição de opacidade de 160 ms; modais e menus têm entradas discretas. Teclado e movimento reduzido mantêm acesso imediato. Evidências locais em [validacao-escuro-fluidez.json](../documentacao/evidencias/validacao-escuro-fluidez.json).
+
+Ao navegar pelos links internos, a página troca o conteúdo no mesmo documento, preservando a lateral da casa. A entrada usa Motion por 200 ms; cada destino revalida sessão e dados. Voltar/avançar, recarga, teclado e links para nova aba continuam disponíveis. Tailwind CSS 4 permanece integrado ao Vite, junto com CSS próprio para a identidade e os temas. Veja [validacao-navegacao-fluida.json](../documentacao/evidencias/validacao-navegacao-fluida.json).
 
 ## Executar
 
@@ -52,17 +56,29 @@ Após essa reorganização, a verificação completa da interface passou com **2
 
 As telas consomem a API real: cadastro/login, criação ou entrada em república, moradores, indicadores, despesas, registros manuais de pagamentos com comprovante, tarefas e consultas MASTER. Não há pagamentos Pix automáticos.
 
-A sessão segue o PR, com JWT em `sessionStorage`. Logout e bloqueio continuam sujeitos à revogação no backend. Algumas operações do backend ainda não têm controles visuais: edição de perfil, transferência de administração, exclusão da conta e certos bloqueios.
+A sessão segue o PR, com JWT em `sessionStorage`. Logout e bloqueio continuam sujeitos à revogação no backend. Perfil, exclusão da conta, saída/troca de república, configurações, transferência de administração, vínculos inativos, detalhes/edição de despesas, histórico pessoal, download de comprovantes, edição de tarefas e bloqueios MASTER agora têm controles na interface. Veja [ações, permissões e roteiro de validação](../documentacao/FUNCIONALIDADES_INTERFACE.md).
+
+Atalhos: **Meu perfil** (`/republica/perfil`), **Meu financeiro** (`/republica/financeiro`) e **Configurações da república** (`/republica/configuracoes`). Perfil e histórico também funcionam sem república. Na lista de despesas, clique no título para abrir detalhes e edição. Em Tarefas, o botão Editar aparece para a administração; no MASTER, as ações ficam nos diretórios.
+
+Perfil e financeiro usam uma área central de até 940 px, com largura adaptada no celular. Uma correção posterior protege esse layout da ordem de carregamento do CSS. Sua regressão mede largura e centralização em seis larguras, nos dois temas; **37 testes ativos passaram**. A porta 5173 também foi conferida com dados exclusivos da API dedicada de testes. Veja [validacao-layout-conta.json](../documentacao/evidencias/validacao-layout-conta.json).
+
+Validação das novas funcionalidades: **36 testes ativos aprovados**, sem falhas ou ignorados, incluindo as jornadas anteriores. O backend passou novamente com **138 testes**. Compilação, tipagem e lint aprovados; permanecem os cinco avisos preexistentes de Fast Refresh. Resultados em [validacao-gestao-interface.json](../documentacao/evidencias/validacao-gestao-interface.json).
 
 O novo login ainda não apresenta o botão Google. A implementação Google do backend permanece disponível, mas a integração com o novo layout e a configuração do Client ID são pendências. O gráfico MASTER não recebe valores fictícios do backend.
 
 ## Verificação
 
+Validação da navegação em 12/11/2026: **46 testes aprovados**, sem falhas ou ignorados, com build, tipagem e lint sem erros (cinco avisos preexistentes). Inclui captura de quadros intermediários da animação, documento e lateral preservados, revalidação da sessão, histórico do navegador, recarga, falha e recuperação, nova aba, download, teclado e movimento reduzido. Os resultados anteriores abaixo permanecem históricos.
+
+Validação da revisão do modo escuro e fluidez em 11/11/2026: **43 testes aprovados** na execução completa final, zero falhas ou ignorados, build e tipagem aprovados e lint sem erros (cinco avisos preexistentes). Os novos cenários conferem os estados vazios, acabamento e contraste dos painéis, interrupção das transições, teclado, movimento reduzido e MASTER. A ocorrência isolada da primeira execução e os resultados finais estão em [validacao-escuro-fluidez.json](../documentacao/evidencias/validacao-escuro-fluidez.json).
+
+Validação da modernização interna em 11/11/2026: **40 testes aprovados**, sem falhas ou ignorados, com build, tipagem e lint sem erros (cinco avisos de Fast Refresh preexistentes). Os três novos cenários conferem o visual com respostas controladas; as jornadas reais existentes continuam na mesma suíte com PostgreSQL dedicado. A matriz cobre 320, 390, 768, 1024, 1366 e 1440 px, dois temas, estados extremos, teclado, contraste e reflow equivalente a 200%. Evidências e limitações: [validacao-modernizacao-interna.json](../documentacao/evidencias/validacao-modernizacao-interna.json).
+
 ### Aparência
 
 A opção **Sistema** acompanha o tema claro ou escuro do computador, inclusive quando ele muda com a página aberta. É possível escolher **Claro** ou **Escuro** no controle de aparência: no canto superior do acesso, junto ao perfil no painel e no topo da administração. Na home, o controle fica no cabeçalho ou dentro do menu no celular.
 
-Somente essa preferência visual é salva em `localStorage`, na chave `rephouse-appearance`, e sincronizada entre abas. Se o navegador bloquear o armazenamento, a escolha continua funcionando na aba atual. Essa configuração não altera o armazenamento da sessão. Campos, rótulos flutuantes, calendário, seleção de moradores, avisos e modais compartilham o tema; o foco por teclado e a preferência de movimento reduzido permanecem ativos.
+Somente essa preferência visual é salva em `localStorage`, na chave `rephouse-appearance`, e sincronizada entre abas. Se o navegador bloquear o armazenamento, a escolha continua funcionando na aba atual. Essa configuração não altera o armazenamento da sessão. Campos, rótulos externos dos formulários internos, calendário, seleção de moradores, avisos e modais compartilham o tema; o foco por teclado e a preferência de movimento reduzido permanecem ativos.
 
 Os cenários de aparência usam o mesmo banco dedicado dos demais testes. As capturas novas ficam em `.devops-local/interface/imagens/aparencia/`, separadas das evidências anteriores. Veja [validacao-aparencia.json](../documentacao/evidencias/validacao-aparencia.json).
 

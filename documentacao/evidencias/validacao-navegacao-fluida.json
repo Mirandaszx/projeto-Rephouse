@@ -1,0 +1,84 @@
+{
+  "dataLocal": "2026-11-12",
+  "fuso": "America/Sao_Paulo",
+  "origem": "local",
+  "versao": "2.1.0",
+  "baseGit": "fc36796",
+  "resultado": "Navegação entre páginas internas com entrada visível e lateral preservada",
+  "implementacao": {
+    "navegacao": "History API em hook interno; URLs existentes preservadas",
+    "efeito": "Motion; opacidade de 0 a 1, deslocamento de 8 a 0 px, 200 ms, cubic-bezier(.23,1,.32,1)",
+    "acessibilidade": "Sem entrada animada por teclado ou com movimento reduzido; foco no conteúdo ao navegar por teclado",
+    "dados": "Sessão e dados revalidados a cada destino; formulário anterior oculto durante a consulta",
+    "linksNativos": "Links públicos, externos, com query, fragmento, download, target ou teclas modificadoras",
+    "falhas": "Nova tentativa para indisponibilidade; sessão revogada encaminha ao login"
+  },
+  "verificacaoCompleta": {
+    "comando": "npm --prefix interface run verificar",
+    "saida": 0,
+    "inicioUTC": "2026-11-12T03:46:25.278Z",
+    "duracaoTestesMs": 270610.669,
+    "aprovados": 46,
+    "falhas": 0,
+    "ignorados": 0,
+    "instaveis": 0,
+    "retriesAutomaticos": 0,
+    "build": "Aprovado",
+    "tipagem": "Aprovada",
+    "lint": { "erros": 0, "avisosFastRefreshPreexistentes": 5 },
+    "log": ".devops-local/navegacao-fluida-verificacao.log",
+    "relatorio": ".devops-local/interface/resultado-playwright.json",
+    "banco": "PostgreSQL 18 dedicado rephouse-interface-test, porta 5544, schemas descartáveis do harness"
+  },
+  "novosTestes": {
+    "arquivo": "interface/testes-pr2/navegacao-fluida.spec.ts",
+    "quantidade": 3,
+    "dados": "Respostas HTTP controladas no navegador",
+    "cenarios": [
+      "Documento e lateral preservados ao trocar páginas; opacidade intermediária capturada em quadros reais",
+      "Revalidação de sessão antes de liberar formulário do destino",
+      "Voltar, avançar e recarregar; perfil e financeiro com dados da conta",
+      "Movimento reduzido e teclado, com foco no conteúdo",
+      "Indisponibilidade de sessão, ocultação dos dados anteriores e recuperação por nova tentativa",
+      "Links com Ctrl, Meta, Shift, Alt, target, download vazio, query, fragmento, endereço público e origem externa",
+      "Sessão revogada durante navegação interna encaminha ao login"
+    ]
+  },
+  "regressao": "A suíte existente manteve suas jornadas HTTP com PostgreSQL real de testes, incluindo pagamentos, comprovantes, tarefas, conta, repúblicas e MASTER. Também manteve a matriz visual e a comparação de preservação do login.",
+  "servidorLocal": {
+    "url": "http://localhost:5173/republica",
+    "resultado": "Aprovado",
+    "navegador": "Edge automatizado",
+    "contagem": 8,
+    "larguras": [390, 1440],
+    "temas": ["claro", "escuro"],
+    "movimento": ["normal", "reduzido"],
+    "documentoELateralPreservados": true,
+    "cenariosComQuadrosIntermediarios": 4,
+    "cenariosReduzidosImediatos": 4,
+    "errosJavaScript": 0,
+    "rolagemHorizontal": false,
+    "dados": "Todas as chamadas API interceptadas por respostas controladas; nenhum acesso ao banco da equipe",
+    "capturas": ".devops-local/interface/imagens/navegacao-fluida/servidor-5173",
+    "registro": ".devops-local/navegacao-fluida-servidor.json",
+    "inspecaoVisual": ["Despesas claras em 1440 px", "Despesas escuras em 390 px"],
+    "ambiente": "Docker Desktop e contêineres existentes iniciados; volumes preservados",
+    "ocorrenciaDaSonda": "A primeira medição falhou porque tsx gerou um helper de nomes ausente na função serializada para o navegador. A sonda foi corrigida; a aplicação não foi alterada por esse diagnóstico. A medição final concluiu os oito cenários."
+  },
+  "preservacao": {
+    "homeLoginCadastroECasinha": true,
+    "apisTiposPublicosBancoEVersao": true,
+    "alteracoesLocaisAnteriores": true,
+    "volumes": true,
+    "novasBibliotecas": false,
+    "commit": false,
+    "push": false,
+    "publicacao": false,
+    "ciRemota": false
+  },
+  "limites": [
+    "Navegador automatizado local; conforto visual subjetivo e aparelho físico não foram avaliados",
+    "A medição da porta 5173 usa dados controlados; não é uma demonstração com contas reais da equipe",
+    "A suíte independente do backend não foi reexecutada, pois a alteração ficou no frontend"
+  ]
+}

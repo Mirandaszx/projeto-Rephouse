@@ -1,0 +1,35 @@
+{
+  "dataLocal": "2026-11-10",
+  "versao": "2.1.0",
+  "problema": "Perfil e financeiro ficavam na coluna lateral de 228 px quando o CSS base da republica carregava depois dos estilos de gestao",
+  "reproducao": {
+    "teste": "interface/testes-pr2/conta-layout.spec.ts",
+    "antes": "Falha reproduzida em 1440 px: display grid em vez de block",
+    "log": ".devops-local/conta-layout-reproducao.log"
+  },
+  "correcao": "Seletor .republica.rep-account-shell garante o layout de conta independentemente da ordem de carregamento dos estilos",
+  "validacao": {
+    "comando": "npm --prefix interface run verificar",
+    "saida": 0,
+    "testesAprovados": 37,
+    "falhas": 0,
+    "ignorados": 0,
+    "compilacaoETipagem": "Aprovadas",
+    "lint": { "erros": 0, "avisosFastRefreshPreexistentes": 5 },
+    "log": ".devops-local/conta-layout-verificacao.log",
+    "novoCenario": "Perfil e financeiro com CSS base forcado ao final: display, largura efetiva, centralizacao e ausencia de rolagem horizontal",
+    "larguras": [320, 390, 768, 1366, 1440, 1740],
+    "temas": ["claro", "escuro"],
+    "capturas": ".devops-local/interface/imagens/conta-layout"
+  },
+  "servidorReal": {
+    "interface": "http://localhost:5173",
+    "dados": "Todas as requisicoes interceptadas no navegador e encaminhadas somente a API HTTP dedicada de testes em 3405; nenhum acesso ao banco da equipe ou envio de formulario",
+    "resultado": "Perfil e financeiro com area principal de 940 px centralizada em 1440 e 1740 px; largura de 390 px no celular; zero erros JavaScript",
+    "capturasInspecionadas": ".devops-local/interface/imagens/conta-layout-servidor",
+    "registro": ".devops-local/conta-layout-servidor.json",
+    "operacao": "Somente frontend reiniciado; API e volumes preservados"
+  },
+  "limites": "Sem mudancas em funcionalidades, backend, APIs, banco, dependencias ou versao; a validacao anterior de 36 testes permanece historica",
+  "naoExecutado": ["commit", "push", "CI remota", "deploy", "alteracoes no banco da equipe"]
+}

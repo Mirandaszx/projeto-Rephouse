@@ -83,7 +83,7 @@ test('falha das tarefas mantém o resumo financeiro e permite tentar novamente',
   await expect(page.getByRole('alert')).toHaveCount(0)
 })
 
-test('modais, campos flutuantes e seletores mantêm contraste nos temas claro e escuro', async ({ page }) => {
+test('modais, rótulos externos e seletores mantêm contraste nos temas claro e escuro', async ({ page }) => {
   test.setTimeout(90000)
   const captures = '../.devops-local/interface/imagens/aparencia'
   await mkdir(captures, { recursive: true })
@@ -99,11 +99,12 @@ test('modais, campos flutuantes e seletores mantêm contraste nos temas claro e 
       expect(await contrast(input)).toBeGreaterThanOrEqual(4.5)
       expect(await contrast(input, 'borderTopColor')).toBeGreaterThanOrEqual(3)
     }
-    for (const label of await dialog.locator('.spell-label-floating').all()) expect(await contrast(label)).toBeGreaterThanOrEqual(4.5)
+    await expect(dialog.locator('.spell-label-outside')).toHaveCount(3)
+    for (const label of await dialog.locator('.spell-label-outside').all()) expect(await contrast(label)).toBeGreaterThanOrEqual(4.5)
     expect(await contrast(dialog.getByRole('button', { name: 'Cancelar', exact: true }))).toBeGreaterThanOrEqual(4.5)
     expect(await contrast(dialog.getByRole('button', { name: 'Adicionar', exact: true }))).toBeGreaterThanOrEqual(4.5)
     expect(await contrast(page.getByRole('button', { name: 'Sair', exact: true }))).toBeGreaterThanOrEqual(4.5)
-    expect(await dialog.locator('.spell-label-floating').first().evaluate(label => getComputedStyle(label).backgroundColor === getComputedStyle(label.parentElement!.querySelector('input')!).backgroundColor)).toBe(true)
+    expect(await dialog.locator('.spell-label-outside').first().evaluate(label => label.getBoundingClientRect().bottom <= label.parentElement!.querySelector('input')!.getBoundingClientRect().top)).toBe(true)
     await dialog.getByRole('button', { name: 'Abrir calendário de Vencimento', exact: true }).click()
     await expect(page.getByRole('dialog', { name: 'Calendário de Vencimento', exact: true })).toBeVisible()
     expect(await contrast(page.locator('.rep-calendar-popup'))).toBeGreaterThanOrEqual(4.5)
