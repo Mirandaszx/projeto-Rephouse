@@ -1,0 +1,83 @@
+{
+  "entrega": "Evolução do financeiro do RepHouse",
+  "versao": "2.2.0",
+  "dataLocal": "2026-11-17",
+  "fusoProduto": "America/Sao_Paulo",
+  "ambiente": "local",
+  "banco": "rabbu_mvp_test",
+  "bancoDaEquipeAlterado": false,
+  "migration": "202611170001_evolucao_financeiro",
+  "resultados": {
+    "backend": {
+      "comando": "npm run verificar",
+      "resultado": "aprovado",
+      "testesUnitariosHttp": 40,
+      "testesPostgresql": 111,
+      "total": 151,
+      "falhas": 0,
+      "ignorados": 0,
+      "buildTipagemContratoTipos": "aprovados",
+      "log": ".devops-local/financeiro-22-backend-final.log"
+    },
+    "interface": {
+      "comando": "npm --prefix interface run verificar",
+      "resultado": "aprovado",
+      "testes": 52,
+      "falhas": 0,
+      "ignorados": 0,
+      "buildTipagem": "aprovados",
+      "lint": "sem erros; cinco avisos preexistentes de Fast Refresh em main.tsx",
+      "duracaoSuite": "4.8 minutos",
+      "log": ".devops-local/financeiro-22-interface-completa.log"
+    },
+    "demonstracao": {
+      "comando": "npm run financeiro:demo -- --verificar",
+      "resultado": "aprovado",
+      "contas": 3,
+      "republicas": 1,
+      "despesas": 2,
+      "parcelaAna": { "devido": "60.00", "pago": "25.00", "saldo": "35.00" },
+      "isolamento": "schema descartável criado e encerrado pelo próprio comando"
+    }
+  },
+  "cobertura": [
+    "Criação idempotente concorrente e geração única por recorrência e competência",
+    "Rateio de 100.00 em 33.34, 33.33 e 33.33",
+    "Configuração futura sem alterar contas já geradas",
+    "Dia 31, fevereiro comum e bissexto, virada de ano e data civil de Brasília",
+    "Participantes fixos, novo morador fora da seleção e saída pausando geração sem redistribuição",
+    "Meses anteriores com revisão sem cobrança automática",
+    "Transferência de administração e autorização do administrador atual",
+    "Desativação sem apagar histórico",
+    "Resumo por vencimento com pagamento feito em outro mês",
+    "Contagem, paginação e filtros da casa versus parcela pessoal",
+    "Comprovantes e histórico depois de sair da república",
+    "Migrations aplicadas a registros anteriores sem modificar registros ou bytes",
+    "API compilada gera na inicialização sem visita, encerra graciosamente e reinicia sem duplicação",
+    "Comprovante baixado com bytes idênticos depois do reinício da API",
+    "Navegador real: criação recorrente, bloqueio de envio duplicado, pagamento parcial, resumo mensal, edição futura e desativação",
+    "Erro 503 com requestId, nova tentativa e troca de filtro sem apresentar totais antigos",
+    "Regressão existente de tarefas, pagamentos, comprovantes, MASTER e páginas públicas"
+  ],
+  "visual": {
+    "larguras": [320, 390, 768, 1024, 1366, 1440],
+    "temas": ["claro", "escuro"],
+    "movimentoReduzido": true,
+    "zoom200": "financeiro pessoal em janela 1440x768",
+    "rolagemHorizontalDaPagina": false,
+    "filtroEstreito": "rolagem horizontal local para acessar as cinco opções",
+    "capturas": ".devops-local/interface/imagens/financeiro-22/",
+    "conferenciaManual": "capturas de despesas no celular e computador e financeiro pessoal no tema escuro",
+    "paginasPublicas": "sem alterações de código; regressão visual existente aprovada"
+  },
+  "limites": [
+    "Migrations não aplicadas ao banco da equipe",
+    "Rotina exige API em execução; interrupções de meses anteriores exigem revisão administrativa",
+    "Revisar competência não cria automaticamente uma despesa avulsa nem altera saldos",
+    "Adaptador preserva limite de 1000 registros; interface paginada para conjuntos maiores permanece fora desta etapa",
+    "Sem validação em celular físico ou leitor de tela nesta revisão",
+    "Sem teste de carga, restauração, CI remota, deploy, commit ou push",
+    "Confirmação administrativa de pagamentos, divisão personalizada e reembolsos não implementados"
+  ],
+  "remoto": { "ciExecutada": false, "publicado": false }
+}

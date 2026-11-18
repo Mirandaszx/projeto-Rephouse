@@ -1,8 +1,16 @@
 # Banco de dados do MVP RABBU
 
+## Complemento financeiro 2.2.0
+
+A migration `202611170001_evolucao_financeiro` acrescenta `recorrencias_despesa`, `configuracoes_recorrencia`, `recorrencias_participantes` e `competencias_recorrencia`. O modelo atual possui 14 tabelas, incluindo as duas de autenticação Google introduzidas anteriormente. As oito tabelas centrais descritas abaixo continuam preservadas.
+
+Recorrência e competência têm chave composta única; uma conta só pode estar vinculada a uma competência gerada. Configurações e participantes são aditivos, com vigência e proteção por triggers. Checks e vínculos verificam meses, valores positivos e isolamento por república. A geração grava conta, rateios e competência na mesma transação `SERIALIZABLE`; meses anteriores não gerados viram pendências de revisão sem cobrança automática.
+
+O teste `financeiro-migracao.test.ts` prepara a estrutura anterior em schema descartável, insere despesa, parcela, pagamento parcial e comprovante, aplica a migration nova e compara registros e bytes. Nesta entrega a migration é aplicada somente em `rabbu_mvp_test`, preservando o banco da equipe. Consulte [FINANCEIRO_2_2.md](FINANCEIRO_2_2.md).
+
 Implementação em PostgreSQL 18, baseada no documento `RABBU_MVP_Primeira_Entrega_3_Perfis.pdf`. O banco `rabbu_mvp` é separado do `banco_projeto` existente; as tabelas do banco anterior foram preservadas.
 
-O [schema Prisma](../prisma/schema.prisma) define oito tabelas. As migrations também contêm regras SQL que o Prisma não representa, como triggers e a view de despesas vencidas. O backend usa TypeScript e ESM, com Prisma 7.10.0 e o gerador moderno `prisma-client`, que produz os tipos e o cliente em `codigo/gerado/prisma`. A conexão PostgreSQL usa `@prisma/adapter-pg`. [Geradores do Prisma 7](https://www.prisma.io/docs/orm/v7/prisma-schema/overview/generators)
+O [schema Prisma](../prisma/schema.prisma) define 14 tabelas. As migrations também contêm regras SQL que o Prisma não representa, como triggers e a view de despesas vencidas. O backend usa TypeScript e ESM, com Prisma 7.10.0 e o gerador moderno `prisma-client`, que produz os tipos e o cliente em `codigo/gerado/prisma`. A conexão PostgreSQL usa `@prisma/adapter-pg`. [Geradores do Prisma 7](https://www.prisma.io/docs/orm/v7/prisma-schema/overview/generators)
 
 A organização dos módulos e a execução da API estão descritas em [ARQUITETURA.md](ARQUITETURA.md).
 

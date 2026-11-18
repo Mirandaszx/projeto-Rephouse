@@ -4,6 +4,7 @@ import { createDatabase } from './infraestrutura/banco/client.js'
 import { createReadinessProbe } from './modulos/saude/readiness.js'
 import { stdoutLog } from './compartilhado/http/request-log.js'
 import {receiptInventory} from './infraestrutura/armazenamento/importar-comprovantes.js'
+import { startRecurringScheduler } from './modulos/financeiro/recorrencias.service.js'
 
 async function startServer(): Promise<void> {
   const env = loadEnv()
@@ -19,6 +20,7 @@ async function startServer(): Promise<void> {
       stdoutLog({ event: 'started', port: env.PORT })
     })
     let encerrando = false
+    const stopRecurring = startRecurringScheduler(database, stdoutLog)
     server.headersTimeout=10000
     server.requestTimeout=30000
     server.keepAliveTimeout=5000
@@ -26,10 +28,11 @@ async function startServer(): Promise<void> {
     const shutdown = (): void => {
       if (encerrando) return
       encerrando = true
+      const recurringStopped = stopRecurring()
       const limite = setTimeout(() => { process.exit(1) }, 15000)
       limite.unref()
       server.close(() => {
-        void Promise.all([database.$disconnect(), probe.close()]).catch(() => {
+        void recurringStopped.then(() => Promise.all([database.$disconnect(), probe.close()])).catch(() => {
           process.exitCode = 1
         }).finally(() => {
           clearTimeout(limite)

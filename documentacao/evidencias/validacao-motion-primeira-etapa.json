@@ -1,0 +1,105 @@
+{
+    "dataUtc":  "2026-11-18T20:20:53.6807333Z",
+    "versao":  "2.2.0",
+    "ambiente":  "local; PostgreSQL dedicado; schema descartável por execução",
+    "comando":  "npm --prefix interface run verificar",
+    "build":  "aprovado",
+    "tipagem":  "aprovada; repetida após ajuste do relógio nos testes",
+    "lint":  {
+                 "erros":  0,
+                 "avisosPreexistentes":  5,
+                 "origem":  "react-refresh/only-export-components em main.tsx"
+             },
+    "testes":  {
+                   "aprovados":  64,
+                   "falhas":  0,
+                   "ignorados":  0,
+                   "instaveis":  0,
+                   "duracaoMs":  336816.724,
+                   "novosCenarios":  7
+               },
+    "execucaoInicial":  {
+                            "aprovados":  10,
+                            "falhas":  1,
+                            "motivo":  "Importação do ReactDOM no harness isolado do aviso; corrigida para default export do Vite",
+                            "resultadoPreservado":  ".devops-local/motion-primeira-verificacao.json"
+                        },
+    "quadrosIntermediarios":  {
+                                  "ambiente":  "controlado; sem escrita na API",
+                                  "observations":  [
+                                                       {
+                                                           "theme":  "light",
+                                                           "entry":  {
+                                                                         "count":  2,
+                                                                         "opacity":  0.436176
+                                                                     },
+                                                           "exit":  {
+                                                                        "count":  2,
+                                                                        "opacity":  0.463854,
+                                                                        "open":  true
+                                                                    },
+                                                           "focused":  true
+                                                       },
+                                                       {
+                                                           "theme":  "light",
+                                                           "toast":  "legível, cabe no celular; reduzido fecha imediatamente"
+                                                       },
+                                                       {
+                                                           "theme":  "dark",
+                                                           "entry":  {
+                                                                         "count":  2,
+                                                                         "opacity":  0.436176
+                                                                     },
+                                                           "exit":  {
+                                                                        "count":  2,
+                                                                        "opacity":  0.463854,
+                                                                        "open":  true
+                                                                    },
+                                                           "focused":  true
+                                                       },
+                                                       {
+                                                           "theme":  "dark",
+                                                           "toast":  "legível, cabe no celular; reduzido fecha imediatamente"
+                                                       }
+                                                   ]
+                              },
+    "capturas":  [
+                     {
+                         "arquivo":  "aviso-dark-390.png",
+                         "sha256":  "92999fef1e958abb888bbd5a6e6fb6344b57f10e990abcbc4147ebdbc5173960"
+                     },
+                     {
+                         "arquivo":  "aviso-light-390.png",
+                         "sha256":  "bc9fdbb1e619b8f976f7e9954e67f5118888beea7a0d8077ce1c85e08a2684eb"
+                     },
+                     {
+                         "arquivo":  "modal-entrada-dark-390.png",
+                         "sha256":  "a9444253ddb6d263ae6c3e5aa5ccfa6b15bb5c64533fd9c4c20667763d6e971a"
+                     },
+                     {
+                         "arquivo":  "modal-entrada-light-390.png",
+                         "sha256":  "77bf36f137368eedeca521dbb8173426d57cefc936b905c87fe092c443aff012"
+                     },
+                     {
+                         "arquivo":  "modal-saida-dark-390.png",
+                         "sha256":  "7b41fcad8cf8041279b96c5a2000088461c767d69aa3f7ff552ebfddbb6d7a10"
+                     },
+                     {
+                         "arquivo":  "modal-saida-light-390.png",
+                         "sha256":  "d026a5af86d02d82337d97f7db0100f8139c4f0647a8b06a7d5926a893069162"
+                     }
+                 ],
+    "inspecaoVisual":  [
+                           "modal claro em 320 px e escuro em janela baixa de 1440 px",
+                           "entrada clara e saída escura pausadas em 20 ms em 390 px",
+                           "aviso escuro em 390 px acima da navegação inferior"
+                       ],
+    "logCompleto":  ".devops-local/motion-verificacao-completa.log",
+    "limites":  [
+                    "sem teste em celular físico ou leitor de tela",
+                    "sem execução remota ou CI",
+                    "sem alteração em API, tipos públicos, versão ou banco da equipe",
+                    "sem instalação de dependências; CSS e recursos existentes foram suficientes",
+                    "sem commit ou push; alterações anteriores preservadas"
+                ]
+}

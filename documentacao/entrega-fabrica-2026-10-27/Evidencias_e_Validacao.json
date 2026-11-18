@@ -1,0 +1,56 @@
+{
+  "referencia": "2026-10-27",
+  "commitInspecionado": "47f8a35bebe8d700d6f63d3597f9f544a0c89d58",
+  "consultaRemota": {
+    "pr": 1,
+    "state": "OPEN",
+    "mergedAt": null,
+    "reviews": [],
+    "base": "homologacao",
+    "head": "47f8a35",
+    "ciRun": 39073260993,
+    "ciConclusion": "success",
+    "execucaoCI": "2026-10-17",
+    "consultadaEm": "2026-10-27"
+  },
+  "equipa": [
+    "Mateus De Miranda Santos Moura",
+    "Erick Alves",
+    "Gabriel Santana",
+    "João Victor Florêncio",
+    "Patrick José",
+    "Miqueias Barros"
+  ],
+  "responsabilidades": "proposta autorizada pelo usuário, ainda sujeita a aprovação do grupo",
+  "cronograma": "proposta em três semanas após aprovação do grupo; data acadêmica não informada",
+  "custos": "cenário hipotético novo de 12 meses; não é cotação ou apuração",
+  "documento": {
+    "paginasPDF": 16,
+    "integrantes": 6,
+    "itensGuiaMapeados": 49,
+    "secoesGuia": 8,
+    "docxXmlValido": true,
+    "figurasEmbutidas": 2,
+    "nenhumTesteBackendReexecutado": true
+  },
+  "economia": {
+    "periodoMeses": 12,
+    "tco": 6940,
+    "beneficioHipotetico": 1500,
+    "roiPercentual": -78.39
+  },
+  "novasEntrevistas": false,
+  "loginGoogleImplementado": false,
+  "prototipoGoogle": "sugestão visual para etapa futura",
+  "prototiposValidados": false,
+  "frontendImplementadoNestaEntrega": false,
+  "codexDocumentControlUtilizado": false,
+  "fontesPublicas": [
+    "https://github.com/Mirandaszx/projeto-Rephouse/pull/1",
+    "https://github.com/Mirandaszx/projeto-Rephouse/actions/runs/39073260993",
+    "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709compilado.htm",
+    "https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-orientativo-sobre-seguranca-da-informacao-para-agentes-de-tratamento-de-pequeno-porte",
+    "https://kanbanguides.org/the-kanban-guide",
+    "https://www.postgresql.org/docs/18/mvcc.html"
+  ]
+}

@@ -47,6 +47,8 @@ model Usuario {
   despesasCriadas         Despesa[]
   identidadeGoogle        IdentidadeGoogle?
   desafiosGoogle          DesafioGoogle[]
+  recorrenciasCriadas     RecorrenciaDespesa[]
+  competenciasRevisadas   CompetenciaRecorrencia[]
 
   @@map("usuarios")
 }
@@ -86,6 +88,7 @@ model Republica {
   membros       MembroRepublica[]
   despesas      Despesa[]
   tarefas       Tarefa[]
+  recorrencias  RecorrenciaDespesa[]
 
   @@index([adminId])
   @@map("republicas")
@@ -102,6 +105,7 @@ model MembroRepublica {
   republica  Republica       @relation(fields: [republicaId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   rateios    RateioDespesa[]
   pagamentos Pagamento[]
+  selecoesRecorrentes RecorrenciaParticipante[]
   tarefas    Tarefa[]
 
   @@unique([usuarioId, republicaId])
@@ -123,9 +127,12 @@ model Despesa {
   republica Republica       @relation(fields: [republicaId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   criadaPor Usuario         @relation(fields: [criadaPorId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   rateios   RateioDespesa[]
+  competenciaRecorrente CompetenciaRecorrencia?
+  recorrenciaOriginada RecorrenciaDespesa?
 
   @@index([republicaId, status, vencimento])
   @@index([criadaPorId])
+  @@index([vencimento, republicaId], map: "despesas_competencia_idx")
   @@map("despesas")
 }
 
@@ -193,4 +200,72 @@ model Tarefa {
   @@index([republicaId, status, prazo])
   @@index([responsavelId, status])
   @@map("tarefas")
+}
+
+model RecorrenciaDespesa {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  republicaId String @map("republica_id") @db.Uuid
+  criadaPorId String @map("criada_por_id") @db.Uuid
+  despesaOrigemId String? @unique @map("despesa_origem_id") @db.Uuid
+  inicio DateTime @db.Date
+  proximaCompetencia DateTime @map("proxima_competencia") @db.Date
+  ativa Boolean @default(true)
+  pausaMotivo String? @map("pausa_motivo") @db.VarChar(60)
+  chaveIdempotencia String @unique @map("chave_idempotencia") @db.Uuid
+  hashRequisicao String @map("hash_requisicao") @db.Char(64)
+  criadaEm DateTime @default(now()) @map("criada_em") @db.Timestamptz(3)
+  republica Republica @relation(fields: [republicaId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  criadaPor Usuario @relation(fields: [criadaPorId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  despesaOrigem Despesa? @relation(fields: [despesaOrigemId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  configuracoes ConfiguracaoRecorrencia[]
+  competencias CompetenciaRecorrencia[]
+  @@index([ativa, pausaMotivo, proximaCompetencia])
+  @@index([republicaId, criadaEm])
+  @@map("recorrencias_despesa")
+}
+
+model ConfiguracaoRecorrencia {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  versao Int @unique @default(autoincrement())
+  recorrenciaId String @map("recorrencia_id") @db.Uuid
+  vigencia DateTime @db.Date
+  titulo String @db.VarChar(160)
+  categoria String @db.VarChar(80)
+  valorTotal Decimal @map("valor_total") @db.Decimal(12, 2)
+  diaVencimento Int @map("dia_vencimento")
+  criadaEm DateTime @default(now()) @map("criada_em") @db.Timestamptz(3)
+  recorrencia RecorrenciaDespesa @relation(fields: [recorrenciaId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  participantes RecorrenciaParticipante[]
+  competencias CompetenciaRecorrencia[]
+  @@index([recorrenciaId, vigencia, criadaEm])
+  @@map("configuracoes_recorrencia")
+}
+
+model RecorrenciaParticipante {
+  configuracaoId String @map("configuracao_id") @db.Uuid
+  membroId String @map("membro_id") @db.Uuid
+  configuracao ConfiguracaoRecorrencia @relation(fields: [configuracaoId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  membro MembroRepublica @relation(fields: [membroId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  @@id([configuracaoId, membroId])
+  @@index([membroId])
+  @@map("recorrencias_participantes")
+}
+
+model CompetenciaRecorrencia {
+  recorrenciaId String @map("recorrencia_id") @db.Uuid
+  competencia DateTime @db.Date
+  configuracaoId String? @map("configuracao_id") @db.Uuid
+  despesaId String? @unique @map("despesa_id") @db.Uuid
+  estado String @db.VarChar(24)
+  motivo String? @db.VarChar(60)
+  snapshot Json?
+  revisadaPorId String? @map("revisada_por_id") @db.Uuid
+  revisadaEm DateTime? @map("revisada_em") @db.Timestamptz(3)
+  recorrencia RecorrenciaDespesa @relation(fields: [recorrenciaId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  configuracao ConfiguracaoRecorrencia? @relation(fields: [configuracaoId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  despesa Despesa? @relation(fields: [despesaId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  revisadaPor Usuario? @relation(fields: [revisadaPorId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  @@id([recorrenciaId, competencia])
+  @@index([estado, competencia])
+  @@map("competencias_recorrencia")
 }

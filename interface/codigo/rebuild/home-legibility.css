@@ -1,0 +1,68 @@
+/* A página mantém a composição aprovada; textos de apoio não viram miniaturas. */
+.rh-home .rh-section-label,
+.rh-home .rh-hero-reassurance,
+.rh-home .rh-footer p,
+.rh-home .rh-footer > small { color: var(--rh-muted); font-size: 14px; line-height: 1.6; }
+.rh-home .rh-closing-inner .rh-section-label { color: #dbe7d5; }
+.rh-home .rh-hero-label { color: #24483e; font-size: 12px; }
+.rh-home .rh-hero-actions > .rh-text-link,
+.rh-home .rh-promise-strip span,
+.rh-home .rh-steps p,
+.rh-home .rh-footer nav { font-size: 14px; }
+.rh-home .rh-features-grid article p,
+.rh-home .rh-feature-people p { font-size: 14px !important; }
+.rh-home .rh-preview-note { font-size: 12px; color: var(--app-muted, #526659); }
+.rh-home .rh-example { font-size: 12px; color: #4d6255; }
+.rh-home .rh-preview-top .rh-example { font-size: 12px; }
+.rh-home .rh-preview-greeting > div > span,
+.rh-home .rh-preview-balance > span,
+.rh-home .rh-preview-balance > div:not(.rh-balance-track),
+.rh-home .rh-preview-list small,
+.rh-home .rh-preview-bottom,
+.rh-home .rh-floating-note small,
+.rh-home .rh-split-people > span,
+.rh-home .rh-split-visual > small { font-size: 12px; line-height: 1.5; color: #4d6255; }
+.rh-home .rh-preview-list > div { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; }
+.rh-home .rh-preview-list > div > span { min-width: 0; }
+.rh-home .rh-preview-list strong,
+.rh-home .rh-list-value,
+.rh-home .rh-floating-note strong,
+.rh-home .rh-split-total,
+.rh-home .rh-task-visual > div { font-size: 14px; }
+.rh-home .rh-list-value { margin-left: 0; }
+.rh-home .rh-list-value small { color: #3f6b4b; }
+.rh-home .rh-list-value .pending,
+.rh-home .rh-task-status.pending { color: #80551a; }
+.rh-home .rh-task-status { font-size: 12px; color: #3f6b4b; }
+.rh-home .rh-preview-segments { font-size: 14px; }
+.rh-home .rh-avatar-stack i,
+.rh-home .rh-mini-avatar { font-size: 12px; color: #3b5141; }
+.rh-home .rh-avatar-stack i:nth-child(2),
+.rh-home .rh-mini-avatar.blue { color: #3d596b; }
+.rh-home .rh-avatar-stack i:nth-child(3) { color: #6d4f2f; }
+.rh-home .rh-avatar-stack i:nth-child(4) { color: #624870; }
+.rh-home .rh-split-people i { font-size: 14px; color: #3b5141; }
+.rh-home .rh-split-people > span:nth-child(2) i { color: #3d596b; }
+.rh-home .rh-split-people > span:nth-child(3) i { color: #6d4f2f; }
+.rh-home .rh-split-people > span:nth-child(4) i { color: #624870; }
+.rh-home .rh-floating-note { max-width: 100%; }
+.rh-home .rh-split-visual,
+.rh-home .rh-task-visual { background: #fff; }
+.rh-home .rh-floating-note > div { min-width: 0; }
+.rh-home .rh-motion-toggle { font-size: 12px; min-height: 44px; color: var(--rh-muted); }
+@media (max-width: 980px) and (min-width: 721px) {
+  .rh-home .rh-hero { grid-template-columns: minmax(0, 1fr); }
+  .rh-home .rh-hero-stage { width: 100%; max-width: 520px; justify-self: center; margin-top: 20px; }
+}
+@media (max-width: 720px) {
+  .rh-home .rh-preview-top { padding-inline: 12px; }
+  .rh-home .rh-preview-content { padding: 16px 12px; }
+  .rh-home .rh-preview-top .rh-preview-brand { font-size: 12px; }
+  .rh-home .rh-preview-list strong,
+  .rh-home .rh-list-value { font-size: 13px; }
+  .rh-home .rh-preview-bottom { flex-wrap: wrap; gap: 6px; }
+  .rh-home .rh-preview-bottom > svg { display: none; }
+  .rh-home .rh-floating-note { left: 0; padding: 10px; }
+  .rh-home .rh-split-visual { padding-inline: 12px; }
+  .rh-home .rh-split-people { gap: 8px; }
+}

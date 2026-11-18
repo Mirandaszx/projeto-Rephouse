@@ -14,24 +14,13 @@ test('tema escuro mantém painéis acabados e estados vazios sem casinhas repeti
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 })
     await page.goto('/republica')
-    await expect(page.getByText('Tudo em dia nas tarefas.', { exact: true })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Comece pela primeira despesa.', exact: true })).toBeVisible()
+    await expect(page.locator('.rep-metric')).toHaveCount(4)
+    await expect(page.locator('.rep-overview-panel')).toHaveCount(2)
+    await expect(page.getByRole('button', { name: '＋ Nova despesa', exact: true })).toBeVisible()
     await expect(page.locator('.workspace-empty svg')).toHaveCount(0)
-    const canvas = await page.locator('.republica').evaluate(element => getComputedStyle(element).backgroundColor)
-    for (const panel of await page.locator('.rep-overview-panel').all()) {
-      const style = await panel.evaluate(element => {
-        const css = getComputedStyle(element)
-        return { background: css.backgroundColor, radius: parseFloat(css.borderRadius), padding: parseFloat(css.paddingLeft), border: css.borderTopWidth }
-      })
-      expect(style.background).not.toBe(canvas)
-      expect(style.radius).toBeGreaterThanOrEqual(14)
-      expect(style.padding).toBeGreaterThanOrEqual(16)
-      expect(style.border).toBe('1px')
-    }
-    for (const target of await page.locator('.rep-metric-personal :is(.rep-metric-label, small, a), .rep-overview-panel :is(h2, p, small, a)').all()) {
+    for (const target of await page.locator('.rep-overview-panel :is(h2, h3, p, a)').all()) {
       expect(await contrast(target)).toBeGreaterThanOrEqual(4.5)
-    }
-    for (const metric of await page.locator('.rep-metric-strip .rep-metric').all()) {
-      expect(await metric.evaluate(element => getComputedStyle(element).backgroundColor)).toBe('rgba(0, 0, 0, 0)')
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await page.screenshot({ path: `${shots}/resumo-vazio-dark-${width}.png`, fullPage: true })
@@ -44,7 +33,49 @@ test('tema escuro mantém painéis acabados e estados vazios sem casinhas repeti
   fixture.empty = false
   await page.goto('/republica')
   await expect(page.locator('.rep-pending-tasks li')).toHaveCount(1)
+  const canvas = await page.locator('.republica').evaluate(element => getComputedStyle(element).backgroundColor)
+  for (const panel of await page.locator('.rep-overview-panel').all()) {
+    const style = await panel.evaluate(element => {
+      const css = getComputedStyle(element)
+      return { background: css.backgroundColor, radius: parseFloat(css.borderRadius), padding: parseFloat(css.paddingLeft), border: css.borderTopWidth }
+    })
+    expect(style.background).not.toBe(canvas)
+    expect(style.radius).toBeGreaterThanOrEqual(14)
+    expect(style.padding).toBeGreaterThanOrEqual(16)
+    expect(style.border).toBe('1px')
+  }
+  for (const metric of await page.locator('.rep-metric-strip .rep-metric').all()) expect(await metric.evaluate(element => getComputedStyle(element).backgroundColor)).toBe('rgba(0, 0, 0, 0)')
   await page.screenshot({ path: `${shots}/resumo-preenchido-dark-1440.png`, fullPage: true })
+})
+
+test('orientação inicial abre o formulário e não esconde valores, falhas ou carregamento', async ({ page }) => {
+  const fixture: Fixture = { empty: true }
+  await prepare(page, fixture)
+  await page.goto('/republica')
+  await page.getByRole('button', { name: 'Registrar primeira despesa', exact: true }).click()
+  await expect(page.getByRole('dialog', { name: 'Nova despesa', exact: true })).toBeVisible()
+  await page.keyboard.press('Escape')
+  fixture.dashboard = { totalPendente: '80.00', totalPagoNoMes: '40.00', tarefasAbertas: 0 }
+  await page.reload()
+  await expect(page.getByRole('region', { name: 'Resumo da república' })).toContainText('80,00')
+  await expect(page.locator('.rep-overview-start')).toHaveCount(0)
+  fixture.dashboard = undefined; fixture.taskError = true
+  await page.reload()
+  await expect(page.getByRole('alert')).toHaveText('Não foi possível carregar as tarefas agora.')
+  await expect(page.locator('.rep-overview-start')).toHaveCount(0)
+  fixture.taskError = false
+  let release!: () => void
+  fixture.loading = new Promise<void>(resolve => { release = resolve })
+  await page.reload()
+  await expect(page.getByText('Carregando tarefas…', { exact: true })).toBeVisible()
+  await expect(page.locator('.rep-overview-start')).toHaveCount(0)
+  release(); fixture.loading = undefined
+  await expect(page.getByRole('heading', { name: 'Comece pela primeira despesa.', exact: true })).toBeVisible()
+  fixture.resident = true
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Os registros da casa ficam aqui.', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Registrar primeira despesa', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('link', { name: 'Ver moradores', exact: true })).toBeVisible()
 })
 
 test('filtros interrompem a transição sem atrasar dados, teclado ou movimento reduzido', async ({ page }) => {
@@ -104,7 +135,7 @@ test('MASTER e diálogos mantêm feedback curto e acesso imediato por teclado', 
   await page.getByRole('button', { name: 'Bloquear Camila Almeida', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: 'Bloquear usuário', exact: true })
   await expect(dialog).toBeVisible()
-  expect(await dialog.evaluate(element => getComputedStyle(element).animationName)).toBe('workspace-dialog-enter')
+  expect(await dialog.evaluate(element => getComputedStyle(element).transitionDuration)).toBe('0.18s, 0.18s')
   await expect(dialog.getByRole('button', { name: 'Cancelar', exact: true })).toBeFocused()
   expect(await contrast(dialog.getByRole('button', { name: 'Confirmar bloqueio', exact: true }))).toBeGreaterThanOrEqual(4.5)
   await page.keyboard.press('Escape')
@@ -112,7 +143,7 @@ test('MASTER e diálogos mantêm feedback curto e acesso imediato por teclado', 
   await page.getByRole('button', { name: 'Bloquear Camila Almeida', exact: true }).focus()
   await page.keyboard.press('Enter')
   await expect(dialog).toBeVisible()
-  expect(await dialog.evaluate(element => getComputedStyle(element).animationName)).toBe('none')
+  expect(await dialog.evaluate(element => getComputedStyle(element).transitionDuration)).toBe('0s')
   await page.keyboard.press('Escape')
   await page.getByRole('button', { name: 'Repúblicas', exact: true }).focus()
   await page.keyboard.press('Enter')

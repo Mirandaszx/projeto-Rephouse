@@ -1,0 +1,13 @@
+# Preserve os bytes dos documentos e recursos binários também no Windows.
+*.pdf binary
+*.docx binary
+*.zip binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary

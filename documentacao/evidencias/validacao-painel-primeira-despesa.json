@@ -1,0 +1,54 @@
+{
+  "dataLocal": "2026-11-12",
+  "origem": "local",
+  "versao": "2.1.0",
+  "baseGit": "35da751",
+  "branch": "experimento/layout-compacto",
+  "resultado": "Painel da referência com quatro indicadores e dois painéis, mantendo a orientação da primeira despesa",
+  "implementacao": {
+    "estrutura": "Indicadores sempre visíveis, saldo pessoal verde, ação no cabeçalho e painéis de despesas/tarefas",
+    "primeiraDespesa": "Orientação e botão dentro de Despesas recentes; abre o formulário existente",
+    "permissoes": "Administrador registra; morador recebe explicação de leitura e link de moradores",
+    "dados": "Orientação inicial somente após confirmação dos indicadores e das tarefas; valores, erros e carregamento preservados"
+  },
+  "verificacao": {
+    "build": "Aprovado",
+    "tipagem": "Aprovada",
+    "lint": { "erros": 0, "avisosFastRefreshPreexistentes": 5 },
+    "comando": "npm --prefix interface run test:e2e -- painel.spec.ts escuro-fluidez.spec.ts modernizacao.spec.ts",
+    "resultadoFinal": { "aprovados": 11, "falhas": 0, "ignorados": 0, "duracaoConformeLog": "2.2m" },
+    "logFinal": ".devops-local/painel-primeira-despesa-regressao-final.log",
+    "ocorrenciaInicial": {
+      "aprovados": 10,
+      "falhas": 1,
+      "descricao": "Teste de navegação não encontrou o título h1 após troca de página",
+      "log": ".devops-local/painel-primeira-despesa-regressao.log",
+      "reproducaoIsolada": "Passou sem alterações, em 27.1s; log painel-primeira-despesa-isolado.log",
+      "causa": "Não determinada; repetição dos onze testes passou sem alteração do comportamento da aplicação"
+    },
+    "banco": "PostgreSQL dedicado, com schemas descartáveis; banco da equipe preservado",
+    "limite": "Suíte completa não repetida nesta revisão"
+  },
+  "servidorLocal": {
+    "url": "http://localhost:5173/republica",
+    "cenarios": 24,
+    "larguras": [320, 390, 768, 1024, 1366, 1440],
+    "temas": ["claro", "escuro"],
+    "perfis": ["administrador", "morador"],
+    "indicadores": 4,
+    "paineis": 2,
+    "contrasteConferido": "Pelo menos 4.5:1 nos textos e controles da orientação",
+    "coresOriginais": true,
+    "rolagemHorizontal": false,
+    "errosJavaScript": 0,
+    "dados": "Todas as chamadas API interceptadas com dados fictícios",
+    "registro": ".devops-local/painel-primeira-despesa.json",
+    "capturas": ".devops-local/interface/imagens/painel-primeira-despesa/"
+  },
+  "preservacao": {
+    "homeAutenticacaoECasinha": "Sem diferenças em relação a 35da751",
+    "apisBancoETiposPublicos": true,
+    "commitNovo": false,
+    "push": false
+  }
+}

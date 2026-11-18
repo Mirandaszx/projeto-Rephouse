@@ -1,0 +1,73 @@
+{
+    "dataUtc":  "2026-11-18T20:35:57.4476606Z",
+    "versao":  "2.2.0",
+    "verificacao":  "focada; regressão completa anterior preservada separadamente",
+    "comandos":  [
+                     "npm --prefix interface run build",
+                     "npm --prefix interface run typecheck",
+                     "npm --prefix interface run lint",
+                     "npm --prefix interface run test:e2e -- acesso auth-feedback"
+                 ],
+    "build":  "aprovado",
+    "tipagem":  "aprovada",
+    "lint":  "zero erros; cinco avisos Fast Refresh anteriores",
+    "testes":  {
+                   "startTime":  "2026-11-18T20:33:59.807Z",
+                   "duration":  25745.226000000002,
+                   "expected":  8,
+                   "skipped":  0,
+                   "unexpected":  0,
+                   "flaky":  0
+               },
+    "novosCenarios":  3,
+    "detector":  "nenhum achado em detect --json --changed",
+    "comportamento":  [
+                          "identificador técnico fora do texto principal",
+                          "detalhes recolhidos e código copiável",
+                          "fechamento automático após oito segundos",
+                          "pausa com hover, foco e detalhes abertos; reinício ao sair",
+                          "timer independente por tentativa; campos preservados",
+                          "Retry-After e mensagens do backend preservados"
+                      ],
+    "inspecao":  "capturas conferidas no frontend servido em 127.0.0.1:5175, 390 e 1440 px no tema escuro; respostas controladas",
+    "capturas":  [
+                     {
+                         "arquivo":  "erro-dark-1440.png",
+                         "sha256":  "75091459af4201dd643d8a9a12d3eaf373c3e9bf98edffd9750c2f5a87676617"
+                     },
+                     {
+                         "arquivo":  "erro-dark-320.png",
+                         "sha256":  "b7eaf4ee86ca3dc1f1acef975b81d6999c19ff3314f4b8e3f8fc0093ad43394b"
+                     },
+                     {
+                         "arquivo":  "erro-dark-390.png",
+                         "sha256":  "6491cc9492abe90173856c3da8d0771324798f7b7aa60bc57a58221a8c655636"
+                     },
+                     {
+                         "arquivo":  "erro-light-1440.png",
+                         "sha256":  "f91218c440002e5986a7db33c448040f7c1bab497b4ed185bd85b2c634ad4395"
+                     },
+                     {
+                         "arquivo":  "erro-light-320.png",
+                         "sha256":  "0831316b184cebe00f3d6e3f029bf820bb0b4d99396696b5c06da7049b7cd0a2"
+                     },
+                     {
+                         "arquivo":  "erro-light-390.png",
+                         "sha256":  "3b9e8834052a3e9371d2bd4941a7e2b4ef3c2b2e762290b86eb3c55b1cc30aa5"
+                     },
+                     {
+                         "arquivo":  "login-invalido-dark-1440.png",
+                         "sha256":  "a3dba13c9c4aa9ca004a07093dd561f3a638193bc44ec3d74f8c240150f3d7a6"
+                     },
+                     {
+                         "arquivo":  "login-invalido-dark-390.png",
+                         "sha256":  "f61874854fafa503cd22b71701694c6e635a7316b3a9dea7470f511cf778e7d2"
+                     }
+                 ],
+    "limites":  [
+                    "sem alterações de API, banco ou versão",
+                    "sem commit ou push",
+                    "sem regressão completa adicional nesta correção",
+                    "sem teste em leitor de tela ou celular físico"
+                ]
+}

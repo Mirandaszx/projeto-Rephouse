@@ -1,5 +1,17 @@
 # Matriz de validação do MVP
 
+## Evolução financeira 2.2.0 — 17/11/2026
+
+| Requisito | Implementação e evidência |
+| --- | --- |
+| RF-01 Recorrências | Configurações por vigência, geração atômica e idempotente, participantes fixos, pausa, revisão e desativação; testes `financeiro-evolucao-db`, `financeiro-migracao` e `financeiro-reinicio` |
+| RF-02 Vencimentos | Avisos por data civil, janela de sete dias, filtros e distinção entre conta e parcela; testes de domínio, HTTP e navegador |
+| RF-03 Resumo individual | Agregação no backend por vencimento, histórico anterior, totais e filtros consistentes; HTTP e jornada real da interface |
+| Compatibilidade | API principal paginada, adaptador preservado, OpenAPI e tipos gerados |
+| Etapas futuras | Confirmação de pagamentos, divisão personalizada, reembolsos e relatórios não implementados |
+
+O [guia financeiro](FINANCEIRO_2_2.md) descreve a operação e a demonstração em schema descartável. A [evidência desta revisão](evidencias/validacao-financeiro-2-2.json) separa resultados locais e pendências; não houve execução remota. Os registros seguintes são históricos e não validam por si só as alterações 2.2.0.
+
 ## Escopo atual da terceira apresentação — 2.1.0
 
 Exige funcionalidades, arquitetura, banco, Docker local e testes. O GitHub Actions permanece com instalação, migrations, regressão e contrato/tipos sincronizados, sem carga ou recuperação em qualquer evento. Não exige homologação separada, demonstração de backup/restauração, metas de desempenho, relatórios operacionais extensos ou planejamento de produção. Recursos e evidências anteriores foram preservados como opcionais ou históricos. O [guia operacional](OPERACAO_BACKEND.md) e o [roteiro de demonstração](ROTEIRO_DEMONSTRACAO_BACKEND.md) descrevem o procedimento atual.

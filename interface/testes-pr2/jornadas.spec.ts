@@ -62,13 +62,13 @@ test('morador vê mais de 20 tarefas e conclui a própria tarefa na API real', a
 test('pagamento com arquivo pelo frontend persiste e pode ser baixado', async ({ page, request }) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message))
   await login(page, 'ana')
-  await page.getByRole('button', { name: 'Pagar', exact: true }).click()
+  await page.getByRole('button', { name: 'Registrar pagamento', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: 'Registrar pagamento' })
   await dialog.getByLabel('Valor pago (R$)', { exact: true }).fill('20.00')
   const bytes = Buffer.from('%PDF-1.4\ncomprovante sintético PR2\n%%EOF')
   await dialog.locator('input[type=file]').setInputFiles({ name: 'comprovante.pdf', mimeType: 'application/pdf', buffer: bytes })
   const paymentResponse = page.waitForResponse(response => response.url().endsWith('/api/pagamentos') && response.request().method() === 'POST')
-  await dialog.getByRole('button', { name: 'Registrar', exact: true }).click()
+  await dialog.getByRole('button', { name: 'Registrar pagamento', exact: true }).click()
   expect((await paymentResponse).status()).toBe(201)
   // A região live tem altura zero; o aviso visível é seu filho com position:fixed.
   await expect(page.getByText('Pagamento registrado.')).toBeVisible()

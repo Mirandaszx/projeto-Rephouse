@@ -11,6 +11,7 @@ import { SpellTaskCheckbox } from './SpellTaskCheckbox'
 import { Badge, EmptyState } from '../interno/WorkspaceUI'
 import { brasilDay } from '../interno/presentation'
 import { useWorkspaceTransition } from '../interno/useWorkspaceTransition'
+import { useDialogMotion } from '../interno/useDialogMotion'
 import './tasks.css'
 
 type Status = 'ABERTA' | 'CONCLUIDA'
@@ -39,7 +40,7 @@ export default function Tasks({ token, members, memberId, canManage, onExpired }
   const [responsible, setResponsible] = useState('')
   const [formRevision, setFormRevision] = useState(0)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
-  const dialog = useRef<HTMLDialogElement>(null)
+  const { dialog, open: openDialog, close: closeDialog, isClosing } = useDialogMotion()
   const saving = useRef(false)
 
   useEffect(() => {
@@ -53,7 +54,7 @@ export default function Tasks({ token, members, memberId, canManage, onExpired }
   }, [token, revision, onExpired])
 
   async function changeStatus(task: Task, checked: boolean) {
-    if (saving.current) return
+    if (saving.current || isClosing()) return
     saving.current = true
     setBusy(true)
     setError('')
@@ -73,7 +74,7 @@ export default function Tasks({ token, members, memberId, canManage, onExpired }
 
   async function createTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (saving.current) return
+    if (saving.current || isClosing()) return
     const form = event.currentTarget
     const values = new FormData(form)
     const titulo = String(values.get('titulo') ?? '').trim()
@@ -96,8 +97,8 @@ export default function Tasks({ token, members, memberId, canManage, onExpired }
       setTasks(current => [created, ...(current ?? [])])
       setFilter('todas')
       setNotice('Tarefa criada.')
+      await closeDialog()
       form.reset()
-      dialog.current?.close()
     } catch (failure) {
       if (!onExpired(failure)) setFormError(failure instanceof Error ? failure.message : 'Não foi possível criar a tarefa.')
     } finally {
@@ -117,7 +118,7 @@ export default function Tasks({ token, members, memberId, canManage, onExpired }
         <span className="rep-task-symbol" aria-hidden="true"><ClipboardCheck size={21} /></span>
         <div><h2 id="rep-tasks-label">Rotina compartilhada</h2><p>{tasks ? `${items.length - completed} ${items.length - completed === 1 ? 'aberta' : 'abertas'} · ${completed} ${completed === 1 ? 'concluída' : 'concluídas'}` : 'Organize os afazeres da casa.'}</p></div>
       </div>
-      {canManage && members.length > 0 && <GlisseButton disabled={busy || !tasks} onClick={() => { setFormError(''); setResponsible(''); setFormRevision(value => value + 1); dialog.current?.showModal() }} icon={<Plus size={16} aria-hidden="true" />}>Nova tarefa</GlisseButton>}
+      {canManage && members.length > 0 && <GlisseButton disabled={busy || !tasks} onClick={() => { if (isClosing()) return; setFormError(''); setResponsible(''); setFormRevision(value => value + 1); openDialog() }} icon={<Plus size={16} aria-hidden="true" />}>Nova tarefa</GlisseButton>}
     </div>
     <div className="rep-tasks-filter"><SegmentedControl aria-label="Filtrar tarefas" value={filter} items={filters} onValueChange={value => setFilter(value as Filter)} /></div>
     {error && <div className="rep-task-state"><p role="alert">{error}</p>{!tasks && <GlisseButton variant="secondary" onClick={() => { setError(''); setRevision(value => value + 1) }}>Tentar novamente</GlisseButton>}</div>}
@@ -143,7 +144,7 @@ export default function Tasks({ token, members, memberId, canManage, onExpired }
       </li>
     })}</ul>}
     </div>
-    <dialog ref={dialog} className="rep-dialog rep-task-dialog" aria-labelledby="rep-task-dialog-title" onCancel={event => { if (busy) event.preventDefault() }}>
+    <dialog ref={dialog} className="rep-dialog rep-task-dialog" aria-labelledby="rep-task-dialog-title" onCancel={event => { event.preventDefault(); if (!saving.current) void closeDialog() }}>
       <form key={formRevision} onSubmit={createTask}>
         <h2 id="rep-task-dialog-title">Nova tarefa</h2>
         <fieldset className="rep-form-fields" disabled={busy}>
@@ -153,7 +154,7 @@ export default function Tasks({ token, members, memberId, canManage, onExpired }
           <label>Descrição opcional<textarea name="descricao" rows={3} maxLength={5000} /></label>
         </fieldset>
         {formError && <p role="alert">{formError}</p>}
-        <footer><GlisseButton variant="secondary" disabled={busy} onClick={() => dialog.current?.close()}>Cancelar</GlisseButton><GlisseButton type="submit" disabled={busy}>{busy ? 'Salvando…' : 'Criar tarefa'}</GlisseButton></footer>
+        <footer><GlisseButton variant="secondary" disabled={busy} onClick={() => void closeDialog()}>Cancelar</GlisseButton><GlisseButton type="submit" disabled={busy}>{busy ? 'Salvando…' : 'Criar tarefa'}</GlisseButton></footer>
       </form>
     </dialog>
     {editingTask && <ActionDialog title="Editar tarefa" confirm="Salvar tarefa" onClose={() => setEditingTask(null)} onSubmit={async data => {

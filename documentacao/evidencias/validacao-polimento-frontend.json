@@ -1,0 +1,102 @@
+﻿{
+    "dataUtc":  "2026-11-18T18:44:14.7946956Z",
+    "ambiente":  "local; PostgreSQL dedicado e schemas descartáveis",
+    "versao":  "2.2.0",
+    "comando":  "npm --prefix interface run verificar",
+    "build":  "aprovado",
+    "tipagem":  "aprovada",
+    "lint":  {
+                 "erros":  0,
+                 "avisosPreexistentes":  5,
+                 "origem":  "react-refresh/only-export-components em main.tsx"
+             },
+    "testes":  {
+                   "aprovados":  57,
+                   "falhas":  0,
+                   "ignorados":  0,
+                   "instaveis":  0,
+                   "duracaoMs":  306459.359,
+                   "novosCenarios":  5
+               },
+    "tiposOpenapi":  "npm run api:tipos:verificar: sincronizados",
+    "detector":  {
+                     "codigoSaida":  2,
+                     "avisos":  1,
+                     "regra":  "overused-font",
+                     "decisao":  "Inter preservada como escolha aprovada; sem outros avisos no scan de código"
+                 },
+    "demonstracao":  {
+                         "ambiente":  "demonstracao-isolada",
+                         "results":  [
+                                         {
+                                             "theme":  "light",
+                                             "preview":  true,
+                                             "pending":  true,
+                                             "bodyOverflow":  false
+                                         },
+                                         {
+                                             "theme":  "dark",
+                                             "preview":  true,
+                                             "pending":  true,
+                                             "bodyOverflow":  false
+                                         }
+                                     ]
+                     },
+    "capturas":  [
+                     {
+                         "arquivo":  "despesas-dark-390.png",
+                         "sha256":  "d16716e8d4a234bd21a85d208d71c867e3813bd5735096e196f35b6f672b2e84"
+                     },
+                     {
+                         "arquivo":  "despesas-light-390.png",
+                         "sha256":  "d4b12d710a2aacbf798c612e9602f4beb262b69bad2de0f73255c8f65ca4bad5"
+                     },
+                     {
+                         "arquivo":  "home-dark-390.png",
+                         "sha256":  "c55bc6e71e7b9c3249bfd3935ce3e755006eba439cc08e7204a5944ef58f7330"
+                     },
+                     {
+                         "arquivo":  "home-light-390.png",
+                         "sha256":  "1afdaaea2c5393367b39b13e6385b4dfbd7b5bbf89d7d331e436bfbdec4f17c7"
+                     },
+                     {
+                         "arquivo":  "pendencias-dark-390.png",
+                         "sha256":  "930b059e474e512f9b0147f4a76b48123ff9a7bfca72d93458746d9057f2607d"
+                     },
+                     {
+                         "arquivo":  "pendencias-light-390.png",
+                         "sha256":  "164dc6d83b194339f68ce78c718f9631d4c0f827d848faa4e18965aac29ecf04"
+                     },
+                     {
+                         "arquivo":  "rateio-dark-390.png",
+                         "sha256":  "c9879eb1072aaefd9a6b3f782ba6bdefb0cdf01b2a54f3a295eb846bc9fded9e"
+                     },
+                     {
+                         "arquivo":  "rateio-light-390.png",
+                         "sha256":  "94cf2ec01d8c1fcfbb102f10b22027d6cf4d1bcabb2e0a70e6d6779787e7e65b"
+                     }
+                 ],
+    "reproducoes":  {
+                        "primeiraRodada":  "47 aprovados; 2 falhas; 8 não executados por dependência serial",
+                        "correcoes":  [
+                                          "Escopo da asserção de moradores para não contar o formulário fechado",
+                                          "Quebra de título extremo na pendência mobile"
+                                      ],
+                        "rodadaDirecionada":  "2 aprovados",
+                        "rodadaFinal":  "57 aprovados; 0 falhas; 0 ignorados"
+                    },
+    "logs":  [
+                 ".devops-local/polimento-frontend-verificar.log",
+                 ".devops-local/polimento-reproducao.log",
+                 ".devops-local/polimento-frontend-final.log"
+             ],
+    "limites":  [
+                    "Sem alterações nas APIs, tipos públicos ou migrations",
+                    "Sem atualização do banco da equipe",
+                    "Regressão completa do backend não repetida nesta revisão do frontend",
+                    "Sem dispositivo físico ou leitor de tela",
+                    "Recuperação de senha continua como funcionalidade futura",
+                    "Planejamento de motion sem implementação dos efeitos propostos",
+                    "Sem commit, push ou CI remota"
+                ]
+}

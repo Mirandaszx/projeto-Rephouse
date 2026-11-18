@@ -2,11 +2,15 @@
 
 Aplicação web para organização de repúblicas e residências compartilhadas.
 
-O backend está na versão **2.1.0**: as listagens da API principal retornam `{dados,paginacao}`, com `pagina=1` e `limite=20` por padrão. Veja o [guia de integração](documentacao/INTEGRACAO_BACKEND.md) para os contratos.
+O backend está na versão **2.2.0**: as listagens da API principal retornam `{dados,paginacao}`, com `pagina=1` e `limite=20` por padrão. Veja o [guia de integração](documentacao/INTEGRACAO_BACKEND.md) para os contratos.
 
 Para integrar conta, repúblicas, moradores, tarefas e MASTER, siga o [roteiro sem operações financeiras](documentacao/JORNADAS_INTEGRACAO.md). Ele inclui coleção Insomnia, exemplos fetch e demonstração isolada por `npm run integracao:demo`.
 
 Na terceira apresentação, o foco é demonstrar funcionalidades, arquitetura, banco e testes. O caminho principal é o Docker Compose local descrito abaixo e no [guia operacional](documentacao/OPERACAO_BACKEND.md). Não é necessário preparar homologação separada, demonstrar backup/restauração ou executar carga e recuperação.
+
+O [financeiro 2.2.0](documentacao/FINANCEIRO_2_2.md) acrescenta recorrências mensais, avisos de vencimento e resumo individual calculado no backend. A demonstração isolada está disponível em `npm run financeiro:demo`; o registro manual de pagamentos permanece preservado.
+
+**Uso diário com dados persistentes:** execute o Compose principal e acesse `http://localhost:5173/login`. A API usa o banco configurado no `.env` e o volume PostgreSQL existente. Os comandos `financeiro:demo` e `integracao:demo` criam ambientes descartáveis com contas fictícias; não use seus links para acessar as contas reais da equipe. A demonstração financeira na porta 5175 não compartilha os dados do ambiente principal.
 
 ## Stack
 
@@ -71,7 +75,7 @@ para gerar o segredo JWT local. O banco padrão desta versão é `rabbu_mvp`.
 As migrations são aplicadas automaticamente antes da API iniciar.
 
 A modelagem segue o documento **RABBU — MVP / Primeira Entrega (3 perfis)**.
-São oito tabelas: usuários, repúblicas, membros, despesas, rateios, pagamentos, comprovantes e tarefas.
+O modelo atual possui 14 tabelas, incluindo autenticação Google e quatro tabelas de recorrências. Usuários, repúblicas, membros, despesas, rateios, pagamentos, comprovantes e tarefas permanecem preservados.
 As operações financeiras usam transações ACID com isolamento `SERIALIZABLE`,
 rollback em caso de falha e repetição limitada de conflitos de concorrência.
 Veja [a documentação do banco](documentacao/BANCO_DE_DADOS.md) para relações, regras,

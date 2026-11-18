@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList, ComboboxTrigger } from './vendor/shadcn-combobox'
 import './fields.css'
+import RateioPreview from '../gestao/RateioPreview'
+import '../gestao/financial.css'
 
 type Member = { id: string; usuario: { nome: string } }
 
-export default function MemberPicker({ members }: { members: Member[] }) {
-  const [selected, setSelected] = useState(members)
+export default function MemberPicker({ members, initialSelected, total }: { members: Member[]; initialSelected?: string[]; total?: string }) {
+  const [selected, setSelected] = useState(() => initialSelected ? members.filter(member => initialSelected.includes(member.id)) : members)
   const [anchor, setAnchor] = useState<HTMLDivElement | null>(null)
   return <fieldset className="rep-participants">
     <legend>Dividir igualmente entre</legend>
@@ -24,6 +26,7 @@ export default function MemberPicker({ members }: { members: Member[] }) {
       </ComboboxContent>
     </Combobox>
     <p className="rep-rateio-count" role="status">{selected.length} de {members.length} moradores selecionados</p>
+    {total !== undefined && <RateioPreview total={total} participants={selected} />}
     {selected.map(member => <input key={member.id} type="hidden" name="membroIds" value={member.id} />)}
   </fieldset>
 }

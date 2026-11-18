@@ -1,5 +1,53 @@
 # Direção visual do RepHouse
 
+## Avisos de login e cadastro — 18/11/2026
+
+O texto principal orienta a correção sem exibir o identificador técnico. O código continua disponível em “Detalhes para suporte”, com ação de copiar. Por solicitação do usuário, esses avisos desaparecem após oito segundos e também podem ser fechados manualmente; hover, foco ou detalhes abertos suspendem o fechamento, e a contagem recomeça ao sair. Nova tentativa limpa o aviso anterior e recebe seu próprio temporizador. Isso se limita à autenticação: erros dos formulários internos e avisos financeiros conservam seu comportamento. Build, tipagem, lint e oito testes focados de autenticação foram aprovados, incluindo cadastro/login reais no PostgreSQL dedicado. A regressão completa de 64 testes registrada na etapa de motion é anterior a este ajuste e não foi reapresentada como validação dele. Evidência: [aviso de autenticação](evidencias/validacao-aviso-autenticacao.json).
+
+## Motion: modais e avisos — 18/11/2026
+
+Os diálogos internos agora entram em 180 ms e saem em 140 ms, com opacidade e deslocamento de 4 px. O diálogo permanece modal durante a saída e devolve o foco ao acionador ao terminar. O aviso flutuante de sucesso usa 180/140 ms e deslocamento de até 8 px, com fechamento manual e proteção contra uma saída antiga apagar uma mensagem nova. Teclado e movimento reduzido seguem imediatos; o deslize do filtro permanece como aprovado. Layout, cores e páginas públicas não foram alterados. Veja [implementação e validação](MOTION_PRIMEIRA_ETAPA.md).
+
+## Refinamentos da revisão Impeccable — 18/11/2026
+
+Foram corrigidas a leitura das pendências no celular e a legibilidade de textos auxiliares. Os formulários agora mostram uma conferência do rateio com nomes e valores por pessoa; os botões deixam explícito que registram pagamentos realizados fora do sistema. Os filtros usam “Mês do vencimento” e oferecem indicação de deslize. Pausas e meses a revisar aparecem antes de expandir as recorrências. As pendências pessoais não são repetidas na lista de despesas recentes.
+
+A paleta, a Inter, a casinha e a composição aprovada permanecem. A home e a autenticação receberam apenas ajustes de legibilidade. Detalhes, capturas e limites estão em [Refinamentos do frontend](REFINAMENTOS_FRONTEND_2026_11.md). O [planejamento de motion design](PLANO_MOTION_DESIGN.md) registra a primeira etapa executada e as oportunidades que continuam propostas. As seções abaixo preservam as evidências históricas.
+
+## Controles financeiros 2.2.0 — 17/11/2026
+
+A revisão acrescenta competência e escopo aos filtros de despesas, identifica contas recorrentes e distingue situação da conta, saldo próprio e pagamento parcial. A configuração mensal fica recolhida em “Contas recorrentes”, com edição, desativação e revisão de competências. Os formulários reutilizam os botões, o seletor de moradores e os diálogos existentes.
+
+O painel preserva a faixa de quatro indicadores e a orientação da primeira despesa; acrescenta os totais individuais do mês e uma lista de pendências próprias. O financeiro pessoal recebe agregações do backend e permite filtrar vencimentos. A troca de filtros não mantém totais antigos apresentados como se fossem do novo período. Os controles usam tokens dos temas claro e escuro, rótulos visíveis e rolagem local do filtro em telas estreitas. Home, login, cadastro e a casinha não foram modificados.
+
+Capturas desta revisão ficam em `.devops-local/interface/imagens/financeiro-22/`, separadas das anteriores. Resultados e limitações são registrados em `evidencias/validacao-financeiro-2-2.json`; as validações abaixo pertencem às revisões históricas indicadas.
+
+## Painel da referência com a primeira despesa — 12/11/2026
+
+A visão geral volta à composição escolhida na imagem: faixa com quatro indicadores, parte pessoal em verde, botão “Nova despesa” no cabeçalho e painéis de despesas recentes e tarefas pendentes abaixo. A orientação da primeira despesa permanece dentro do painel de despesas, com o mesmo formulário, permissões, bloqueio durante envio e links de apoio. Os indicadores continuam visíveis mesmo quando zerados.
+
+O carregamento e a falha das tarefas continuam distintos de uma casa sem registros; a orientação inicial só aparece após confirmação dos dados. A adaptação ao celular e os temas são preservados. Esta revisão substitui a composição sem cartões da seção seguinte; seus resultados anteriores ficam registrados como históricos. Capturas novas: `.devops-local/interface/imagens/painel-primeira-despesa/`.
+
+Validação final: build e tipagem aprovados, lint sem erros com cinco avisos preexistentes e onze testes focados aprovados, sem ignorados. A primeira execução teve um timeout de título durante navegação; o cenário isolado e a repetição dos onze testes passaram sem alterar o comportamento da aplicação. A causa não foi determinada e permanece registrada. No servidor 5173, 24 combinações de largura, tema e perfil mantiveram os indicadores, os painéis e o formulário da primeira despesa, sem erros JavaScript ou rolagem horizontal. Evidência: `evidencias/validacao-painel-primeira-despesa.json`. Sem novo commit ou push.
+
+## Visão geral sem cartões vazios — 12/11/2026
+
+Quando despesas, tarefas e indicadores confirmam que ainda não há registros, a visão geral apresenta uma orientação única. O administrador pode abrir o formulário existente por “Registrar primeira despesa” ou acessar as tarefas. O morador recebe uma explicação compatível com seu perfil e acesso aos moradores. O resumo financeiro permanece acessível.
+
+A orientação só aparece depois do carregamento bem-sucedido das tarefas e não esconde valores do painel. Com registros, as listas continuam disponíveis; a parte pessoal zerada usa a superfície comum e as legendas repetidas foram retiradas. As cores, o login, a casinha, as APIs e o banco permanecem preservados. A revisão continua local em `experimento/layout-compacto`, sem commit adicional ou push.
+
+Build, tipagem e lint passaram, com cinco avisos preexistentes de Fast Refresh. Os onze testes focados passaram sem falhas ou ignorados, incluindo acesso ao formulário, diferenças por perfil e preservação de valores, falhas e carregamento. A suíte completa não foi repetida nesta revisão. A conferência local cobriu 24 combinações de largura, tema e perfil, além do saldo pessoal zerado nos dois temas e do retorno às listas com registros. As novas capturas e medições ficam em `.devops-local/interface/imagens/resumo-inicial/`, `.devops-local/resumo-inicial-servidor.json` e `evidencias/validacao-resumo-inicial.json`; os resultados da experiência compacta abaixo são anteriores a este ajuste.
+
+## Experiência de layout compacto na visão geral — 12/11/2026
+
+A composição escolhida mantém as cores do commit `35da751` e reúne os quatro indicadores em uma faixa. O saldo pessoal mantém seu destaque verde; os outros três indicadores ficam alinhados ao lado. Em larguras menores, a faixa se reorganiza para preservar a leitura dos valores.
+
+A lista de despesas recebe mais largura no computador e alinha descrição, valor e ação na mesma linha. Nas tarefas, responsável, prazo e atraso ficam agrupados abaixo do título. No celular, as informações se reorganizam sem esconder valores, ações ou estados. Login, cadastro, home, casinha, navegação, APIs e banco permanecem como no commit de retorno.
+
+A experiência está em `experimento/layout-compacto`, sem novo commit ou push. As capturas novas ficam em `.devops-local/interface/imagens/layout-compacto/`; a sonda usa respostas fictícias para todas as chamadas da API e registra resultados em `.devops-local/layout-compacto-servidor.json`. Os resultados completos das seções anteriores permanecem históricos.
+
+Validação desta revisão: build, tipagem e lint sem erros (cinco avisos preexistentes de Fast Refresh); dez testes existentes de painel, temas e responsividade aprovados, sem falhas ou ignorados. A conferência na porta 5173 cobriu 36 combinações de tamanho, tema e dados, sem rolagem horizontal nem erros JavaScript. Em 1440 px, a faixa mede aproximadamente 168 px de altura, e os painéis de despesas e tarefas medem 687 e 417 px. Paleta, home e autenticação foram conferidas contra o commit de retorno. Evidência resumida em `evidencias/validacao-layout-compacto.json`. A suíte completa de 46 testes não foi repetida nesta revisão de layout.
+
 ## Deslize do filtro de despesas — 12/11/2026
 
 O destaque de Todas/Pendentes/Pagas desliza horizontalmente em 350 ms, com aceleração e desaceleração suaves. A duração maior atende à preferência visual escolhida; os dados filtrados continuam disponíveis imediatamente. A marcação usa uma transição CSS de `transform`, restrita a esse filtro, preservando o controle Glisse e sua navegação por teclado. Por escolha explícita do usuário, o clique mantém esse deslize mesmo quando o Windows solicita movimento reduzido. Teclado continua imediato; as demais animações seguem a preferência do sistema.

@@ -42,6 +42,12 @@ const membroFields = { id: uuid, usuarioId: uuid, republicaId: uuid, ativo: { ty
 const rateioFields = { id: uuid, despesaId: uuid, membroId: uuid, valorDevido: money, valorPago: money, status: { enum: ['PENDENTE', 'PARCIAL', 'PAGO'] } }
 const despesaFields = { id: uuid, republicaId: uuid, criadaPorId: uuid, titulo: { type: 'string' }, categoria: { type: 'string' }, valorTotal: money, vencimento: storedDate, status: { enum: ['PENDENTE', 'PAGA'] }, criadaEm: timestamp, statusCalculado: { enum: ['PENDENTE', 'PAGA', 'VENCIDA'] } }
 const painelFields = { totalPendente: money, totalPagoNoMes: money, tarefasAbertas: { type: 'integer', minimum: 0 }, moradoresAtivos: { type: 'integer', minimum: 0 }, proximasContas: array(ref('DespesaResumo')) }
+const monthInput = { type: 'string', pattern: '^(19|20|21)[0-9]{2}-(0[1-9]|1[0-2])$', example: '2026-11' }
+const financialSituation = { enum: ['EM_DIA', 'VENCE_EM_BREVE', 'VENCE_HOJE', 'ATRASADA', 'QUITADA'] }
+const financialMetadata = { dataReferencia: dateInput, situacaoVencimento: financialSituation, pagamentoParcial: { type: 'boolean' } }
+const recurrenceOrigin = nullable(object({ id: uuid, competencia: monthInput }))
+const recurringConfig = { titulo: { type: 'string', minLength: 1, maxLength: 160 }, categoria: { type: 'string', minLength: 1, maxLength: 80 },
+  valorTotal: positiveMoney, diaVencimento: { type: 'integer', minimum: 1, maximum: 31 }, membroIds: { type: 'array', minItems: 1, uniqueItems: true, items: uuid } }
 const schemas: Record<string, Schema> = {
   Error: object({ error: object({ code: { type: 'string' }, message: { type: 'string' } }) }),
   Usuario: object(usuarioFields),
@@ -52,12 +58,18 @@ const schemas: Record<string, Schema> = {
   MembroListado: object({ ...membroFields, usuario: object({ id: uuid, nome: { type: 'string' }, email: { type: 'string', format: 'email' } }) }),
   MinhaConta: object({ ...usuarioFields, membro: nullable(object({ ...membroFields, republica: ref('Republica') })) }),
   Pagamento: object({ id: uuid, rateioId: uuid, membroId: uuid, valor: money, comprovanteUrl: nullable({ type: 'string', pattern: '^/api/pagamentos/[a-f0-9-]+/comprovante$' }), dataPagamento: timestamp }),
-  Rateio: object({ ...rateioFields, pagamentos: array(ref('Pagamento')) }, Object.keys(rateioFields)),
-  RateioPessoal: object({ ...rateioFields, pagamentos: array(ref('Pagamento')), despesa: object({ id: uuid, titulo: { type: 'string' }, categoria: { type: 'string' }, vencimento: storedDate, republica: object({ id: uuid, nome: { type: 'string' } }) }) }),
-  DespesaResumo: object(despesaFields),
-  Despesa: object({ ...despesaFields, rateios: array(ref('Rateio')) }),
+  Rateio: object({ ...rateioFields, ...financialMetadata, valorRestante: money, pagamentos: array(ref('Pagamento')) }, Object.keys(rateioFields)),
+  RateioPessoal: object({ ...rateioFields, ...financialMetadata, valorRestante: money, pagamentos: array(ref('Pagamento')), despesa: object({ id: uuid, titulo: { type: 'string' }, categoria: { type: 'string' }, vencimento: storedDate, republica: object({ id: uuid, nome: { type: 'string' } }) }) }, [...Object.keys(rateioFields), 'pagamentos', 'despesa']),
+  DespesaResumo: object({ ...despesaFields, ...financialMetadata, recorrencia: recurrenceOrigin }, Object.keys(despesaFields)),
+  Despesa: object({ ...despesaFields, ...financialMetadata, recorrencia: recurrenceOrigin, rateios: array(ref('Rateio')) }, [...Object.keys(despesaFields), 'rateios']),
   Tarefa: object({ id: uuid, republicaId: uuid, responsavelId: uuid, titulo: { type: 'string' }, descricao: nullable({ type: 'string' }), prazo: nullable(storedDate), status: { enum: ['ABERTA', 'CONCLUIDA'] }, criadaEm: timestamp }),
-  Painel: object(painelFields),
+  Painel: object({ ...painelFields, dataReferencia: dateInput, financeiroIndividual: ref('ResumoIndividual'), financeiroIndividualGeral: ref('ResumoIndividual') }, Object.keys(painelFields)),
+  ResumoIndividual: object({ competencia: nullable(monthInput), dataReferencia: dateInput, totalDevido: money, totalPago: money, saldoPendente: money, totalItens: { type: 'integer', minimum: 0 }, rateiosPendentes: { type: 'integer', minimum: 0 } }),
+  CriarRecorrencia: object({ ...recurringConfig, inicio: monthInput, despesaOrigemId: uuid }, [...Object.keys(recurringConfig), 'inicio']),
+  EditarRecorrencia: { ...object({ ...recurringConfig, ativa: { type: 'boolean' } }, []), minProperties: 1 },
+  Recorrencia: object({ id: uuid, republicaId: uuid, despesaOrigemId: nullable(uuid), inicio: monthInput, proximaCompetencia: monthInput,
+    ativa: { type: 'boolean' }, pausaMotivo: nullable({ type: 'string' }), configuracoes: array(object({ ...recurringConfig, id: uuid, vigencia: monthInput })) }),
+  CompetenciaRecorrencia: object({ competencia: monthInput, estado: { enum: ['GERADA', 'PENDENTE_REVISAO', 'BLOQUEADA', 'REVISADA'] }, motivo: nullable({ type: 'string' }), despesaId: nullable(uuid), revisadaEm: nullable(timestamp) }),
   PainelMaster: object({ ...painelFields, usuarios: { type: 'integer', minimum: 0 }, republicas: { type: 'integer', minimum: 0 } }),
   Cadastro: object({ nome: nameInput, email: { type: 'string', format: 'email', maxLength: 254 }, senha: password }),
   Login: object({ email: { type: 'string', format: 'email', maxLength: 254 }, senha: password }),
@@ -120,7 +132,7 @@ const taskInput = { titulo: 'Limpar cozinha', responsavelId: membro.id, prazo: '
 add('/api/health', 'get', 'Verificar o processo HTTP', { public: true, tag: 'Documentação', response: object({ status: { const: 'ok' } }), output: { status: 'ok' } })
 const ready = add('/api/ready', 'get', 'Verificar conexão ao PostgreSQL', { public: true, tag: 'Documentação', description: 'Consulta SELECT 1; responde em até dois segundos, sem detalhes da conexão.', response: object({ status: { const: 'ok' } }), output: { status: 'ok' } })
 ready.responses['503'] = { description: 'PostgreSQL indisponível.', content: { 'application/json': { schema: object({ status: { const: 'unavailable' } }), example: { status: 'unavailable' } } } }
-add('/api/openapi.json', 'get', 'Obter o contrato OpenAPI', { public: true, tag: 'Documentação', response: { type: 'object', required: ['openapi', 'info', 'paths', 'components'] }, output: { openapi: '3.1.0', info: { title: 'RepHouse API', version: '2.1.0' }, paths: {}, components: {} } })
+add('/api/openapi.json', 'get', 'Obter o contrato OpenAPI', { public: true, tag: 'Documentação', response: { type: 'object', required: ['openapi', 'info', 'paths', 'components'] }, output: { openapi: '3.1.0', info: { title: 'RepHouse API', version: '2.2.0' }, paths: {}, components: {} } })
 const cadastro = add('/api/auth/register', 'post', 'Cadastrar conta independente', { public: true, tag: 'Autenticação', status: 201, body: ref('Cadastro'), input: { nome: usuario.nome, email: usuario.email, senha: 'SuaSenhaDeTeste123!' }, response: ref('Sessao'), output: { token: 'JWT_RECEBIDO_DA_API', usuario }, description: 'Sempre cria NORMAL; campos de privilégio são rejeitados. O e-mail é normalizado. E-mail já utilizado, inclusive por conta excluída, retorna 409.' })
 const login = add('/api/auth/login', 'post', 'Autenticar por e-mail e senha', { public: true, tag: 'Autenticação', body: ref('Login'), input: { email: usuario.email, senha: 'SuaSenhaDeTeste123!' }, response: ref('Sessao'), output: { token: 'JWT_RECEBIDO_DA_API', usuario }, description: 'Token de uma hora. Contas bloqueadas ou excluídas não autenticam. Ao expirar, faça login novamente; não há refresh token.' })
 login.responses['401'] = { description: 'Credenciais incorretas ou conta indisponível.', content: { 'application/json': { schema: ref('Error'), example: { error: { code: 'INVALID_CREDENTIALS', message: 'E-mail ou senha inválidos.' } } } } }
@@ -179,6 +191,36 @@ masterMembers.parameters!.push({ name: 'inativos', in: 'query', schema: { type: 
 add(`${masterPrefix}/membros/{id}`, 'patch', 'Desativar vínculo pelo contexto MASTER', { body: object({ ativo: { const: false } }), input: { ativo: false }, response: ref('Membro'), output: { ...membro, ativo: false } })
 add(`${masterPrefix}/transferir-admin`, 'post', 'Transferir administração pelo contexto MASTER', { body: object({ membroId: uuid }), input: { membroId: membro.id }, response: object({ adminId: uuid }), output: { adminId: usuario.id } })
 
+const financialParameters = [
+  { name: 'competencia', in: 'query', schema: monthInput, description: 'Mês do vencimento. Sem filtro mantém o histórico completo.' },
+  { name: 'situacao', in: 'query', schema: { enum: ['TODAS','PENDENTES','PROXIMAS','ATRASADAS','PAGAS'] }, description: 'PROXIMAS inclui hoje e os próximos sete dias. Quitadas não entram nos avisos.' },
+]
+const summaryExample = { competencia: '2026-11', dataReferencia: '2026-11-17', totalDevido: '60.00', totalPago: '25.00', saldoPendente: '35.00', totalItens: 1, rateiosPendentes: 1 }
+const summary = add('/api/me/financeiro/resumo', 'get', 'Consultar resumo das próprias parcelas', { tag: 'Financeiro', response: ref('ResumoIndividual'), output: summaryExample,
+  description: 'Agregação de todas as parcelas filtradas, independente da paginação. O mês é do vencimento, não da data do pagamento. Funciona sem vínculo ativo e preserva histórico.' })
+summary.parameters = [...financialParameters, { name: 'republicaId', in: 'query', schema: uuid }]
+paths['/api/me/financeiro']!.get!.parameters ??= []
+paths['/api/me/financeiro']!.get!.parameters!.push(...summary.parameters)
+const recurringExample = { id: id(10,1), republicaId: republica.id, despesaOrigemId: null, inicio: '2026-11', proximaCompetencia: '2026-12', ativa: true, pausaMotivo: null,
+  configuracoes: [{ id: id(11,1), vigencia: '2026-11', titulo: 'Internet', categoria: 'INTERNET', valorTotal: '120.00', diaVencimento: 20, membroIds: [membro.id] }] }
+for (const prefix of ['/api', '/api/master/republicas/{republicaId}']) {
+  const expenseList = paths[`${prefix}/despesas`]!.get!
+  expenseList.parameters ??= []
+  expenseList.parameters.push(...financialParameters, { name: 'escopo', in: 'query', schema: { enum: ['CASA','PESSOAL'], default: 'CASA' }, description: 'PESSOAL filtra a própria parcela; CASA considera a quitação de toda a conta.' })
+  add(`${prefix}/recorrencias`, 'get', 'Listar recorrências mensais', { response: array(ref('Recorrencia')), output: [recurringExample], tag: 'Financeiro' })
+  const createRecurring = add(`${prefix}/recorrencias`, 'post', 'Criar recorrência e primeira competência aplicável', { admin: true, status: 201, tag: 'Financeiro', body: ref('CriarRecorrencia'),
+    input: { titulo: 'Internet', categoria: 'INTERNET', valorTotal: '120.00', diaVencimento: 20, inicio: '2026-11', membroIds: [membro.id] }, response: ref('Recorrencia'), output: recurringExample,
+    description: 'Idempotência obrigatória. Participantes fixos; início no mês atual ou futuro. Vencimento já passado exige próximo mês. Dias inexistentes usam o último dia do mês. Origem avulsa exige início após seu mês e após o mês atual.' })
+  createRecurring.parameters ??= []
+  createRecurring.parameters.push({ name: 'Idempotency-Key', in: 'header', required: true, schema: uuid })
+  add(`${prefix}/recorrencias/{id}`, 'get', 'Consultar configuração da recorrência', { response: ref('Recorrencia'), output: recurringExample, tag: 'Financeiro' })
+  add(`${prefix}/recorrencias/{id}`, 'patch', 'Editar ou desativar recorrência', { admin: true, body: ref('EditarRecorrencia'), input: { ativa: false }, response: ref('Recorrencia'), output: { ...recurringExample, ativa: false }, tag: 'Financeiro',
+    description: 'Configurações valem a partir do próximo mês, sem reescrever despesas ou versões anteriores. ativa=false não exclui histórico. Reativação exige participantes ativos.' })
+  add(`${prefix}/recorrencias/{id}/competencias`, 'get', 'Consultar competências e pendências de revisão', { response: array(ref('CompetenciaRecorrencia')), output: [{ competencia: '2026-11', estado: 'GERADA', motivo: null, despesaId: despesa.id, revisadaEm: null }], tag: 'Financeiro' })
+  const review = add(`${prefix}/recorrencias/{id}/competencias/{competencia}/revisar`, 'post', 'Marcar competência não gerada como revisada', { admin: true, status: 204, body: object({}), input: {}, tag: 'Financeiro', description: 'Não cria pagamentos nem altera saldos. Cadastre uma despesa avulsa se a revisão identificar cobrança necessária. Competências geradas não podem ser revisadas.' })
+  review.parameters = review.parameters!.map(parameter => (parameter as { name: string }).name === 'competencia' ? { name: 'competencia', in: 'path', required: true, schema: monthInput } : parameter)
+}
+
 const pageMetadata=object({pagina:{type:'integer',minimum:1},limite:{type:'integer',minimum:1,maximum:100},totalItens:{type:'integer',minimum:0},totalPaginas:{type:'integer',minimum:0}})
 for(const operations of Object.values(paths)){
   const operation=operations.get
@@ -223,7 +265,7 @@ for (const operations of Object.values(paths)) for (const operation of Object.va
 
 export const openApiDocument = {
   openapi: '3.1.0',
-  info: { title: 'RepHouse API', version: '2.1.0', description: 'Backend TypeScript. Listagens retornam {dados,paginacao}. Dinheiro é string decimal. Datas de entrada usam YYYY-MM-DD; datas civis de saída usam ISO à meia-noite UTC. Relatórios e vencimentos seguem APP_TIME_ZONE, padrão horário de Brasília (America/Sao_Paulo). Exemplos são ilustrativos. Endpoints protegidos usam Authorization: Bearer TOKEN; CORS não substitui autorização.' },
+  info: { title: 'RepHouse API', version: '2.2.0', description: 'Backend TypeScript. Listagens retornam {dados,paginacao}. Dinheiro é string decimal. Datas de entrada usam YYYY-MM-DD; datas civis de saída usam ISO à meia-noite UTC. Relatórios e vencimentos seguem APP_TIME_ZONE, padrão horário de Brasília (America/Sao_Paulo). Exemplos são ilustrativos. Endpoints protegidos usam Authorization: Bearer TOKEN; CORS não substitui autorização.' },
   servers: [{ url: 'http://localhost:3000', description: 'Desenvolvimento local; ajuste ao ambiente da equipe.' }],
   tags: ['Documentação', 'Autenticação', 'Conta', 'Repúblicas', 'Financeiro', 'Tarefas', 'Painel', 'MASTER', 'Frontend (compatibilidade)'].map(name => ({ name })),
   security: [{ bearerAuth: [] }],

@@ -23,7 +23,7 @@ export function validarDados(schema: Record<string, unknown>, data: unknown, lab
 
 export function validarResposta(method: string, path: string, status: number, data: unknown) {
   const actual = path.split('?')[0].split('/')
-  const match = Object.entries(openApiDocument.paths).find(([template, operations]) => operations[method.toLowerCase()] && template.split('/').length === actual.length
+  const match = Object.entries(openApiDocument.paths).sort(([a],[b]) => Number(a.includes('{')) - Number(b.includes('{'))).find(([template, operations]) => operations[method.toLowerCase()] && template.split('/').length === actual.length
     && template.split('/').every((part, index) => part.startsWith('{') || part === actual[index]))
   assert.ok(match, `Rota ausente no contrato: ${method} ${path}`)
   const response = match[1][method.toLowerCase()].responses[status]

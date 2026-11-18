@@ -6,6 +6,7 @@ import { TiltCard } from './spell/tilt-card'
 import { BlurReveal } from './spell/blur-reveal'
 import AnimatedGradient from './spell/animated-gradient'
 import './home.css'
+import './home-legibility.css'
 import AppearanceControl from '../aparencia/AppearanceControl'
 
 const gradient = { preset: 'custom' as const, color1: '#e1ece5', color2: '#d3e8f0', color3: '#f5e8ca', speed: 6, swirl: 30, swirlIterations: 3, scale: 0.4, softness: 100 }

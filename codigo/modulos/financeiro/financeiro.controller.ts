@@ -5,6 +5,13 @@ import {prepareReceipt,paymentPublic,receiptTypes} from '../../infraestrutura/ar
 import type { Actor } from '../../compartilhado/context.js'
 import { dateOnly, endpoint, idParam, money, uuid } from '../../compartilhado/http/validation.js'
 import { collectionEndpoint } from '../integracao/frontend-compat.js'
+import { financialQueryShape } from './dominio/competencia.js'
+
+const { escopo: _escopo, ...personalShape } = financialQueryShape
+const personalQueryShape = { ...personalShape, republicaId: uuid.optional() }
+// pagina/limite são validados pelo wrapper; os filtros são lidos sem enfraquecer a validação dos outros módulos.
+const financialFilters = z.object(financialQueryShape)
+const personalFilters = z.object(personalQueryShape)
 
 const expenseSchema = z.object({ titulo: z.string().trim().min(1).max(160), categoria: z.string().trim().min(1).max(80),
   valorTotal: money, vencimento: dateOnly, membroIds: z.array(uuid).min(1) }).strict()
@@ -31,10 +38,11 @@ export function createFinanceiroController(service: FinanceiroService, master = 
   }
   return {
     create: endpoint((req, actor) => service.create(actor, expenseSchema.parse(req.body), scope(req)), 201),
-    list: collectionEndpoint((req, actor, page) => service.list(actor, page, scope(req))),
+    list: collectionEndpoint((req, actor, page) => service.list(actor, page, scope(req), financialFilters.parse(req.query)), false, financialQueryShape),
     detail: endpoint((req, actor) => service.detail(actor, idParam(req), scope(req))),
     edit: endpoint((req, actor) => service.edit(actor, idParam(req), expenseSchema.partial().parse(req.body), scope(req))),
-    personal: collectionEndpoint((_req, actor, page) => service.personal(actor, undefined, page)),
+    personalSummary: endpoint((req, actor) => service.personalSummary(actor, personalFilters.strict().parse(req.query))),
+    personal: collectionEndpoint((req, actor, page) => service.personal(actor, undefined, page, personalFilters.parse(req.query)), false, personalQueryShape),
     personalDetail: endpoint((req, actor) => service.personal(actor, idParam(req))),
     pay, receipt,
   }

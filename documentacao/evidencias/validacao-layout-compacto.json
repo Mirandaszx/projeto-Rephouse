@@ -1,0 +1,54 @@
+{
+  "dataLocal": "2026-11-12",
+  "fuso": "America/Sao_Paulo",
+  "origem": "local",
+  "versao": "2.1.0",
+  "baseGit": "35da751",
+  "branch": "experimento/layout-compacto",
+  "escopo": "Layout compacto somente da visão geral, com cores do checkpoint preservadas",
+  "mudancas": [
+    "Quatro indicadores reunidos numa faixa responsiva",
+    "Mais largura para despesas, com descrição, valor e ação na mesma linha no computador",
+    "Responsável, prazo e atraso agrupados nas tarefas"
+  ],
+  "verificacoesEstaticas": {
+    "build": "Aprovado",
+    "tipagem": "Aprovada",
+    "lint": { "erros": 0, "avisosFastRefreshPreexistentes": 5 }
+  },
+  "regressaoFocada": {
+    "comando": "npm --prefix interface run test:e2e -- painel.spec.ts escuro-fluidez.spec.ts modernizacao.spec.ts",
+    "aprovados": 10,
+    "falhas": 0,
+    "ignorados": 0,
+    "retriesAutomaticos": 0,
+    "duracaoConformeLog": "2.3m",
+    "banco": "PostgreSQL dedicado rephouse-interface-test, porta 5544; schemas descartáveis do harness",
+    "log": ".devops-local/layout-compacto-regressao.log",
+    "limite": "A suíte completa de 46 testes não foi repetida nesta revisão de layout"
+  },
+  "servidorLocal": {
+    "url": "http://localhost:5173/republica",
+    "cenarios": 36,
+    "larguras": [320, 390, 768, 1024, 1366, 1440],
+    "temas": ["claro", "escuro"],
+    "dados": ["normais", "nomes longos e valores elevados", "listas vazias"],
+    "coresOriginais": true,
+    "contrasteTextosConferidos": "Pelo menos 4.5:1",
+    "rolagemHorizontal": false,
+    "errosJavaScript": 0,
+    "alturaFaixa1440px": 167.796875,
+    "largurasPaineis1440px": [687.390625, 416.59375],
+    "origemDados": "Todas as chamadas API interceptadas com respostas controladas; sem acesso ao banco da equipe",
+    "registro": ".devops-local/layout-compacto-servidor.json",
+    "capturas": ".devops-local/interface/imagens/layout-compacto",
+    "inspecaoVisual": ["Claro 1440 px", "Escuro 1440 px", "Escuro 390 px"]
+  },
+  "preservacao": {
+    "coresHomeLoginCadastroECasinha": "Sem diferenças em relação a 35da751 nos arquivos de aparência, home, autenticação e workspace",
+    "apisBancoETiposPublicos": true,
+    "volumes": true,
+    "commitNovo": false,
+    "push": false
+  }
+}

@@ -1,5 +1,11 @@
 # Arquitetura do backend
 
+## Evolução financeira 2.2.0
+
+O módulo financeiro passa a incluir recorrências com configurações por vigência, participantes fixos e competências. A geração roda no processo da API, na inicialização e a cada minuto, em lotes limitados. Não exige serviço externo, fila ou visita à interface. Cada competência usa uma transação ACID com bloqueio da recorrência e unicidade no PostgreSQL. Ao encerrar a API, a rotina interrompe novos ciclos e termina a operação em andamento antes da desconexão.
+
+Consultas compartilhadas calculam filtros, avisos e totais individuais no backend; contagem e registros usam o mesmo escopo e transação. Configurações históricas não são substituídas. A arquitetura em camadas e os endpoints existentes permanecem preservados. Veja [regras, contrato e demonstração](FINANCEIRO_2_2.md).
+
 O backend é um **monólito modular em TypeScript**: uma API Express e um banco PostgreSQL, com o código organizado por funcionalidade. TypeScript usa modo estrito e módulos ESM. Prisma 7 gera o cliente tipado a partir do schema; o adaptador `@prisma/adapter-pg` realiza a conexão com PostgreSQL 18.
 
 Os módulos de autenticação, repúblicas, financeiro, tarefas, dashboard e MASTER estão conectados à API. `GET /api/health` preserva a resposta `{ "status": "ok" }`; `GET /api/openapi.json` publica os contratos. A migração e as regras de exclusão da conta estão descritas em [MIGRACAO_DJANGO.md](MIGRACAO_DJANGO.md).

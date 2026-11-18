@@ -1,5 +1,11 @@
 # Interface do RepHouse
 
+## Financeiro 2.2.0
+
+Despesas agora incluem recorrência mensal, competência, filtros de vencimento e distinção entre conta da casa e parcela individual. O financeiro pessoal recebe os totais calculados pelo backend e mantém contas de repúblicas anteriores. Edição e desativação de recorrência não reescrevem contas existentes. A identidade visual, home, login e cadastro permanecem preservados.
+
+Use o [guia financeiro](../documentacao/FINANCEIRO_2_2.md) para os contratos, regras e demonstração temporária com API na porta 3406 e frontend na 5175. Não é necessário aplicar a migration ao banco da equipe para executar essa demonstração.
+
 O design do [PR #2](https://github.com/Mirandaszx/projeto-Rephouse/pull/2), commit `8e8ae9aeb84ad2404ee8afc474efa3c9b7986476`, é a interface principal desde 09/11/2026. Ele substitui o layout anterior na pasta `interface`, sem cópia de segurança.
 
 Login e cadastro foram refinados com o painel verde e a casinha da referência aprovada, usando os componentes e a paleta do PR. As telas internas receberam a modernização acolhedora e editorial: lateral verde profunda, fundo mais quente, tipografia legível e listas com menos cartões. Veja a [direção visual atual](../documentacao/DIRECAO_VISUAL_FRONTEND.md).

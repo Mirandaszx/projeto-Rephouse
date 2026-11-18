@@ -285,6 +285,7 @@
 .rh-admin.rep-internal .rh-admin-directory-head p { font-size: 14px; color: var(--app-muted); }
 .rh-admin.rep-internal .rh-admin-search { min-height: 48px; background: var(--app-input-bg); border-color: var(--app-control-border); border-radius: 10px; }
 .rh-admin.rep-internal .rh-admin-search input { font-size: 16px; }
+.rh-admin.rep-internal .rh-admin-search input::placeholder { color: var(--app-muted); opacity: 1; }
 .rh-admin.rep-internal .rh-admin-record strong { font-size: 16px; font-weight: 550; }
 .rh-admin.rep-internal .rh-admin-record small { font-size: 14px; color: var(--app-muted); }
 .rh-admin.rep-internal .rh-admin-record > span { width: 40px; height: 40px; font-size: 14px; background: var(--rep-mint); color: var(--app-accent); }
@@ -398,13 +399,19 @@
 @media (prefers-reduced-motion: no-preference) {
   .rep-internal button.lg-button { transition: transform 140ms cubic-bezier(.23,1,.32,1), background-color 140ms ease; }
   .rep-internal button.lg-button:active:not(:disabled):not(:focus-visible) { transform: scale(.98); }
-  .rep-internal .rep-dialog[open] { animation: workspace-dialog-enter 180ms cubic-bezier(.23,1,.32,1); }
-  .rep-internal .rep-dialog[open]::backdrop { animation: workspace-backdrop-enter 180ms cubic-bezier(.23,1,.32,1); }
+  .rep-internal .rep-dialog[open] { opacity: 1; transform: translateY(0); transition: opacity 180ms cubic-bezier(.23,1,.32,1), transform 180ms cubic-bezier(.23,1,.32,1); }
+  .rep-internal .rep-dialog[open]::backdrop { opacity: 1; transition: opacity 180ms cubic-bezier(.23,1,.32,1); }
+  .rep-internal .rep-dialog[open][data-motion-state='closing'] { opacity: 0; transform: translateY(4px); transition-duration: 140ms; }
+  .rep-internal .rep-dialog[open][data-motion-state='closing']::backdrop { opacity: 0; transition-duration: 140ms; }
+  .rep-internal .rep-dialog[data-motion-instant='true'], .rep-internal .rep-dialog[data-motion-instant='true']::backdrop { transition: none; }
   .rep-internal :is(.rep-combobox-popup, .rep-calendar-popup) { transform-origin: var(--transform-origin); transition: opacity 150ms cubic-bezier(.23,1,.32,1), transform 150ms cubic-bezier(.23,1,.32,1); }
   .rep-internal :is(.rep-combobox-popup, .rep-calendar-popup):is([data-starting-style], [data-ending-style]) { opacity: 0; transform: scale(.98); }
   .rep-internal[data-workspace-input='keyboard'] :is(.rep-dialog, .rep-combobox-popup, .rep-calendar-popup), .rep-internal[data-workspace-input='keyboard'] .rep-dialog::backdrop { animation: none; transition: none; }
-  @keyframes workspace-dialog-enter { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes workspace-backdrop-enter { from { opacity: 0; } to { opacity: 1; } }
+  .rep-internal[data-workspace-input='keyboard'] .rh-toast { transition: none; }
+  @starting-style {
+    .rep-internal .rep-dialog[open] { opacity: 0; transform: translateY(4px); }
+    .rep-internal .rep-dialog[open]::backdrop { opacity: 0; }
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .rep-internal *, .rep-internal *::before, .rep-internal *::after { animation-duration: 0s !important; transition-duration: 0s !important; }

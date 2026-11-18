@@ -8,6 +8,9 @@ import { withActor, republicContext, requireAdmin, type Actor } from '../../comp
 import { AppError } from '../../compartilhado/http/app-error.js'
 import {pageResult,type PageInput} from '../../compartilhado/http/pagination.js'
 import {paymentPublic,type ReceiptInput} from '../../infraestrutura/armazenamento/comprovantes.js'
+import { civilDate } from '../../configuracao/time-zone.js'
+import { expensesWhere, personalWhere, personalSummary, expenseView, shareView } from './financeiro.consultas.js'
+import type { FinancialFilter } from './dominio/competencia.js'
 
 const repository = new FinanceiroRepository()
 
@@ -65,17 +68,19 @@ export function createFinanceiroService(db: PrismaClient) {
       const parcelas = parcelasValidas(input.valorTotal, input.membroIds)
       const expense = await repository.criarDespesa(tx, data)
       await repository.criarRateios(tx, expense.id, parcelas)
-      return repository.buscarDespesaComRateios(tx, expense.id)
+      return expenseView(await repository.buscarDespesaComRateios(tx, expense.id))
     }),
-    list: (actor: Actor, page:PageInput, scope?: string) => withActor(db, actor, async (tx, user) => {
+    list: (actor: Actor, page:PageInput, scope?: string, filter: FinancialFilter = {}) => withActor(db, actor, async (tx, user) => {
       const republic = await republicContext(tx, user, scope)
-      return pageResult(await repository.listarDespesas(tx,republic.id,page),await repository.contarDespesas(tx,republic.id),page)
+      const today = civilDate(), where = expensesWhere(republic.id, user.id, filter, today)
+      const items = await repository.listarDespesas(tx,republic.id,page,where)
+      return pageResult(items.map(item => expenseView(item, today)),await repository.contarDespesas(tx,republic.id,where),page)
     }),
     detail: (actor: Actor, id: string, scope?: string) => withActor(db, actor, async (tx, user) => {
       const republic = await republicContext(tx, user, scope)
       const expense = await repository.detalharDespesa(tx, id, republic.id)
       if (!expense) throw new AppError(404, 'NOT_FOUND', 'Despesa não encontrada.')
-      return {...expense,rateios:expense.rateios.map(rateio=>({...rateio,pagamentos:rateio.pagamentos.map(paymentPublic)}))}
+      return expenseView({...expense,rateios:expense.rateios.map(rateio=>({...rateio,pagamentos:rateio.pagamentos.map(paymentPublic)}))})
     }),
     edit: (actor: Actor, id: string, input: Partial<Omit<CriarDespesaInput, 'republicaId' | 'criadaPorId'>>, scope?: string) => withActor(db, actor, async (tx, user) => {
       const republic = await republicContext(tx, user, scope)
@@ -96,14 +101,16 @@ export function createFinanceiroService(db: PrismaClient) {
         await repository.criarRateios(tx, id, parcelas)
       }
       await repository.editarDespesa(tx, id, metadata)
-      return repository.buscarDespesaComRateios(tx, id)
+      return expenseView(await repository.buscarDespesaComRateios(tx, id))
     }),
-    personal: (actor: Actor, id?: string, page?:PageInput) => withActor(db, actor, async (tx, user) => {
+    personalSummary: (actor: Actor, filter: FinancialFilter & { republicaId?: string } = {}) => withActor(db, actor, (tx, user) => personalSummary(tx, user.id, filter)),
+    personal: (actor: Actor, id?: string, page?:PageInput, filter: FinancialFilter & { republicaId?: string } = {}) => withActor(db, actor, async (tx, user) => {
       // Este escopo é por proprietário, sem exigir vínculo ativo na república antiga.
-      const items = await repository.pessoal(tx, user.id, id, page)
-      const publicItems = items.map(item=>({...item,pagamentos:item.pagamentos.map(paymentPublic)}))
+      const today = civilDate(), where = personalWhere(user.id, filter, today)
+      const items = await repository.pessoal(tx, user.id, id, page, where)
+      const publicItems = items.map(item=>shareView({...item,pagamentos:item.pagamentos.map(paymentPublic)}, today))
       if (id && !items.length) throw new AppError(404, 'NOT_FOUND', 'Rateio não encontrado.')
-      return id ? publicItems[0] : pageResult(publicItems,await repository.contarPessoal(tx,user.id),page!)
+      return id ? publicItems[0] : pageResult(publicItems,await repository.contarPessoal(tx,user.id,where),page!)
     }),
     async pay(actor: Actor, input: { rateioId: string; valor: string; chaveIdempotencia: string; comprovante?: ReceiptInput }) {
       const hashRequisicao = createHash('sha256').update(JSON.stringify([

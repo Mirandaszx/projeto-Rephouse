@@ -16,6 +16,7 @@ import { createRepublicasRouter } from './modulos/republicas/republicas.routes.j
 import { createFinanceiroService } from './modulos/financeiro/financeiro.service.js'
 import { createFinanceiroController } from './modulos/financeiro/financeiro.controller.js'
 import { createFinanceiroRouter } from './modulos/financeiro/financeiro.routes.js'
+import { createRecorrenciasRouter } from './modulos/financeiro/recorrencias.routes.js'
 import { createTarefasService } from './modulos/tarefas/tarefas.service.js'
 import { createTarefasController } from './modulos/tarefas/tarefas.controller.js'
 import { createTarefasRouter } from './modulos/tarefas/tarefas.routes.js'
@@ -69,10 +70,12 @@ export function createApp(options: AppOptions = {}): Express {
     const api = express.Router()
     api.use(auth.authenticate)
     api.get('/me', auth.me).patch('/me', auth.edit).delete('/me', auth.deleteAccount)
+    api.get('/me/financeiro/resumo', fc.personalSummary)
     api.get('/me/financeiro', fc.personal).get('/me/financeiro/:id', fc.personalDetail)
     api.use('/republicas', createRepublicasRouter(rc))
     api.get('/membros', rc.members).patch('/membros/:id', rc.deactivate)
     api.use('/despesas', createFinanceiroRouter(fc))
+    api.use('/recorrencias', createRecorrenciasRouter(db))
     api.post('/pagamentos', auth.activeSession, createUploadLimit(), upload.single('comprovante'), fc.pay)
     api.get('/pagamentos/:id/comprovante', fc.receipt)
     api.use('/tarefas', createTarefasRouter(createTarefasController(tarefas)))
@@ -86,6 +89,7 @@ export function createApp(options: AppOptions = {}): Express {
     api.get('/master/republicas/:republicaId/membros', mrc.members).patch('/master/republicas/:republicaId/membros/:id', mrc.deactivate)
     api.post('/master/republicas/:republicaId/transferir-admin', mrc.transfer)
     api.use('/master/republicas/:republicaId/despesas', createFinanceiroRouter(createFinanceiroController(financeiro, true)))
+    api.use('/master/republicas/:republicaId/recorrencias', createRecorrenciasRouter(db, true))
     api.use('/master/republicas/:republicaId/tarefas', createTarefasRouter(createTarefasController(tarefas, true)))
     api.get('/master/republicas/:republicaId/dashboard', createDashboardController(dashboard, true).get)
     app.use(FRONT_PREFIX, createFrontendCompatibilityRouter(authRouter, api))

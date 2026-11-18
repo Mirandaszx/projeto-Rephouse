@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { request, brl as money } from '../api'
 import CopyInvite from './CopyInvite'
@@ -17,26 +17,29 @@ import PersonalFinance from '../gestao/PersonalFinance'
 import HouseSettings from '../gestao/HouseSettings'
 import Residents from '../gestao/Residents'
 import ExpenseDetails from '../gestao/ExpenseDetails'
+import RecurringExpenses, { RecurrenceFields } from '../gestao/RecurringExpenses'
+import ExpenseFilters, { type ExpenseFilter } from '../gestao/ExpenseFilters'
 import type { Account, House, Member } from '../gestao/types'
 import './republica.css'
 import './motion.css'
 import { Badge, EmptyState, PageHeading, SectionHeading, WorkspaceBrand } from '../interno/WorkspaceUI'
-import { financialState } from '../interno/presentation'
+import { financialState, brasilDay } from '../interno/presentation'
 import { useWorkspaceTransition } from '../interno/useWorkspaceTransition'
 import { useWorkspaceNavigation } from '../interno/useWorkspaceNavigation'
 import { WorkspacePage } from '../interno/WorkspacePage'
+import { allowsSurfaceMotion, useDialogMotion } from '../interno/useDialogMotion'
+import SuccessNotice, { type Notice } from '../interno/SuccessNotice'
 import '../interno/workspace.css'
 
-const filters = ['Todas', 'Pendentes', 'Pagas'] as const
+const filterValues = { Todas: 'TODAS', Pendentes: 'PENDENTES', Próximas: 'PROXIMAS', Atrasadas: 'ATRASADAS', Pagas: 'PAGAS' }
 const pages = [
   { path: '/republica', label: 'Visão geral', icon: Building2 },
   { path: '/republica/despesas', label: 'Despesas', icon: ReceiptText },
   { path: '/republica/tarefas', label: 'Tarefas', icon: ClipboardCheck },
   { path: '/republica/moradores', label: 'Moradores', icon: Users },
 ] as const
-type Filter = typeof filters[number]
-type Dashboard = { totalPendente: string; totalPagoNoMes: string; tarefasAbertas: number }
-type Home = { path: string; user: Account; house: House | null; dashboard: Dashboard | null; members: Member[]; expenses: Expense[] }
+type Dashboard = { totalPendente: string; totalPagoNoMes: string; tarefasAbertas: number; dataReferencia?: string; financeiroIndividual?: import('../gestao/types').Schemas['ResumoIndividual']; financeiroIndividualGeral?: import('../gestao/types').Schemas['ResumoIndividual'] }
+type Home = { path: string; queryKey?: string; user: Account; house: House | null; dashboard: Dashboard | null; members: Member[]; expenses: Expense[] }
 const initials = (name: string) => name.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase()
 const remaining = (share: Share) => Math.max(0, Math.round(Number(share.valorDevido) * 100) - Math.round(Number(share.valorPago) * 100))
 
@@ -52,22 +55,28 @@ export default function Republica() {
   const [home, setHome] = useState<Home | null>(null)
   const [loading, setLoading] = useState(true)
   const [revision, setRevision] = useState(0)
-  const [filter, setFilter] = useState<Filter>('Todas')
+  const [filter, setFilter] = useState<ExpenseFilter>('Todas')
+  const [competence, setCompetence] = useState('')
+  const [financialScope, setFinancialScope] = useState('CASA')
+  const [newExpenseDue, setNewExpenseDue] = useState('')
+  const [newExpenseTotal, setNewExpenseTotal] = useState('')
   const results = useWorkspaceTransition(filter)
   const [editing, setEditing] = useState<{ expense: Expense; share: Share } | null>(null)
   const [createHouse, setCreateHouse] = useState(() => new URLSearchParams(window.location.search).get('acao') === 'criar')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [formError, setFormError] = useState('')
-  const [notice, setNotice] = useState('')
+  const [notice, setNotice] = useState<Notice | null>(null)
+  const dismissNotice = useCallback((id: string) => setNotice(current => current?.id === id ? null : current), [])
   const [detailId, setDetailId] = useState<string | null>(null)
   const [receipt, setReceipt] = useState<File | null>(null)
   const [receiptRevision, setReceiptRevision] = useState(0)
-  const dialog = useRef<HTMLDialogElement>(null)
+  const { dialog, open: openDialog, close: closeDialog, isClosing } = useDialogMotion()
   const paymentKey = useRef('')
   const submitting = useRef(false)
   const navigation = useWorkspaceNavigation()
   const currentPath = navigation.path
+  const financialKey = currentPath === '/republica/despesas' ? `${filter}|${competence}|${financialScope}` : ''
   const profile = currentPath === '/republica/perfil'
   const personal = currentPath === '/republica/financeiro'
   const settings = currentPath === '/republica/configuracoes'
@@ -89,18 +98,24 @@ export default function Republica() {
           setError('')
           return
         }
+        const query = new URLSearchParams()
+        if (currentPath === '/republica/despesas') {
+          if (filter !== 'Todas') query.set('situacao', filterValues[filter])
+          if (competence) query.set('competencia', competence)
+          if (financialScope !== 'CASA') query.set('escopo', financialScope)
+        }
         const [house, dashboard, expenses, members] = await Promise.all([
           request<House>('/republicas/atual', token), request<Dashboard>('/dashboard', token),
-          request<Expense[]>('/despesas', token), request<Member[]>('/membros', token),
+          request<Expense[]>('/despesas' + (query.size ? '?' + query.toString() : ''), token), request<Member[]>('/membros', token),
         ])
-        if (active) { setHome({ path: currentPath, user, house, dashboard, expenses, members }); setError('') }
+        if (active) { setHome({ path: currentPath, queryKey: financialKey, user, house, dashboard, expenses, members }); setError('') }
       } catch (err) {
         if (active && !expired(err)) setError((err as Error).message)
       } finally { if (active) setLoading(false) }
     }
     void load()
     return () => { active = false }
-  }, [token, revision, accountRoute, currentPath])
+  }, [token, revision, accountRoute, currentPath, filter, competence, financialScope, financialKey])
 
   function refresh() {
     setLoading(true)
@@ -109,39 +124,45 @@ export default function Republica() {
   }
 
   function open(expense: Expense | null, share?: Share) {
+    if (isClosing() || submitting.current) return
     setEditing(expense && share ? { expense, share } : null)
     setReceipt(null)
     setReceiptRevision(value => value + 1)
     setFormError('')
+    setNewExpenseDue('')
+    setNewExpenseTotal('')
     paymentKey.current = crypto.randomUUID()
     dialog.current?.querySelector('form')?.reset()
-    dialog.current?.showModal()
+    openDialog()
   }
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (submitting.current) return
+    if (submitting.current || isClosing()) return
     submitting.current = true
     const data = new FormData(event.currentTarget)
     setBusy(true)
     setFormError('')
     try {
+      let message: string
       if (editing) {
         if (receipt) data.set('comprovante', receipt)
         data.set('rateioId', editing.share.id)
         await request('/pagamentos', token, data, { 'Idempotency-Key': paymentKey.current })
-        setNotice('Pagamento registrado.')
+        message = 'Pagamento registrado.'
       } else {
         const membroIds = data.getAll('membroIds')
         if (!membroIds.length) throw new Error('Selecione pelo menos um morador para o rateio.')
-        await request('/despesas', token, {
-          titulo: data.get('titulo'), categoria: data.get('categoria'), valorTotal: data.get('valorTotal'),
-          vencimento: data.get('vencimento'), membroIds,
-        })
+        const base = { titulo: data.get('titulo'), categoria: data.get('categoria'), valorTotal: data.get('valorTotal'), membroIds }
+        const repeat = data.get('repetir') === 'on'
+        await request(repeat ? '/recorrencias' : '/despesas', token, repeat
+          ? { ...base, inicio: data.get('inicio'), diaVencimento: Number(String(data.get('vencimento')).slice(8, 10)) }
+          : { ...base, vencimento: data.get('vencimento') }, repeat ? { 'Idempotency-Key': paymentKey.current } : undefined)
         setFilter('Todas')
-        setNotice('Despesa cadastrada com rateio.')
+        message = repeat ? 'Recorrência cadastrada. A primeira conta será gerada no mês escolhido.' : 'Despesa cadastrada com rateio.'
       }
-      dialog.current?.close()
+      await closeDialog()
+      setNotice({ id: crypto.randomUUID(), message, instant: !allowsSurfaceMotion(dialog.current) })
       refresh()
     } catch (err) { if (!expired(err)) setFormError((err as Error).message) }
     finally { setBusy(false); submitting.current = false }
@@ -215,9 +236,10 @@ export default function Republica() {
   </main></div>
 
   const canCreate = user.tipoUsuario === 'USUARIO_ADMIN' && house.adminId === user.id
+  const financialPending = currentPath === '/republica/despesas' && home.queryKey !== financialKey
   const role = house.adminId === user.id ? 'Administrador' : 'Morador'
   const paid = (expense: Expense) => expense.rateios.every(share => remaining(share) === 0)
-  const visible = expenses.filter(expense => filter === 'Todas' || paid(expense) === (filter === 'Pagas'))
+  const visible = expenses
   const month = new Intl.DateTimeFormat('pt-BR', { month: 'long', timeZone: 'America/Sao_Paulo' }).format(new Date())
 
   return <div className="republica rep-internal">
@@ -239,28 +261,31 @@ export default function Republica() {
       <PageHeading context={house.nome + ' · ' + month} title={overview ? 'Oi, ' + user.nome.split(' ')[0] + '.' : page.label} description={overview ? 'Acompanhe as contas e as tarefas da república.' : people ? 'Conheça os moradores da sua república.' : tasks ? 'Distribua os afazeres e acompanhe o que já foi feito.' : settings ? 'Cuide dos dados, da administração e do seu vínculo com a casa.' : 'Acompanhe as contas da casa e registre seus pagamentos.'}>
         {!people && !tasks && !settings && canCreate && <GlisseButton disabled={busy || loading || Boolean(error)} onClick={() => open(null)}>＋ Nova despesa</GlisseButton>}
       </PageHeading>
-      {settings ? <HouseSettings token={token} house={house} members={members} canManage={canCreate} onChanged={refresh} /> : overview ? <Overview token={token} revision={revision} memberId={user.membro?.id} members={members} expenses={expenses} dashboard={dashboard} disabled={busy || loading || Boolean(error)} onPay={open} onExpired={expired} /> : tasks ? <Tasks token={token} members={members} memberId={user.membro?.id} canManage={canCreate} onExpired={expired} /> : people ? <><Residents token={token} members={members} adminId={house.adminId} canManage={canCreate} onChanged={refresh} />{house.codigoEntrada && <section className="rep-invite" aria-labelledby="invite-title"><div><h2 id="invite-title"><UserRoundPlus size={19} aria-hidden="true" />Convide um morador</h2><p>Compartilhe o código com quem vai morar com você.</p></div><CopyInvite code={house.codigoEntrada} /></section>}</> : <section className="rep-expenses" id="despesas">
-        <SectionHeading title="Todas as despesas" description={`${visible.length} ${visible.length === 1 ? 'registro' : 'registros'} neste filtro`}><SegmentedControl className="workspace-expense-filter" aria-label="Filtrar despesas da casa" value={filter} items={filters.map(value => ({ value, label: value }))} onValueChange={value => setFilter(value as Filter)} /></SectionHeading>
-        <div ref={results} className="workspace-results">{visible.length === 0 ? <EmptyState title={expenses.length ? 'Nenhuma despesa neste filtro.' : 'Nenhuma despesa cadastrada na casa.'} /> : <><div className="workspace-expense-columns" aria-hidden="true"><span>Despesa</span><span>Vencimento</span><span>Valor e sua parte</span><span>Ação</span></div><ul>{visible.map(expense => {
+      {settings ? <HouseSettings token={token} house={house} members={members} canManage={canCreate} onChanged={refresh} /> : overview ? <Overview token={token} revision={revision} memberId={user.membro?.id} members={members} expenses={expenses} dashboard={dashboard} disabled={busy || loading || Boolean(error)} onPay={open} onCreateExpense={canCreate ? () => open(null) : undefined} onExpired={expired} /> : tasks ? <Tasks token={token} members={members} memberId={user.membro?.id} canManage={canCreate} onExpired={expired} /> : people ? <><Residents token={token} members={members} adminId={house.adminId} canManage={canCreate} onChanged={refresh} />{house.codigoEntrada && <section className="rep-invite" aria-labelledby="invite-title"><div><h2 id="invite-title"><UserRoundPlus size={19} aria-hidden="true" />Convide um morador</h2><p>Compartilhe o código com quem vai morar com você.</p></div><CopyInvite code={house.codigoEntrada} /></section>}</> : <section className="rep-expenses" id="despesas">
+        <SectionHeading title="Todas as despesas" description={`${visible.length} ${visible.length === 1 ? 'registro' : 'registros'} neste filtro`}><ExpenseFilters value={filter} onChange={setFilter} /></SectionHeading>
+        <div className="finance-controls"><label>Mês do vencimento<input type="month" value={competence} onChange={event => setCompetence(event.target.value)} /></label>{competence && <GlisseButton variant="secondary" onClick={() => setCompetence('')}>Todos os meses</GlisseButton>}<label>Valores e filtros<select value={financialScope} onChange={event => setFinancialScope(event.target.value)}><option value="CASA">Contas da casa</option><option value="PESSOAL">Minha parte</option></select></label></div>
+        <div ref={results} className="workspace-results">{financialPending ? <p role="status">Carregando despesas deste filtro…</p> : visible.length === 0 ? <EmptyState title={filter !== 'Todas' || competence || financialScope !== 'CASA' ? 'Nenhuma despesa neste filtro.' : 'Nenhuma despesa cadastrada na casa.'} /> : <><div className="workspace-expense-columns" aria-hidden="true"><span>Despesa</span><span>Vencimento</span><span>Valor e sua parte</span><span>Ação</span></div><ul>{visible.map(expense => {
           const share = expense.rateios.find(item => item.membroId === user.membro?.id)
-          const state = financialState(expense.vencimento, expense.rateios.reduce((total, item) => total + remaining(item), 0), expense.rateios.reduce((total, item) => total + Number(item.valorPago), 0))
+          const state = financialState(expense.vencimento, expense.rateios.reduce((total, item) => total + remaining(item), 0), expense.rateios.reduce((total, item) => total + Number(item.valorPago), 0), expense.dataReferencia, expense.situacaoVencimento)
+          const ownState = share ? financialState(expense.vencimento, remaining(share), Number(share.valorPago), expense.dataReferencia, share.situacaoVencimento) : null
           return <li className="rh-row-enter" key={expense.id}>
-            <div className="rep-expense-name"><span aria-hidden="true"><ReceiptText size={19} /></span><div><button type="button" className="rep-expense-detail-link" aria-label={`Detalhes de ${expense.titulo}`} onClick={() => setDetailId(expense.id)}>{expense.titulo}</button><small>{expense.categoria}</small></div></div>
+            <div className="rep-expense-name"><span aria-hidden="true"><ReceiptText size={19} /></span><div><button type="button" className="rep-expense-detail-link" aria-label={`Detalhes de ${expense.titulo}`} onClick={() => setDetailId(expense.id)}>{expense.titulo}</button><small>{expense.categoria}{expense.recorrencia ? ' · Recorrente' : ''}</small></div></div>
             <div className="workspace-expense-due"><time dateTime={expense.vencimento.slice(0, 10)}>{expense.vencimento.slice(0, 10).split('-').reverse().join('/')}</time><Badge tone={state.tone}>{state.label}</Badge></div>
-            <div className="rep-amount"><strong>{money.format(Number(expense.valorTotal))}</strong><small>{share ? 'Seu saldo: ' + money.format(remaining(share) / 100) : 'Fora do seu rateio'}</small></div>
-            {share && remaining(share) > 0 ? <GlisseButton variant="secondary" disabled={busy || loading || Boolean(error)} onClick={() => open(expense, share)}>Pagar</GlisseButton> : <span className="rep-paid">{paid(expense) ? 'Paga' : share ? 'Sua parte paga' : 'Pendente'}</span>}
+            <div className="rep-amount"><strong>{money.format(Number(expense.valorTotal))}</strong><small>{share ? 'Seu saldo: ' + money.format(remaining(share) / 100) : 'Fora do seu rateio'}</small>{ownState && <small>Sua parte: {ownState.label}{share && Number(share.valorPago) > 0 && remaining(share) > 0 ? ' · Parcial' : ''}</small>}</div>
+            {share && remaining(share) > 0 ? <GlisseButton variant="secondary" disabled={busy || loading || Boolean(error)} onClick={() => open(expense, share)}>Registrar pagamento</GlisseButton> : <span className="rep-paid">{paid(expense) ? 'Paga' : share ? 'Sua parte paga' : 'Pendente'}</span>}
           </li>
         })}</ul></>}</div>
+        <RecurringExpenses token={token} members={members} revision={revision} canManage={canCreate} onChanged={refresh} onCreate={() => open(null)} />
       </section>}
       </WorkspacePage>}
-      <div className="rep-status" role="status">{notice && <div className="rh-toast">{notice}<button aria-label="Fechar aviso" onClick={() => setNotice('')}>×</button></div>}</div>
+      <div className="rep-status" role="status">{notice && <SuccessNotice notice={notice} onDismiss={dismissNotice} />}</div>
     </main>
     {detailId && <ExpenseDetails id={detailId} token={token} members={members} memberId={user.membro?.id} canManage={canCreate} onChanged={refresh} onClose={() => setDetailId(null)} />}
-    <dialog ref={dialog} className="rep-dialog" aria-labelledby="rep-dialog-title" onCancel={event => { if (busy) event.preventDefault() }}>
+    <dialog ref={dialog} className="rep-dialog" aria-labelledby="rep-dialog-title" onCancel={event => { event.preventDefault(); if (!submitting.current) void closeDialog() }}>
       <form key={editing?.share.id ?? 'new-' + receiptRevision} onSubmit={save} onChange={() => { paymentKey.current = crypto.randomUUID() }}>
         <h2 id="rep-dialog-title">{editing ? 'Registrar pagamento' : 'Nova despesa'}</h2>
         <fieldset disabled={busy} className="rep-form-fields">
-          {editing ? <><p>{editing.expense.titulo} · Saldo: {money.format(remaining(editing.share) / 100)}</p>
+          {editing ? <><p>{editing.expense.titulo} · Saldo: {money.format(remaining(editing.share) / 100)}</p><p className="rep-management-note">Registre aqui um pagamento feito pelo meio combinado com a casa. O RepHouse não transfere dinheiro.</p>
             <AnimatedField label="Valor pago (R$)" name="valor" type="number" required min="0.01" step="0.01" max={remaining(editing.share) / 100} defaultValue={(remaining(editing.share) / 100).toFixed(2)} />
             <div className="rep-receipt">
               <p>Comprovante opcional</p>
@@ -287,13 +312,14 @@ export default function Republica() {
           </> : <>
             <AnimatedField label="Descrição" name="titulo" required maxLength={160} />
             <AnimatedField label="Categoria" name="categoria" required maxLength={80} defaultValue="Contas da casa" />
-            <AnimatedField label="Valor total da despesa (R$)" name="valorTotal" type="number" required min="0.01" max="9999999999.99" step="0.01" />
-            <DateField label="Vencimento" name="vencimento" required />
-            <MemberPicker members={members} />
+            <AnimatedField label="Valor total da despesa (R$)" name="valorTotal" type="number" required min="0.01" max="9999999999.99" step="0.01" onChange={event => setNewExpenseTotal(event.target.value)} />
+            <DateField label="Vencimento" name="vencimento" required onValueChange={setNewExpenseDue} />
+            <RecurrenceFields today={dashboard.dataReferencia ?? brasilDay()} due={newExpenseDue} />
+            <MemberPicker members={members} total={newExpenseTotal} />
           </>}
         </fieldset>
         {formError && <p role="alert">{formError}</p>}
-        <footer><GlisseButton variant="secondary" disabled={busy} onClick={() => dialog.current?.close()}>Cancelar</GlisseButton><GlisseButton type="submit" disabled={busy}>{busy ? 'Salvando…' : editing ? 'Registrar' : 'Adicionar'}</GlisseButton></footer>
+        <footer><GlisseButton variant="secondary" disabled={busy} onClick={() => void closeDialog()}>Cancelar</GlisseButton><GlisseButton type="submit" disabled={busy}>{busy ? 'Salvando…' : editing ? 'Registrar pagamento' : 'Adicionar'}</GlisseButton></footer>
       </form>
     </dialog>
   </div>

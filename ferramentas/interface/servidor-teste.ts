@@ -18,7 +18,7 @@ const jwtSecret = "segredo-apenas-do-ensaio-de-interface-local-2026";
 const auth = createAuthService(environment.db, jwtSecret);
 const managementAccounts: Record<string, { token: string; id: string; email: string }> = {};
 try {
-  for (const name of ["admin", "morador", "removido", "outra-casa", "excluir", "master"]) {
+  for (const name of ["admin", "morador", "removido", "outra-casa", "excluir", "master", "financeiro-admin", "financeiro-morador", "polimento-admin", "polimento-ana", "polimento-bruno"]) {
     const email = `gestao-${name}@integracao.rephouse.test`;
     const session = await auth.register({ nome: `Gestão ${name}`, email, senha: "Senha-interface-teste-2026" });
     if (name === "master") await environment.db.usuario.update({ where: { id: session.usuario.id }, data: { tipoUsuario: "USUARIO_MASTER" } });

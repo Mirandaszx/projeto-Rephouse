@@ -13,15 +13,17 @@ export class ApiError extends Error {
   status: number
   code?: string
   requestId?: string
+  userMessage: string
   constructor(response: Response, data: { error?: { code?: string; message?: string } } | null) {
     const id = response.headers.get('X-Request-Id')
     const retry = response.headers.get('Retry-After')
-    super((data?.error?.message || 'Não foi possível conectar. Tente novamente.')
+    const message = (data?.error?.message || 'Não foi possível conectar. Tente novamente.')
       + (response.status === 429 && retry ? ` Tente novamente após ${retry} segundos.` : '')
-      + (id ? ` Identificação para suporte: ${id}.` : ''))
+    super(message + (id ? ` Identificação para suporte: ${id}.` : ''))
     this.status = response.status
     this.code = data?.error?.code
     this.requestId = id ?? undefined
+    this.userMessage = message
   }
 }
 

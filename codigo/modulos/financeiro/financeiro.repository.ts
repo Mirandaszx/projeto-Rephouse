@@ -2,6 +2,7 @@ import type { Prisma } from '../../gerado/prisma/client.js'
 import type { ParcelaRateio } from './dominio/rateio.js'
 import type { CriarDespesaInput, RegistrarPagamentoInput } from './financeiro.types.js'
 import {pageArgs,type PageInput} from '../../compartilhado/http/pagination.js'
+import { originInclude } from './financeiro.consultas.js'
 
 // Recebe a transação do service; não cria conexão nem abre transação própria.
 export class FinanceiroRepository {
@@ -11,13 +12,13 @@ export class FinanceiroRepository {
   pagamentoPorChave(tx: Prisma.TransactionClient, chaveIdempotencia: string) {
     return tx.pagamento.findUnique({ where: { chaveIdempotencia }, include: {comprovante:{select:{pagamentoId:true}}} })
   }
-  listarDespesas(tx: Prisma.TransactionClient, republicaId: string, page:PageInput) {
-    return tx.despesa.findMany({ ...pageArgs(page),where: { republicaId }, include: { rateios: true }, orderBy: [{ vencimento: 'asc' },{id:'asc'}] })
+  listarDespesas(tx: Prisma.TransactionClient, republicaId: string, page:PageInput, where: Prisma.DespesaWhereInput = { republicaId }) {
+    return tx.despesa.findMany({ ...pageArgs(page),where, include: { rateios: true, competenciaRecorrente: originInclude }, orderBy: [{ vencimento: 'asc' },{id:'asc'}] })
   }
-  contarDespesas(tx:Prisma.TransactionClient,republicaId:string){return tx.despesa.count({where:{republicaId}})}
-  contarPessoal(tx:Prisma.TransactionClient,usuarioId:string){return tx.rateioDespesa.count({where:{membro:{usuarioId}}})}
+  contarDespesas(tx:Prisma.TransactionClient,republicaId:string,where:Prisma.DespesaWhereInput={republicaId}){return tx.despesa.count({where})}
+  contarPessoal(tx:Prisma.TransactionClient,usuarioId:string,where:Prisma.RateioDespesaWhereInput={membro:{usuarioId}}){return tx.rateioDespesa.count({where})}
   detalharDespesa(tx: Prisma.TransactionClient, id: string, republicaId: string) {
-    return tx.despesa.findFirst({ where: { id, republicaId }, include: { rateios: { include: { pagamentos: {include:{comprovante:{select:{pagamentoId:true}}}} } } } })
+    return tx.despesa.findFirst({ where: { id, republicaId }, include: { competenciaRecorrente: originInclude, rateios: { include: { pagamentos: {include:{comprovante:{select:{pagamentoId:true}}}} } } } })
   }
   contarPagamentos(tx: Prisma.TransactionClient, despesaId: string) {
     return tx.pagamento.count({ where: { rateio: { despesaId } } })
@@ -26,8 +27,8 @@ export class FinanceiroRepository {
   editarDespesa(tx: Prisma.TransactionClient, id: string, data: Prisma.DespesaUncheckedUpdateInput) {
     return tx.despesa.update({ where: { id }, data })
   }
-  pessoal(tx: Prisma.TransactionClient, usuarioId: string, id?: string, page?:PageInput) {
-    return tx.rateioDespesa.findMany({ ...(page?pageArgs(page):{skip:0,take:1}),orderBy:[{despesa:{vencimento:'asc'}},{id:'asc'}],where: { ...(id ? { id } : {}), membro: { usuarioId } }, include: {
+  pessoal(tx: Prisma.TransactionClient, usuarioId: string, id?: string, page?:PageInput, filters: Prisma.RateioDespesaWhereInput = {}) {
+    return tx.rateioDespesa.findMany({ ...(page?pageArgs(page):{skip:0,take:1}),orderBy:[{despesa:{vencimento:'asc'}},{id:'asc'}],where: { AND: [filters, { ...(id ? { id } : {}), membro: { usuarioId } }] }, include: {
       pagamentos: {include:{comprovante:{select:{pagamentoId:true}}}}, despesa: { select: { id: true, titulo: true, categoria: true, vencimento: true,
         republica: { select: { id: true, nome: true } } } },
     } })
@@ -51,7 +52,7 @@ export class FinanceiroRepository {
 
   buscarDespesaComRateios(tx: Prisma.TransactionClient, id: string) {
     return tx.despesa.findUniqueOrThrow({
-      where: { id }, include: { rateios: { orderBy: { membroId: 'asc' } } },
+      where: { id }, include: { competenciaRecorrente: originInclude, rateios: { orderBy: { membroId: 'asc' } } },
     })
   }
 

@@ -1,0 +1,50 @@
+{
+  "dataLocal": "2026-11-12",
+  "origem": "local",
+  "baseGit": "35da751",
+  "branch": "experimento/layout-compacto",
+  "versao": "2.1.0",
+  "resultado": "Orientação inicial sem cartões zerados, com ações compatíveis com o perfil",
+  "comportamento": {
+    "dadosVazios": "Orientação única somente após consulta bem-sucedida de tarefas e confirmação dos indicadores zerados",
+    "administrador": "Registrar primeira despesa abre o formulário existente; link permite acessar tarefas",
+    "morador": "Explicação de leitura e acesso aos moradores, sem botão de cadastro de despesa",
+    "comRegistros": "Resumo e listas preservados; parte pessoal zerada usa a superfície comum",
+    "falhasECarregamento": "Não são apresentados como ausência de registros"
+  },
+  "verificacao": {
+    "build": "Aprovado",
+    "tipagem": "Aprovada",
+    "lint": { "erros": 0, "avisosFastRefreshPreexistentes": 5 },
+    "testesSelecionados": 11,
+    "falhas": 0,
+    "ignorados": 0,
+    "comando": "npm --prefix interface run test:e2e -- painel.spec.ts escuro-fluidez.spec.ts modernizacao.spec.ts",
+    "log": ".devops-local/resumo-inicial-regressao.log",
+    "limite": "Suíte completa não repetida nesta revisão; testes HTTP usam PostgreSQL dedicado com schemas descartáveis"
+  },
+  "conferenciaServidor": {
+    "url": "http://localhost:5173/republica",
+    "cenariosIniciais": 24,
+    "larguras": [320, 390, 768, 1024, 1366, 1440],
+    "temas": ["claro", "escuro"],
+    "perfis": ["administrador", "morador"],
+    "checagensAdicionais": "Parte pessoal zerada com indicadores financeiros positivos nos dois temas; retorno às listas com registros",
+    "coresOriginais": true,
+    "contrasteConferido": "Pelo menos 4.5:1 nos textos e controles da orientação inicial e do saldo zerado",
+    "rolagemHorizontal": false,
+    "errosJavaScript": 0,
+    "dados": "Chamadas API interceptadas com respostas fictícias; sem acesso ao banco da equipe",
+    "registro": ".devops-local/resumo-inicial-servidor.json",
+    "capturas": ".devops-local/interface/imagens/resumo-inicial/",
+    "inspecaoVisual": ["Claro 1440 px", "Escuro 1440 px", "Escuro 390 px"],
+    "ocorrenciaDaSonda": "Helper de serialização do tsx corrigido na sonda após navegação adicional; aplicação inalterada por essa correção"
+  },
+  "preservacao": {
+    "paletaHomeAutenticacaoECasinha": "Arquivos sem diferenças em relação a 35da751",
+    "apisBancoETiposPublicos": true,
+    "volumes": true,
+    "commitNovo": false,
+    "push": false
+  }
+}

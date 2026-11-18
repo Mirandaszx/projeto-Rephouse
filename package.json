@@ -1,6 +1,6 @@
 {
   "name": "projeto-rephouse",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Sistema web simples para gestão e organização de repúblicas e residências compartilhadas.",
   "main": "dist/server.js",
   "directories": {
@@ -21,9 +21,10 @@
     "api:exportar": "tsx codigo/comandos/exportar-openapi.ts",
     "auth:secret": "tsx codigo/comandos/generate-secret.ts",
     "master:provision": "tsx codigo/comandos/provision-master.ts",
-    "test": "tsx --test --test-concurrency=1 testes/rateio.test.ts testes/http.test.ts testes/integracao-http.test.ts testes/operacao-http.test.ts testes/backup.test.ts testes/robustez.test.ts testes/frontend-compat.test.ts",
-    "test:db": "tsx --test --test-concurrency=1 testes/database.test.ts testes/acid.test.ts testes/migration.test.ts testes/comprovantes.test.ts testes/jornadas-integracao.test.ts testes/google.test.ts testes/frontend-compat-db.test.ts",
+    "test": "tsx --test --test-concurrency=1 testes/rateio.test.ts testes/http.test.ts testes/integracao-http.test.ts testes/operacao-http.test.ts testes/backup.test.ts testes/robustez.test.ts testes/frontend-compat.test.ts testes/financeiro-evolucao.test.ts",
+    "test:db": "tsx --test --test-concurrency=1 testes/database.test.ts testes/acid.test.ts testes/migration.test.ts testes/comprovantes.test.ts testes/jornadas-integracao.test.ts testes/google.test.ts testes/frontend-compat-db.test.ts testes/financeiro-evolucao-db.test.ts testes/financeiro-migracao.test.ts testes/financeiro-reinicio.test.ts",
     "test:integracao": "tsx --test testes/jornadas-integracao.test.ts",
+    "financeiro:demo": "tsx ferramentas/integracao/demo-financeiro.ts",
     "integracao:demo": "tsx ferramentas/integracao/demo.ts",
     "front:pr2": "tsx ferramentas/interface/servir-pr2.ts",
     "backup": "tsx codigo/comandos/backup.ts",

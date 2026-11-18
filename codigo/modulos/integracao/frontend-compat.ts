@@ -23,13 +23,14 @@ export function createFrontendCompatibilityRouter(auth: Router, api: Router) {
 export function collectionEndpoint(
   operation: (request: Request, actor: Actor, page: PageInput) => Promise<unknown>,
   members = false,
+  extraQuery: z.ZodRawShape = {},
 ): RequestHandler {
   return async (req, res, next) => {
     const compatible = res.locals.frontCompatibility === true
     // O protótipo trabalha com a coleção completa. Nunca devolver só a primeira
     // página como se fosse o conjunto inteiro, nem permitir uma consulta ilimitada.
-    if (compatible) z.object(members ? { inativos: z.enum(['true', 'false']).optional() } : {}).strict().parse(req.query)
-    const page = compatible ? { pagina: 1, limite: FRONT_COLLECTION_LIMIT + 1 } : pagination(req.query, members)
+    if (compatible) z.object({ ...(members ? { inativos: z.enum(['true', 'false']).optional() } : {}), ...extraQuery }).strict().parse(req.query)
+    const page = compatible ? { pagina: 1, limite: FRONT_COLLECTION_LIMIT + 1 } : pagination(req.query, members, extraQuery)
     await endpoint(async (request, actor) => {
       const result = await operation(request, actor, page)
       if (!compatible) return result
