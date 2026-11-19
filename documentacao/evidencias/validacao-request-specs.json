@@ -1,0 +1,52 @@
+{
+  "executadoEm": "2026-11-18T22:33:57.976Z",
+  "ambiente": "local",
+  "versaoAplicacao": "2.2.0",
+  "comando": "npm run test:completo",
+  "ferramentas": ["Node.js 24.21.0", "node:test", "tsx", "PostgreSQL 18", "Docker Compose"],
+  "destino": { "host": "127.0.0.1", "porta": 5544, "banco": "rabbu_mvp_test", "usuario": "rephouse_interface_test" },
+  "bancoEquipeUtilizado": false,
+  "migrations": { "quantidade": 10, "destino": "schema temporário exclusivo", "reset": false },
+  "schemaTemporarioRemovido": true,
+  "volumesRemovidos": false,
+  "configuracaoLimitadaAosProcessosFilhos": true,
+  "etapas": {
+    "docker": "aprovado",
+    "identidadeEDurabilidadePostgreSQL": "aprovado",
+    "build": "aprovado",
+    "tipagem": "aprovado",
+    "openApiETiposSincronizados": "aprovado",
+    "regressaoAnterior": "151 testes aprovados",
+    "coberturaAdicional": "58 testes no TAP: 50 aprovados e 8 falhas",
+    "geracaoInicialDuasInstanciasEReinicio": "aprovado",
+    "cicloRealDeUmMinuto": "aprovado; cenário executado em aproximadamente 61,9 segundos",
+    "comprovanteAposTransferenciaSaidaEExclusao": "aprovado; administrador antigo perde acesso, novo administrador e MASTER mantêm acesso, proprietário mantém após saída e perde sessão após exclusão",
+    "destinoInvalido": "recusado com código 1 antes de chamar Docker ou conectar; porta 5432 e banco rabbu_mvp usados como entrada negativa",
+    "gitDiffContratoETipos": "sem diferenças",
+    "gitDiffCheck": "sem erros"
+  },
+  "totais": { "testes": 209, "aprovados": 201, "falhas": 8, "ignorados": 0, "cancelados": 0 },
+  "codigoSaida": 1,
+  "bugs": [
+    { "id": "BUG-01", "rota": "POST /api/despesas", "descricao": "Idempotency-Key ignorada na criação", "cenariosFalhando": 3 },
+    { "id": "BUG-02", "rota": "POST /api/tarefas", "descricao": "Idempotency-Key ignorada na criação", "cenariosFalhando": 3 },
+    { "id": "BUG-03", "rota": "POST /api/despesas", "descricao": "valorTotal 1,00 retorna 500 em vez de 400", "cenariosFalhando": 1 }
+  ],
+  "observacaoContagem": "O TAP conta também o teste agrupador de entradas inválidas como falho. São sete cenários de falha e três bugs distintos; oito testes falhando no total.",
+  "hashesPreservados": {
+    "documentacao/openapi.json": "17ff5f3339838258debb562023f3138a0bdc69d0fc6bcc6d0a072cae686f3d54",
+    "integracao/api.d.ts": "75d161ed60a4397fe8b878cc167d5294414bce25fedb8ca25416da0167470514"
+  },
+  "limites": [
+    "O backend não está aprovado: testes de bugs continuam falhando.",
+    "Calendário de fevereiro/ano bissexto tem cobertura complementar, sem simular a data no processo real.",
+    "No primeiro dia do mês, o subcaso de vencimento já passado no mês não é observável; nesta execução era dia 18.",
+    "MIME positivo HTTP desta ampliação usa PDF; PNG/JPEG/WEBP individuais permanecem uma ampliação identificada.",
+    "Não houve novo E2E de navegador nem autenticação com conta Google real.",
+    "Não houve carga, recuperação operacional, alteração de funcionalidade, commit, push ou execução remota."
+  ],
+  "registroCompletoLocal": ".devops-local/testes-criticos/2026-11-18T22-30-52.956Z.json",
+  "logCompletoLocal": ".devops-local/testes-criticos/2026-11-18T22-30-52.956Z.log",
+  "backendAprovado": false,
+  "resultadoRemoto": "não executado"
+}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { request, brl as money } from '../api'
 import CopyInvite from './CopyInvite'
@@ -7,7 +7,7 @@ import { GlisseButton } from '../rebuild/GlisseButton'
 import { SegmentedControl } from 'glisse'
 import { HaloDropzone } from '../rebuild/vendor/cult-halo-dropzone'
 import { AnimatedField, DateField } from '../rebuild/Fields'
-import { Building2, ClipboardCheck, LogOut, ReceiptText, Users, UserRoundPlus, Settings, UserRound, Wallet, House as HouseIcon, KeyRound } from 'lucide-react'
+import { LogOut, ReceiptText, UserRoundPlus, Settings, UserRound, Wallet, House as HouseIcon, KeyRound } from 'lucide-react'
 import Tasks from './Tasks'
 import Overview, { type Expense, type Share } from './Overview'
 import AppearanceControl from '../aparencia/AppearanceControl'
@@ -19,7 +19,9 @@ import Residents from '../gestao/Residents'
 import ExpenseDetails from '../gestao/ExpenseDetails'
 import RecurringExpenses, { RecurrenceFields } from '../gestao/RecurringExpenses'
 import ExpenseFilters, { type ExpenseFilter } from '../gestao/ExpenseFilters'
-import type { Account, House, Member } from '../gestao/types'
+import { expired, useRepublicaData } from './republica/useRepublicaData'
+import RepublicNavigation from './republica/RepublicNavigation'
+import { initials, pages } from './republica/navigation'
 import './republica.css'
 import './motion.css'
 import { Badge, EmptyState, PageHeading, SectionHeading, WorkspaceBrand } from '../interno/WorkspaceUI'
@@ -31,30 +33,10 @@ import { allowsSurfaceMotion, useDialogMotion } from '../interno/useDialogMotion
 import SuccessNotice, { type Notice } from '../interno/SuccessNotice'
 import '../interno/workspace.css'
 
-const filterValues = { Todas: 'TODAS', Pendentes: 'PENDENTES', Próximas: 'PROXIMAS', Atrasadas: 'ATRASADAS', Pagas: 'PAGAS' }
-const pages = [
-  { path: '/republica', label: 'Visão geral', icon: Building2 },
-  { path: '/republica/despesas', label: 'Despesas', icon: ReceiptText },
-  { path: '/republica/tarefas', label: 'Tarefas', icon: ClipboardCheck },
-  { path: '/republica/moradores', label: 'Moradores', icon: Users },
-] as const
-type Dashboard = { totalPendente: string; totalPagoNoMes: string; tarefasAbertas: number; dataReferencia?: string; financeiroIndividual?: import('../gestao/types').Schemas['ResumoIndividual']; financeiroIndividualGeral?: import('../gestao/types').Schemas['ResumoIndividual'] }
-type Home = { path: string; queryKey?: string; user: Account; house: House | null; dashboard: Dashboard | null; members: Member[]; expenses: Expense[] }
-const initials = (name: string) => name.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase()
 const remaining = (share: Share) => Math.max(0, Math.round(Number(share.valorDevido) * 100) - Math.round(Number(share.valorPago) * 100))
-
-function expired(err: unknown) {
-  if ((err as { status?: number }).status !== 401) return false
-  sessionStorage.removeItem('rephouse-token')
-  window.location.replace('/login')
-  return true
-}
 
 export default function Republica() {
   const [token] = useState(() => sessionStorage.getItem('rephouse-token') || '')
-  const [home, setHome] = useState<Home | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [revision, setRevision] = useState(0)
   const [filter, setFilter] = useState<ExpenseFilter>('Todas')
   const [competence, setCompetence] = useState('')
   const [financialScope, setFinancialScope] = useState('CASA')
@@ -64,7 +46,6 @@ export default function Republica() {
   const [editing, setEditing] = useState<{ expense: Expense; share: Share } | null>(null)
   const [createHouse, setCreateHouse] = useState(() => new URLSearchParams(window.location.search).get('acao') === 'criar')
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
   const [formError, setFormError] = useState('')
   const [notice, setNotice] = useState<Notice | null>(null)
   const dismissNotice = useCallback((id: string) => setNotice(current => current?.id === id ? null : current), [])
@@ -86,42 +67,7 @@ export default function Republica() {
   const people = page.path === '/republica/moradores'
   const tasks = page.path === '/republica/tarefas'
 
-  useEffect(() => {
-    if (!token) { window.location.replace('/login'); return }
-    let active = true
-    async function load() {
-      try {
-        const user = await request<Account>('/me', token)
-        if (!active) return
-        if (accountRoute || !user.membro || user.tipoUsuario === 'USUARIO_MASTER') {
-          setHome({ path: currentPath, user, house: null, dashboard: null, members: [], expenses: [] })
-          setError('')
-          return
-        }
-        const query = new URLSearchParams()
-        if (currentPath === '/republica/despesas') {
-          if (filter !== 'Todas') query.set('situacao', filterValues[filter])
-          if (competence) query.set('competencia', competence)
-          if (financialScope !== 'CASA') query.set('escopo', financialScope)
-        }
-        const [house, dashboard, expenses, members] = await Promise.all([
-          request<House>('/republicas/atual', token), request<Dashboard>('/dashboard', token),
-          request<Expense[]>('/despesas' + (query.size ? '?' + query.toString() : ''), token), request<Member[]>('/membros', token),
-        ])
-        if (active) { setHome({ path: currentPath, queryKey: financialKey, user, house, dashboard, expenses, members }); setError('') }
-      } catch (err) {
-        if (active && !expired(err)) setError((err as Error).message)
-      } finally { if (active) setLoading(false) }
-    }
-    void load()
-    return () => { active = false }
-  }, [token, revision, accountRoute, currentPath, filter, competence, financialScope, financialKey])
-
-  function refresh() {
-    setLoading(true)
-    setError('')
-    setRevision(value => value + 1)
-  }
+  const { home, loading, revision, error, setError, refresh } = useRepublicaData({ token, currentPath, accountRoute, filter, competence, financialScope, financialKey })
 
   function open(expense: Expense | null, share?: Share) {
     if (isClosing() || submitting.current) return
@@ -244,15 +190,7 @@ export default function Republica() {
 
   return <div className="republica rep-internal">
     <a className="workspace-skip" href="#conteudo-interno">Ir para o conteúdo</a>
-    <aside className="rep-sidebar">
-      <WorkspaceBrand />
-      <div className="rep-house"><span>Minha república</span><strong>{house.nome}</strong></div>
-      <div><p className="workspace-nav-label">A casa</p><nav aria-label="Navegação da casa">{pages.map(({ path, icon: Icon, label }) => <a key={path} href={path} aria-current={page.path === path ? 'page' : undefined}><Icon size={18} aria-hidden="true" /><span>{label}</span></a>)}</nav></div>
-      <div className="rep-account"><div className="rep-profile"><span className="rep-avatar">{initials(user.nome)}</span><div><strong>{user.nome}</strong><small>{role}</small></div></div><div className="rep-account-links"><a href="/republica/perfil"><UserRound size={16} />Meu perfil</a><a href="/republica/financeiro"><Wallet size={16} />Meu financeiro</a><a href="/republica/configuracoes" aria-current={settings ? 'page' : undefined}><Settings size={16} />Configurações da república</a></div><AppearanceControl /><button className="rep-logout" disabled={busy} onClick={() => void logout()}><LogOut size={17} aria-hidden="true" />Sair</button></div>
-    </aside>
-    <div className="rep-glisse-dock">
-      <nav className="rep-mobile-nav" aria-label="Navegação da casa">{pages.map(({ path, icon: Icon, label }) => <a key={path} href={path} aria-current={page.path === path ? 'page' : undefined}><Icon size={19} aria-hidden="true" /><span>{label}</span></a>)}</nav>
-    </div>
+    <RepublicNavigation user={user} house={house} activePath={page.path} role={role} busy={busy} onLogout={logout} />
     <main className="rep-main rep-workspace" id="conteudo-interno" tabIndex={-1} aria-busy={loading || (routePending && !error)}>
       <div className="rep-mobile-profile"><div className="rep-profile"><span className="rep-avatar">{initials(user.nome)}</span><div><strong>{user.nome}</strong><small>{role}</small></div></div><div className="rep-mobile-actions"><a className="rep-mobile-account-link" aria-label="Meu perfil" href="/republica/perfil"><UserRound size={18} /></a><a className="rep-mobile-account-link" aria-label="Meu financeiro" href="/republica/financeiro"><Wallet size={18} /></a><a className="rep-mobile-account-link" aria-label="Configurações da república" href="/republica/configuracoes"><Settings size={18} /></a><AppearanceControl compact /><button className="rep-logout" disabled={busy} onClick={() => void logout()}><LogOut size={17} aria-hidden="true" />Sair</button></div></div>
       {error && <div className="rep-error"><p role="alert">{error}</p><GlisseButton variant="secondary" disabled={loading} onClick={refresh}>Tentar novamente</GlisseButton></div>}

@@ -47,11 +47,12 @@ Com `.env` configurado e PostgreSQL disponível, execute na raiz:
 npm ci
 npm run auth:secret
 npm run db:generate
-npm run db:deploy
 npm run typecheck
 npm test
 npm run dev
 ```
+
+Migrations aprovadas são executadas separadamente com a conta administrativa; a API usa `DATABASE_URL` limitada. Siga o [guia de permissões PostgreSQL](documentacao/PERMISSOES_POSTGRESQL.md). No banco da equipe deste checkout, as nove migrations da auditoria continuam pendentes e não devem ser aplicadas pelo procedimento de inicialização.
 
 `npm run dev` usa `tsx` com recarga automática. Para compilar e executar o resultado:
 
@@ -72,7 +73,7 @@ use `npm run api:exportar`. Para criar a demonstração em desenvolvimento, defi
 
 Copie `.env.example` para `.env`, configure o banco e execute `npm run auth:secret`
 para gerar o segredo JWT local. O banco padrão desta versão é `rabbu_mvp`.
-As migrations são aplicadas automaticamente antes da API iniciar.
+As migrations e a preparação das dependências são operações administrativas explícitas. Reiniciar a API não aplica migrations.
 
 A modelagem segue o documento **RABBU — MVP / Primeira Entrega (3 perfis)**.
 O modelo atual possui 14 tabelas, incluindo autenticação Google e quatro tabelas de recorrências. Usuários, repúblicas, membros, despesas, rateios, pagamentos, comprovantes e tarefas permanecem preservados.
@@ -84,15 +85,21 @@ uso local do Prisma e testes. O contrato OpenAPI está em `GET /api/openapi.json
 Com Docker Desktop aberto, na raiz do repositório:
 
 ```bash
-docker compose up
+# Banco novo ou migrations pendentes explicitamente aprovadas:
+docker compose up -d --wait postgres
+docker compose --profile manutencao run --rm migracoes
+docker compose --profile manutencao run --rm migracoes npm run db:permissoes -- --compose
+docker compose up -d --wait api frontend
 ```
 
-Na primeira execução, o Compose baixa a imagem do Node e instala as dependências usando os arquivos de lock. A aplicação fica disponível em:
+O serviço manual `migracoes` instala pelo lockfile e prepara o banco; `db:permissoes` separa a conta administrativa da conta da API. Para o ambiente existente, preserve o override e siga o [guia operacional](documentacao/OPERACAO_BACKEND.md), sem aplicar migrations pendentes. Nas execuções seguintes, `docker compose up -d --wait api frontend` reutiliza as dependências e os dados. A aplicação fica disponível em:
 
 - Frontend: http://localhost:5173
 - API: http://localhost:3000/api/health
 - OpenAPI: http://localhost:3000/api/openapi.json
 - PostgreSQL: localhost:5432
+
+As portas do Compose principal são publicadas somente em `127.0.0.1`, para acesso pelo próprio computador. Os containers continuam se comunicando pelos nomes internos `postgres` e `api`. Acesso de outros computadores da rede exige uma configuração explícita separada.
 
 O frontend encaminha chamadas `/api` para a API pelo proxy do Vite. Dentro da rede do Compose, a API encontra o banco pelo nome do serviço `postgres`.
 
@@ -109,6 +116,16 @@ O volume `postgres_data` preserva registros e comprovantes ao reiniciar os conta
 A [matriz de validação](documentacao/VALIDACAO_MVP.md) relaciona requisitos, implementação e evidências históricas. O [roteiro de demonstração](documentacao/ROTEIRO_DEMONSTRACAO_BACKEND.md) orienta a apresentação das funcionalidades e do estado no banco.
 
 ## Testes locais e GitHub Actions
+
+Para executar toda a verificação do backend com isolamento automático:
+
+```powershell
+npm run test:completo
+```
+
+Com Docker Desktop aberto e as dependências instaladas, esse comando prepara somente o PostgreSQL de testes na porta 5544 e usa schemas temporários. Não altera `.env` nem o banco da equipe. Executa a regressão anterior e os novos testes por HTTP real; falhas e testes ignorados impedem aprovação. Veja a [especificação e matriz dos fluxos críticos](documentacao/TESTES_FLUXOS_CRITICOS.md), a [lista de bugs reproduzidos](documentacao/BUGS_REQUEST_SPECS.md) e o [resultado local](documentacao/evidencias/validacao-request-specs.json). Não inclui E2E de navegador, carga ou recuperação operacional.
+
+O procedimento manual abaixo permanece como alternativa histórica para quem também executa a suíte de navegador da interface; ela é separada dos novos request specs.
 
 Com Node.js 24 e dependências instaladas na raiz e em `interface`, prepare somente o PostgreSQL dedicado aos testes:
 
@@ -127,6 +144,8 @@ Use um terminal exclusivo para esses comandos; feche-o ao terminar para não rea
 O GitHub Actions continua em pushes e PRs para `main` e `homologacao`, além do acionamento manual. Valida o backend com Node.js 24, PostgreSQL 18 temporário, instalação pelo lockfile, migrations, regressão completa e contrato/tipos sincronizados. Os testes de navegador da interface são executados localmente pelo comando acima. Nenhum evento do workflow executa carga, recuperação, backup, restauração ou deploy. Resultados locais e remotos são registrados separadamente.
 
 ## Recursos opcionais preservados
+
+A [auditoria do schema](documentacao/auditoria-schema/RELATORIO.md) registra o inventário e as contagens anteriores. As [migrations adicionais e suas reversões](documentacao/auditoria-schema/IMPLEMENTACAO.md) foram preparadas para validação exclusivamente no PostgreSQL de testes; o banco da equipe não foi migrado nesta etapa. Os testes SQL fazem parte de `npm run test:completo`.
 
 Dockerfile, Compose compilado, ambiente de homologação, scripts de backup/restauração e ensaios de carga/recuperação continuam disponíveis. Não são requisitos da terceira apresentação nem etapas do Actions atual. Os guias [operacional](documentacao/OPERACAO_BACKEND.md), [de homologação](documentacao/HOMOLOGACAO_BACKEND.md) e [de consolidação](documentacao/CONSOLIDACAO_BACKEND.md) identificam essas alternativas e seus registros anteriores. Planejamento de hospedagem, custos de provedor e escalabilidade fica para outra etapa.
 

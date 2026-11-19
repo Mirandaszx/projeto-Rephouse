@@ -15,8 +15,11 @@ test('migration 2.2 preserva despesas, rateios, pagamentos e bytes de comprovant
   try {
     await db.query(`CREATE SCHEMA "${schema}"`)
     const migrations = (await readdir('prisma/migracoes')).filter(name => /^\d/.test(name)).sort()
-    assert.equal(migrations.at(-1),'202611170001_evolucao_financeiro')
-    for (const name of migrations.slice(0,-1)) await db.query(await readFile(`prisma/migracoes/${name}/migration.sql`,'utf8'))
+    const migrationFinanceira = '202611170001_evolucao_financeiro'
+    const indiceFinanceiro = migrations.indexOf(migrationFinanceira)
+    assert.notEqual(indiceFinanceiro,-1,'A migration financeira 2.2 precisa existir.')
+    // A fixture representa a base anterior à 2.2, mesmo com migrations posteriores na pasta.
+    for (const name of migrations.slice(0,indiceFinanceiro)) await db.query(await readFile(`prisma/migracoes/${name}/migration.sql`,'utf8'))
     const user=randomUUID(), house=randomUUID(), member=randomUUID(), expense=randomUUID(), share=randomUUID(), payment=randomUUID()
     const proof=Buffer.from('%PDF-1.4\nhistorico anterior a recorrencias\n%%EOF')
     await db.query('BEGIN')
@@ -35,7 +38,7 @@ test('migration 2.2 preserva despesas, rateios, pagamentos e bytes de comprovant
       return result
     }
     const before=await snapshot()
-    await db.query(await readFile(`prisma/migracoes/${migrations.at(-1)}/migration.sql`,'utf8'))
+    await db.query(await readFile(`prisma/migracoes/${migrationFinanceira}/migration.sql`,'utf8'))
     assert.deepEqual(await snapshot(),before)
     assert.equal((await db.query('SELECT count(*) FROM recorrencias_despesa')).rows[0].count,'0')
     const row=(await db.query('SELECT valor_devido,valor_pago,status FROM rateios_despesa WHERE id=$1',[share])).rows[0]

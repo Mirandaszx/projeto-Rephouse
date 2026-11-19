@@ -1,0 +1,102 @@
+{
+  "executadoEm": "2026-11-19T01:33:21.919Z",
+  "ambiente": "local",
+  "escopo": "Compose principal projeto-rephouse; separacao de contas tecnicas PostgreSQL",
+  "versaoAplicacao": "2.2.0",
+  "permissaoApi": {
+    "nome": "rephouse_api",
+    "rolsuper": false,
+    "rolcreatedb": false,
+    "rolcreaterole": false,
+    "rolreplication": false,
+    "rolbypassrls": false
+  },
+  "validacoes": {
+    "credencialAdministrativaAusenteDaApi": true,
+    "arquivosAdministrativosAusentesDaApi": [
+      {
+        "path": "/app/.env",
+        "existe": false
+      },
+      {
+        "path": "/app/.env.homologacao",
+        "existe": false
+      },
+      {
+        "path": "/app/.git",
+        "existe": false
+      }
+    ],
+    "ddlPersistenteNegado": true,
+    "leituraHistoricoMigrationsNegada": true,
+    "conexaoRealDaApiConferida": "rephouse_api",
+    "dadosPreservados": true,
+    "tabelas": 15,
+    "registrosAplicacao": 6,
+    "migrationsAplicadasAntes": 10,
+    "migrationsAplicadasDepois": 10,
+    "migrationsDaAuditoriaPendentes": 9,
+    "postgresRecriado": false,
+    "frontendRecriado": false,
+    "apiRecriada": true,
+    "imagensPreservadas": true,
+    "volumesPreservados": true,
+    "http": [
+      {
+        "url": "http://127.0.0.1:3000/api/health",
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:3000/api/ready",
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:5173/login",
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:5173/api/auth/metodos",
+        "status": 200
+      }
+    ]
+  },
+  "testesPermissoes": {
+    "comando": "npm run test:permissoes",
+    "destino": "127.0.0.1:5544/rabbu_mvp_test",
+    "aprovados": 5,
+    "falhas": 0,
+    "ignorados": 0,
+    "schemas": "temporarios exclusivos, antes e depois das nove migrations",
+    "httpReal": true,
+    "google": "assinatura real com chaves controladas; sem acesso real ao provedor",
+    "repetidosAposTrocaDaConta": true
+  },
+  "regressao": {
+    "comando": "npm run test:completo",
+    "testes": 267,
+    "aprovados": 259,
+    "falhas": 8,
+    "ignorados": 0,
+    "cancelados": 0,
+    "codigoSaida": 1,
+    "schemaTemporarioRemovido": true,
+    "contratoETiposSemDiferencas": true,
+    "relatorioLocal": ".devops-local/testes-criticos/2026-11-19T01-27-58.110Z.json",
+    "problemasPreexistentes": [
+      "Idempotency-Key ignorada na criacao de despesas (3 testes)",
+      "Idempotency-Key ignorada na criacao de tarefas (3 testes)",
+      "Valor monetario com virgula retorna 500 em vez de 400 (subteste e teste pai: 2 falhas)"
+    ]
+  },
+  "limites": [
+    "Sem alteracao de regras de negocio, RLS ou policies",
+    "Composes alternativos compilado/homologacao continuam historicos e fora desta validacao de permissoes",
+    "Sem commit, push ou execucao remota",
+    "Nove migrations de schema continuam sem aplicacao no banco da equipe"
+  ],
+  "evidenciasLocais": [
+    ".devops-local/permissoes-antes.json",
+    ".devops-local/permissoes-depois.json"
+  ],
+  "backendAprovado": false
+}

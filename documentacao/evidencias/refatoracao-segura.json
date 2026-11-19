@@ -1,0 +1,166 @@
+{
+  "executadoEm": "2026-11-19T02:30:12.071Z",
+  "ambiente": "local",
+  "versaoAplicacao": "2.2.0",
+  "escopo": "Revisao estrutural de front/backend e duas extracoes de Republica.tsx",
+  "revisao": {
+    "arquivosTypeScriptAntes": 122,
+    "ciclosEncontradosNosImportsAnalisados": 0,
+    "exclusoes": [
+      "codigo gerado",
+      "vendor",
+      "spell"
+    ],
+    "relatorio": "documentacao/REFATORACAO_SEGURA.md"
+  },
+  "movimentos": [
+    {
+      "nome": "carregamento",
+      "arquivo": "interface/codigo/novo/republica/useRepublicaData.ts",
+      "base": 17,
+      "aprovadosAposExtracao": 17,
+      "falhas": 0
+    },
+    {
+      "nome": "navegacao",
+      "arquivos": [
+        "interface/codigo/novo/republica/RepublicNavigation.tsx",
+        "interface/codigo/novo/republica/navigation.ts"
+      ],
+      "semWrapperHtmlAdicional": true
+    }
+  ],
+  "equivalencia": {
+    "executadoEm": "2026-11-19T02:16:50.466Z",
+    "original": "HEAD:interface/codigo/novo/Republica.tsx",
+    "comparacoes": [
+      {
+        "trecho": "expired",
+        "parametrosECorpoIguais": true
+      },
+      {
+        "trecho": "load",
+        "parametrosECorpoIguais": true
+      },
+      {
+        "trecho": "refresh",
+        "parametrosECorpoIguais": true
+      },
+      {
+        "trecho": "open",
+        "parametrosECorpoIguais": true
+      },
+      {
+        "trecho": "save",
+        "parametrosECorpoIguais": true
+      },
+      {
+        "trecho": "enterHouse",
+        "parametrosECorpoIguais": true
+      },
+      {
+        "trecho": "logout",
+        "parametrosECorpoIguais": true
+      },
+      {
+        "trecho": "remaining",
+        "expressaoIgual": true
+      },
+      {
+        "trecho": "pages",
+        "expressaoIgual": true
+      },
+      {
+        "trecho": "initials",
+        "expressaoIgual": true
+      },
+      {
+        "trecho": "useEffect",
+        "callbackEDependenciasIguais": true
+      }
+    ],
+    "estadosAntes": 18,
+    "estadosDepois": 18,
+    "estadosNaComposicao": 14,
+    "linhasAntes": 326,
+    "linhasDepois": 264
+  },
+  "verificacaoCompletaInterface": {
+    "comando": "npm --prefix interface run verificar",
+    "build": true,
+    "tipagem": true,
+    "lint": {
+      "erros": 0,
+      "avisos": 5,
+      "arquivoDosAvisos": "interface/codigo/main.tsx",
+      "arquivoNaoAlterado": true
+    },
+    "testes": 67,
+    "aprovados": 66,
+    "falhas": 1,
+    "ignorados": 0,
+    "codigoSaida": 1,
+    "log": ".devops-local/refatoracao-interface-final.log"
+  },
+  "falhaPreexistente": {
+    "arquivo": "interface/testes-pr2/motion-superficies.spec.ts",
+    "linha": 227,
+    "observado": "Timeout ao consultar o dialogo depois da captura de quadro intermediario; o teste utiliza relogio simulado.",
+    "comandoReproducao": "npm --prefix interface run test:e2e -- motion-superficies.spec.ts",
+    "repeticoesCodigoAtual": 2,
+    "falhasCodigoAtual": 2,
+    "repeticoesArquivoOriginal": 2,
+    "falhasArquivoOriginal": 2,
+    "controleReferenciaOriginal": {
+      "executadoEm": "2026-11-19T02:27:09.308Z",
+      "status": 200,
+      "usaHookExtraido": false,
+      "contemSidebarOriginal": true
+    },
+    "metodoControle": "Vite de testes substituiu somente o modulo Republica.tsx pelo conteudo original de HEAD, sem editar o checkout ou o servidor principal.",
+    "expectativaDoTestePreservada": true,
+    "causaRaiz": "Ainda nao estabelecida; falha tambem presente antes desta refatoracao.",
+    "logs": [
+      ".devops-local/refatoracao-motion-isolado.log",
+      ".devops-local/refatoracao-motion-original.log"
+    ]
+  },
+  "preservado": {
+    "rotas": true,
+    "contratoETiposPublicos": true,
+    "regrasFinanceiras": true,
+    "css": true,
+    "versao": true,
+    "alteracoesAnteriores": true,
+    "semMigrationsNoBancoDaEquipe": true
+  },
+  "http": {
+    "executadoEm": "2026-11-19T02:21:01.975Z",
+    "checks": [
+      {
+        "url": "http://127.0.0.1:3000/api/health",
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:3000/api/ready",
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:5173/login",
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:5173/codigo/novo/republica/RepublicNavigation.tsx",
+        "status": 200,
+        "moduloAtualizado": true
+      }
+    ]
+  },
+  "pendencias": [
+    "Investigar separadamente o caso de animacao antes de declarar a suite totalmente aprovada.",
+    "Extracoes futuras: geracao/agendador das recorrencias; tarefas; MASTER; estilos compartilhados.",
+    "Backend nao refatorado nem revalidado nesta rodada; oito falhas anteriores permanecem como evidencia historica, sem alteracao de seus testes."
+  ],
+  "semCommitPush": true,
+  "interfaceIntegralAprovada": false
+}

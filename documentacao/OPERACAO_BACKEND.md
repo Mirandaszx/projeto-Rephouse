@@ -1,19 +1,23 @@
 # Operação local do backend
 
-Na terceira apresentação, use o Compose principal com frontend, API e PostgreSQL. A versão permanece **2.1.0**. A validação exigida é compilação, tipos, contrato e testes funcionais; carga, recuperação e demonstração de backup/restauração são opcionais. Não é necessário preparar homologação separada ou planejar produção.
+Use o Compose principal com frontend, API e PostgreSQL. A versão atual é **2.2.0**. A validação exigida é compilação, tipos, contrato e testes funcionais; carga, recuperação e demonstração de backup/restauração são opcionais. Não é necessário preparar homologação separada ou planejar produção.
 
 ## Caminho principal: Docker local
 
 Na raiz, com Docker Desktop iniciado, prepare `.env` somente se ele ainda não existir: copie `.env.example`, configure as credenciais do banco e preencha `JWT_SECRET` com um segredo aleatório de pelo menos 32 caracteres. `npm run auth:secret`, após `npm ci`, fornece um valor para copiar ao arquivo; não o publique. Não sobrescreva um `.env` já configurado nem tente trocar credenciais de um volume existente pelas variáveis de inicialização.
 
 ```powershell
-docker compose up -d --wait
+# Em banco novo ou com migrations pendentes aprovadas, siga a preparação administrativa:
+docker compose up -d --wait postgres
+docker compose --profile manutencao run --rm migracoes
+docker compose --profile manutencao run --rm migracoes npm run db:permissoes -- --compose
+docker compose up -d --wait api frontend
 docker compose ps -a
 Invoke-RestMethod http://localhost:3000/api/health
 Invoke-RestMethod http://localhost:3000/api/ready
 ```
 
-Abra `http://localhost:5173/login`. O Compose instala pelo lockfile, aplica migrations e inicia API e frontend. O PostgreSQL usa o volume `postgres_data` do projeto; contas, vínculos, tarefas e comprovantes persistem após reinício. Para diagnosticar, reiniciar ou encerrar:
+Abra `http://localhost:5173/login`. O serviço manual `migracoes` prepara dependências e banco; a API usa a conta limitada, sem migrations na inicialização e sem acesso ao `.env` administrativo. Veja as permissões e a preparação de um ambiente novo no [guia específico](PERMISSOES_POSTGRESQL.md). As portas 5173, 3000 e 5432 são publicadas somente em `127.0.0.1`; os containers continuam se comunicando pela rede interna Docker. O PostgreSQL usa o volume `postgres_data` do projeto; contas, vínculos, tarefas e comprovantes persistem após reinício. Para diagnosticar, reiniciar ou encerrar:
 
 ```powershell
 docker compose logs --tail 100 api frontend postgres
@@ -22,6 +26,15 @@ docker compose down
 ```
 
 `down` preserva os dados; `down -v` remove volumes e não faz parte do procedimento. Não execute reset ou limpeza de volumes. O [README](../README.md#testes-locais-e-github-actions) contém os comandos da regressão no PostgreSQL dedicado, sem escrever no banco da equipe.
+
+**Estado local após a restrição de portas:** as nove migrations adicionais da auditoria continuam pendentes no banco da equipe. Para ativar as portas locais sem aplicá-las, este checkout usa o override não versionado `.devops-local/restricao-portas.override.json`, que inicia API e frontend com as dependências existentes e preserva a configuração de inicialização do volume PostgreSQL. `docker compose restart api frontend` reutiliza esses comandos atuais. Para recriar os serviços mantendo essa condição, use:
+
+```powershell
+docker compose -p projeto-rephouse -f docker-compose.yml -f .devops-local/restricao-portas.override.json up -d --no-deps --pull never --wait postgres
+docker compose -p projeto-rephouse -f docker-compose.yml -f .devops-local/restricao-portas.override.json up -d --no-deps --pull never --wait api frontend
+```
+
+Esse override é específico do ambiente local já preparado. Após a separação das contas, a inicialização normal da API também deixou de executar `db:deploy`; migrations exigem o serviço manual `migracoes` e autorização sobre as pendentes. A validação anterior da restrição de portas comparou hashes das 15 tabelas e confirmou os mesmos seis registros de aplicação, dez migrations aplicadas, imagens e volumes. Login, health, readiness e o proxy da interface responderam normalmente. Essa evidência histórica está em `.devops-local/restricao-portas-validacao.json`; a verificação posterior de permissões tem registro próprio, indicado no guia específico.
 
 ## GitHub Actions da entrega
 

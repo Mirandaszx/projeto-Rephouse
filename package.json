@@ -21,9 +21,10 @@
     "api:exportar": "tsx codigo/comandos/exportar-openapi.ts",
     "auth:secret": "tsx codigo/comandos/generate-secret.ts",
     "master:provision": "tsx codigo/comandos/provision-master.ts",
-    "test": "tsx --test --test-concurrency=1 testes/rateio.test.ts testes/http.test.ts testes/integracao-http.test.ts testes/operacao-http.test.ts testes/backup.test.ts testes/robustez.test.ts testes/frontend-compat.test.ts testes/financeiro-evolucao.test.ts",
-    "test:db": "tsx --test --test-concurrency=1 testes/database.test.ts testes/acid.test.ts testes/migration.test.ts testes/comprovantes.test.ts testes/jornadas-integracao.test.ts testes/google.test.ts testes/frontend-compat-db.test.ts testes/financeiro-evolucao-db.test.ts testes/financeiro-migracao.test.ts testes/financeiro-reinicio.test.ts",
-    "test:integracao": "tsx --test testes/jornadas-integracao.test.ts",
+    "test": "tsx --test --test-reporter=tap --test-concurrency=1 testes/rateio.test.ts testes/http.test.ts testes/integracao-http.test.ts testes/operacao-http.test.ts testes/backup.test.ts testes/robustez.test.ts testes/frontend-compat.test.ts testes/financeiro-evolucao.test.ts",
+    "test:db": "tsx ferramentas/integracao/conferir-destino.ts && tsx --test --test-reporter=tap --test-concurrency=1 testes/database.test.ts testes/acid.test.ts testes/migration.test.ts testes/comprovantes.test.ts testes/jornadas-integracao.test.ts testes/google.test.ts testes/frontend-compat-db.test.ts testes/financeiro-evolucao-db.test.ts testes/financeiro-migracao.test.ts testes/financeiro-reinicio.test.ts testes/request-identidade.test.ts testes/request-idempotencia.test.ts testes/request-financeiro.test.ts testes/request-recorrencias.test.ts testes/request-google.test.ts testes/permissoes-db.test.ts testes/schema-hardening.test.ts",
+    "test:integracao": "tsx ferramentas/integracao/conferir-destino.ts && tsx --test testes/jornadas-integracao.test.ts",
+    "test:completo": "tsx ferramentas/integracao/testar-completo.ts",
     "financeiro:demo": "tsx ferramentas/integracao/demo-financeiro.ts",
     "integracao:demo": "tsx ferramentas/integracao/demo.ts",
     "front:pr2": "tsx ferramentas/interface/servir-pr2.ts",
@@ -35,7 +36,9 @@
     "test:carga:completo": "tsx codigo/comandos/verificar-carga.ts completo",
     "comprovantes:importar": "tsx codigo/comandos/importar-comprovantes.ts",
     "api:tipos": "npm run api:exportar && tsx ferramentas/contrato/gerar.ts",
-    "api:tipos:verificar": "tsx ferramentas/contrato/gerar.ts --verificar"
+    "api:tipos:verificar": "tsx ferramentas/contrato/gerar.ts --verificar",
+    "db:permissoes": "tsx codigo/comandos/configurar-permissoes.ts",
+    "test:permissoes": "tsx ferramentas/integracao/conferir-destino.ts && tsx --test --test-reporter=tap testes/permissoes-db.test.ts"
   },
   "repository": {
     "type": "git",

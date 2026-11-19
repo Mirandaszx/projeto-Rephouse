@@ -1,5 +1,9 @@
 # Matriz de validação do MVP
 
+## Request specs dos fluxos críticos — 18/11/2026
+
+Nova cobertura com API HTTP e PostgreSQL reais, incluindo concorrência e geração pelo processo compilado. A [matriz dos comportamentos aprovados](TESTES_FLUXOS_CRITICOS.md) separa request specs de testes complementares. A execução local encontrou falhas de idempotência na criação de despesas/tarefas e erro 500 para valor com vírgula; os testes permanecem falhando. Consulte a [lista de bugs](BUGS_REQUEST_SPECS.md) e a [evidência local](evidencias/validacao-request-specs.json). Não houve correção de funcionalidades, alteração do contrato, execução remota ou novo E2E. As aprovações históricas abaixo não significam aprovação desta nova especificação.
+
 ## Evolução financeira 2.2.0 — 17/11/2026
 
 | Requisito | Implementação e evidência |
@@ -182,3 +186,9 @@ O código validado foi publicado em `homologacao`. A entrega seguinte está no [
 | CI por PR para homologacao | Instalação limpa, migrations, 112 testes, contrato/tipos e ensaio Docker real de queda, reinício, backup e restauração | Execução remota aprovada; link/commit no resultado estruturado |
 | Carga financeira | Duas etapas restritas a workflow_dispatch com carga_completa=true; desabilitadas nos PRs desta entrega | Não executada |
 | Interface, publicação e merge | Telas não alteradas; backend somente local; main e configurações de proteção preservadas | Fora do escopo; PR aberto para revisão |
+
+## Correção local posterior: privilégios PostgreSQL
+
+A API do Compose principal passou a usar conta técnica limitada, sem a credencial administrativa ou montagem do `.env` no container. Migrations ficam no serviço manual de manutenção. O [guia](PERMISSOES_POSTGRESQL.md) e a [evidência local](evidencias/permissoes-postgresql.json) registram o escopo: cinco testes de permissões aprovados; regressão com 267 testes, 259 aprovados, as mesmas oito falhas de produto e zero ignorados/cancelados. O backend integral continua sem aprovação devido aos [bugs conhecidos](BUGS_REQUEST_SPECS.md).
+
+A comparação antes/depois confirmou preservação dos dados nas 15 tabelas e das dez migrations aplicadas; as nove migrations da auditoria continuam pendentes no banco da equipe. PostgreSQL, frontend, imagens e volumes foram preservados; somente a API foi recriada. Não houve commit, push ou validação remota nesta correção.
