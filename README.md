@@ -1,169 +1,379 @@
 # RepHouse
 
-Aplicação web para organização de repúblicas e residências compartilhadas.
+Sistema para organizar moradores, tarefas e despesas de uma república. A versão **4.2.0** inclui rateios, pagamentos manuais, recorrências, notificações, perfil com foto e autenticação por e-mail.
 
-O código local evoluiu para **4.2.0**, com [foto e informações do perfil](documentacao/PERFIL_E_FOTO.md): enquadramento, troca e remoção, avatares autenticados e confirmação por link somente quando registrada. A versão foi ativada no principal local em 22/11/2026, após autorização, backup conferido e atualização das permissões: **26 migrations aplicadas, nenhuma pendente**, dados e volume preservados. Veja a [evidência de ativação](documentacao/evidencias/ativacao-perfil-principal-2026-11-22.json). Backend: 337 testes aprovados. As oito jornadas de perfil passaram; a última suíte completa do frontend registrou três falhas descritas no guia, sem aprovação global.
+Este guia explica a primeira configuração no **Windows, usando PowerShell e Docker Desktop**. Execute os passos na ordem. Se um comando falhar, resolva o erro antes de continuar.
 
-A entrega **4.1.0** acrescentou [avisos gerais e aba Todas](documentacao/NOTIFICACOES_GERAIS.md). Todas reúne tarefas, despesas e entrada/saída de moradores; Tarefas e Despesas mantêm seus filtros. A implementação foi validada no banco dedicado. Após autorização explícita, a migration foi ativada no principal com backup, atualização das permissões e preservação dos dados e volumes. Veja a [evidência de ativação](documentacao/evidencias/ativacao-gerais-principal-2026-11-21.json).
+> **Clonar o projeto não copia o banco nem o `.env` de outra pessoa.** Cada integrante prepara seu próprio ambiente. Contas criadas no computador de um colega não aparecem automaticamente no seu.
 
-A entrega **4.0.0** introduziu [tarefas compartilhadas e notificações internas em tempo real](documentacao/NOTIFICACOES_E_TAREFAS.md). Moradores criam tarefas disponíveis ou para si e podem assumir uma disponível. O sino separa avisos de tarefas e vencimentos, com leitura individual e persistência no PostgreSQL. As duas migrations 4.0.0 foram ativadas em 21/11/2026, após autorização, backup e conferência dos dados e permissões. O contrato permite `responsavelId: null`; a listagem de notificações permanece paginada inclusive em `/api/front/v1`. Veja a [evidência dessa ativação](documentacao/evidencias/ativacao-notificacoes-principal-2026-11-21.json).
+## 1. Confira o que precisa estar instalado
 
-A autenticação por e-mail, introduzida na **3.0.0** e ativada em 20/11/2026, permanece preservada. Novos cadastros aguardam confirmação por e-mail e há login por link mágico; o envio real pelo Resend ainda não foi validado. Veja [configuração, ativação e limitações](documentacao/AUTENTICACAO_EMAIL.md). As contas existentes conservam login por senha. As listagens principais continuam retornando `{dados,paginacao}`, com `pagina=1` e `limite=20` por padrão.
+- **Git**, para baixar e atualizar o código.
+- **Node.js 24**, com npm, para os comandos de configuração e desenvolvimento.
+- **Docker Desktop**, aberto e executando containers Linux. No Windows, conclua a configuração do WSL 2 solicitada pelo Docker.
+- **VS Code**, recomendado para editar os arquivos.
 
-A [revisão 2.2.1](documentacao/CORRECOES_2_2_1.md) corrige entradas monetárias inválidas e acrescenta proteção opcional por `Idempotency-Key` nas criações de despesas e tarefas. Os formulários usam essa proteção e conservam tentativas incertas em memória. Em 20/11/2026, após autorização explícita e backup, as dez migrations pendentes foram aplicadas no banco principal local e as permissões atualizadas. Os dados anteriores e os volumes foram preservados; os testes continuam usando o banco dedicado.
+Abra o terminal do VS Code em **Terminal > Novo Terminal**. Os exemplos abaixo usam PowerShell.
 
-Para integrar conta, repúblicas, moradores, tarefas e MASTER, siga o [roteiro sem operações financeiras](documentacao/JORNADAS_INTEGRACAO.md). Ele inclui coleção Insomnia, exemplos fetch e demonstração isolada por `npm run integracao:demo`.
+```powershell
+git --version
+node --version
+npm --version
+docker compose version
+docker info --format '{{.ServerVersion}}'
+```
 
-Na terceira apresentação, o foco é demonstrar funcionalidades, arquitetura, banco e testes. O caminho principal é o Docker Compose local descrito abaixo e no [guia operacional](documentacao/OPERACAO_BACKEND.md). Não é necessário preparar homologação separada, demonstrar backup/restauração ou executar carga e recuperação.
+Cada comando deve mostrar uma versão; `node --version` deve começar com `v24.`. O último confirma que o Docker está funcionando, além de instalado.
 
-O [financeiro 2.2.0](documentacao/FINANCEIRO_2_2.md) acrescenta recorrências mensais, avisos de vencimento e resumo individual calculado no backend. A demonstração isolada está disponível em `npm run financeiro:demo`; o registro manual de pagamentos permanece preservado.
+Se o PowerShell bloquear `npm.ps1`, use `npm.cmd` no lugar de `npm` neste guia. Não é necessário desativar a proteção do Windows.
 
-A extensão de [término das recorrências](documentacao/RECORRENCIA_DATA_FIM.md) permite escolher até qual dia, mês e ano uma conta repete. Está ativa no principal local após autorização e backup, na ocasião com 25 migrations, nenhuma pendência e dados/volume preservados. Sua [evidência de ativação](documentacao/evidencias/ativacao-recorrencia-fim-principal-2026-11-21.json) é independente da ativação anterior de notificações.
+## 2. Baixe a branch que contém estas atualizações
 
-**Uso diário com dados persistentes:** acesse `http://localhost:5173/login`. Neste checkout, o override local `.devops-local/principal-estavel.yml`, descrito no [guia operacional](documentacao/OPERACAO_BACKEND.md), mantém a imagem compilada 4.2.0, incluindo Sharp. A API usa o banco configurado no `.env` e o volume PostgreSQL existente. Os comandos `financeiro:demo` e `integracao:demo` criam ambientes descartáveis com contas fictícias; não use seus links para acessar as contas reais da equipe. A demonstração financeira na porta 5175 não compartilha os dados do ambiente principal.
+Para quem **ainda não baixou o projeto**:
 
-## Stack
+```powershell
+git clone --branch teste-devops https://github.com/Mirandaszx/projeto-Rephouse.git
+cd projeto-Rephouse
+```
 
-- Frontend: React, TypeScript, Vite, Tailwind CSS e ESLint
-- Backend: Node.js, Express e TypeScript em modo estrito (ESM)
-- Banco de dados: PostgreSQL
-- ORM: Prisma 7.10.0, com migrations versionadas
-- Ambiente local: Docker Compose
+Para quem **já tem uma cópia**, abra essa pasta e confira primeiro `git status`. Preserve suas alterações antes de trocar de branch. Se estiver sem alterações pendentes:
 
-## Arquitetura do backend
+```powershell
+git fetch origin
+git switch teste-devops
+git pull --ff-only origin teste-devops
+```
 
-O backend usa um monólito modular em camadas, organizado por funcionalidade.
-O módulo financeiro separa domínio, services e repositories; a infraestrutura
-compartilha conexão, transações ACID e tratamento HTTP de erros.
+Confira onde está:
 
-Veja [ARQUITETURA.md](documentacao/ARQUITETURA.md) para a estrutura e as responsabilidades.
-As pastas usam português sem acentos: `codigo`, `modulos`, `infraestrutura`,
-`compartilhado`, `testes`, `documentacao` e `interface`. Diretórios técnicos como
-`node_modules`, `dist` e `.git` conservam os nomes das ferramentas.
-Os módulos auth, repúblicas, financeiro, tarefas, dashboard e master já possuem
-rotas e serviços. A migração inclui pagamentos parciais, cobrança após saída da
-república e exclusão lógica da própria conta. A primeira interface React já integra
-acesso, perfil, repúblicas, moradores e tarefas. Consulte o [guia do frontend](interface/README.md)
-e a [direção visual escolhida](documentacao/DIRECAO_VISUAL_FRONTEND.md).
-O [sistema visual atual](DESIGN.md) concentra tokens, temas e componentes; os [ajustes da revisão Impeccable](documentacao/REFINAMENTO_IMPECCABLE_2026_11_20.md) registram o tratamento de erros, foco e carregamento por página.
-Veja [MIGRACAO_DJANGO.md](documentacao/MIGRACAO_DJANGO.md) para as regras e os endpoints.
-O [guia de integração do backend](documentacao/INTEGRACAO_BACKEND.md) explica
-o contrato importável, CORS, contas de demonstração e a verificação automatizada.
+```powershell
+git branch --show-current
+Get-Item package.json, docker-compose.yml, .env.example
+```
 
-## Backend local em TypeScript
+A branch esperada é `teste-devops`. A pasta desses três arquivos é a **raiz do projeto**. Todos os comandos seguintes partem dela, sem entrar em `interface`.
 
-Com `.env` configurado e PostgreSQL disponível, execute na raiz:
+## 3. Crie seu `.env`: este passo é obrigatório
 
-```bash
+O `.env.example` é um **modelo**. O `.env` guarda a configuração usada no seu computador. O projeto não cria essa cópia automaticamente.
+
+```powershell
+if (!(Test-Path .env)) {
+    Copy-Item .env.example .env
+} else {
+    Write-Host 'O .env já existe. Confira o conteúdo sem sobrescrevê-lo.'
+}
+```
+
+No explorador do VS Code, abra o arquivo chamado **exatamente `.env`**, na mesma pasta do `package.json` da raiz.
+
+- Não use `.env.txt`.
+- Não coloque esse arquivo dentro de `interface`.
+- Não altere apenas o `.env.example`: isso não configura sua execução.
+- Não envie seu `.env` ao GitHub, ao grupo ou em capturas. Ele está ignorado pelo Git.
+
+## 4. Configure a senha do seu banco local
+
+**Em uma instalação nova**, gere uma senha sem caracteres que precisem ser escapados na URL:
+
+```powershell
+node -e "console.log(require('node:crypto').randomBytes(24).toString('hex'))"
+```
+
+Copie o resultado e use **a mesma senha nos dois lugares** abaixo, dentro do `.env`. Substitua `COLE_A_SENHA_GERADA`; não deixe esse texto como valor.
+
+```dotenv
+POSTGRES_DB=rabbu_mvp
+POSTGRES_USER=gabrisel
+POSTGRES_PASSWORD=COLE_A_SENHA_GERADA
+DATABASE_URL=postgresql://gabrisel:COLE_A_SENHA_GERADA@localhost:5432/rabbu_mvp?schema=public
+API_DB_USER=rephouse_api
+API_DB_PASSWORD=
+JWT_SECRET=
+```
+
+Essas linhas já existem no modelo: **edite as existentes, sem duplicá-las**. Preserve também:
+
+```dotenv
+NODE_ENV=development
+APP_TIME_ZONE=America/Sao_Paulo
+CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+```
+
+Salve com **Ctrl+S**. `gabrisel` é o usuário técnico PostgreSQL usado pelo modelo, não uma conta de login do site. `rabbu_mvp` é o nome técnico do banco; mantenha-o neste procedimento.
+
+| Variável | Para que serve | O que fazer |
+|---|---|---|
+| `POSTGRES_PASSWORD` | Senha administrativa do PostgreSQL local | Preencher com a senha gerada. |
+| `DATABASE_URL` | Endereço de conexão com o banco | Na primeira preparação, repetir a mesma senha e manter `localhost:5432`. |
+| `JWT_SECRET` | Protege as sessões do RepHouse | O próximo comando gera automaticamente. |
+| `API_DB_PASSWORD` | Senha da conta limitada da API | O passo 8 gera automaticamente. |
+
+**Se já possui banco com dados, preserve as credenciais existentes.** Trocar `POSTGRES_PASSWORD` no arquivo não troca a senha de um PostgreSQL salvo no volume. Não apague o volume para contornar uma senha desconhecida.
+
+## 5. Instale as dependências e gere o segredo de sessão
+
+Na raiz:
+
+```powershell
 npm ci
 npm run auth:secret
-npm run db:generate
-npm run typecheck
-npm test
-npm run dev
 ```
 
-Migrations aprovadas são executadas separadamente com a conta administrativa; a API usa `DATABASE_URL` limitada. Siga o [guia de permissões PostgreSQL](documentacao/PERMISSOES_POSTGRESQL.md). O banco principal local deste checkout tem 21 migrations aplicadas, sem pendências na conferência de 20/11/2026. Outros ambientes exigem conferência e autorização próprias.
+`npm ci` instala as versões do lockfile. `auth:secret` preenche `JWT_SECRET` **diretamente no `.env`**, sem mostrar o segredo no terminal. Se já estiver preenchido, preserva o valor.
 
-`npm run dev` usa `tsx` com recarga automática. Para compilar e executar o resultado:
+Resultado esperado: `JWT_SECRET configurado no .env local.` ou `JWT_SECRET já está configurado; nenhuma alteração foi feita.`
 
-```bash
-npm run build
-npm start
-```
+## 6. Ligue somente o PostgreSQL
 
-O build gera JavaScript em `dist/`. `npm run test:db` executa a suíte PostgreSQL/ACID
-usando a `TEST_DATABASE_URL` explícita, conforme [a documentação do banco](documentacao/BANCO_DE_DADOS.md).
+Com o Docker Desktop aberto:
 
-Com o banco de testes preparado, `npm run verificar` executa build, exportação do
-OpenAPI, verificação de tipos e todas as suítes. Para gerar o contrato importável,
-use `npm run api:exportar`. Para criar a demonstração em desenvolvimento, defina
-`DEMO_PASSWORD` no `.env` e execute `npm run db:seed`.
-
-## Rodar com Docker
-
-Copie `.env.example` para `.env`, configure o banco e execute `npm run auth:secret`
-para gerar o segredo JWT local. O banco padrão desta versão é `rabbu_mvp`.
-As migrations e a preparação das dependências são operações administrativas explícitas. Reiniciar a API não aplica migrations.
-
-A modelagem segue o documento **RABBU — MVP / Primeira Entrega (3 perfis)**.
-O modelo atual possui 15 tabelas de domínio, incluindo autenticação Google, quatro tabelas de recorrências e o controle de criações idempotentes. Usuários, repúblicas, membros, despesas, rateios, pagamentos, comprovantes e tarefas permanecem preservados.
-As operações financeiras usam transações ACID com isolamento `SERIALIZABLE`,
-rollback em caso de falha e repetição limitada de conflitos de concorrência.
-Veja [a documentação do banco](documentacao/BANCO_DE_DADOS.md) para relações, regras,
-uso local do Prisma e testes. O contrato OpenAPI está em `GET /api/openapi.json`.
-
-Com Docker Desktop aberto, na raiz do repositório:
-
-```bash
-# Banco novo ou migrations pendentes explicitamente aprovadas:
+```powershell
+docker compose config --quiet
 docker compose up -d --wait postgres
+docker compose ps
+```
+
+O primeiro comando verifica a configuração do Compose sem imprimir os segredos. Ele não substitui a conferência do `.env`.
+
+O serviço `postgres` precisa aparecer como **healthy**. Não inicie a API ainda: o banco precisa receber as tabelas e permissões primeiro.
+
+## 7. Crie as tabelas e aplique as migrations
+
+Na primeira instalação, no **seu banco local de desenvolvimento**:
+
+```powershell
 docker compose --profile manutencao run --rm migracoes
+```
+
+Esse comando instala as dependências Linux do backend, gera o cliente Prisma e aplica as migrations. O download inicial pode levar alguns minutos. Aguarde terminar com sucesso.
+
+Resultado esperado: migrations aplicadas ou a informação de que não existem migrations pendentes. A versão atual contém **26 migrations**.
+
+`--rm` remove somente o container temporário de manutenção. **Não remove o banco nem seu volume.**
+
+Se o banco já contém dados da equipe, confira o destino e obtenha autorização antes de aplicar migrations novas. Não execute `migrate reset` como parte da instalação.
+
+## 8. Crie a conta limitada da API
+
+```powershell
 docker compose --profile manutencao run --rm migracoes npm run db:permissoes -- --compose
+```
+
+Esse passo também é obrigatório. Ele separa a conta administrativa da conta que atende o site e **atualiza automaticamente seu `.env`**:
+
+- `MIGRATIONS_DATABASE_URL` guarda o endereço administrativo para manutenção.
+- `API_DB_PASSWORD` recebe a senha técnica gerada.
+- `DATABASE_URL` passa a usar a conta limitada `rephouse_api`.
+
+Resultado esperado: `Conta limitada provisionada; DATABASE_URL separada da credencial administrativa.`
+
+**Não volte `DATABASE_URL` para o valor do passo 4 depois disso.** A mudança é esperada. O Compose usa `postgres` como endereço interno; os comandos executados no Windows usam `localhost`.
+
+## 9. Prepare um acesso de demonstração, se não configurou e-mail
+
+Um banco novo começa sem usuários. O cadastro normal exige confirmação por e-mail. **Sem configurar o Resend, você pode abrir o site, mas não concluir um novo cadastro pelo formulário.**
+
+Para desenvolver em uma instalação local nova, use as contas fictícias previstas no projeto. No `.env`, preencha `DEMO_PASSWORD` com uma senha escolhida por você, de **12 a 128 caracteres**. Salve e execute:
+
+```powershell
+docker compose --profile manutencao run --rm migracoes npm run db:seed
+```
+
+O comando cria duas repúblicas e dados fictícios de moradores, despesas, pagamentos e tarefas. Não envia e-mail. As contas abaixo usam a `DEMO_PASSWORD` definida **na primeira execução**:
+
+| E-mail de demonstração | Acesso |
+|---|---|
+| `admin.aurora@demo.rephouse.test` | Administrador da República Aurora |
+| `ana@demo.rephouse.test` | Moradora da República Aurora |
+| `master@demo.rephouse.test` | Painel MASTER |
+
+Use essas contas em **Entrar**, com e-mail e senha; não tente confirmar esses endereços fictícios por e-mail.
+
+O seed preserva uma demonstração completa já existente e não troca suas senhas ao executar novamente. Ele acrescenta registros: **não execute esse passo no banco de outra pessoa ou no principal compartilhado sem combinar com a equipe**.
+
+Se vai usar cadastro e e-mails reais, pode pular o seed e configurar o Resend na seção própria abaixo.
+
+## 10. Ligue a API e o frontend
+
+Depois de concluir as etapas anteriores:
+
+```powershell
 docker compose up -d --wait api frontend
+docker compose ps
 ```
 
-O serviço manual `migracoes` instala pelo lockfile e prepara o banco; `db:permissoes` separa a conta administrativa da conta da API. Para o ambiente existente, preserve o override e siga o [guia operacional](documentacao/OPERACAO_BACKEND.md). Não aplique migrations futuras sem conferir o destino e sua autorização. Nas execuções seguintes, `docker compose up -d --wait api frontend` reutiliza as dependências e os dados. A aplicação fica disponível em:
+`postgres` e `api` devem aparecer como **healthy**; `frontend` deve estar em execução. Na primeira vez, o frontend ainda pode estar instalando dependências. Acompanhe:
 
-- Frontend: http://localhost:5173
-- API: http://localhost:3000/api/health
-- OpenAPI: http://localhost:3000/api/openapi.json
-- PostgreSQL: localhost:5432
-
-As portas do Compose principal são publicadas somente em `127.0.0.1`, para acesso pelo próprio computador. Os containers continuam se comunicando pelos nomes internos `postgres` e `api`. Acesso de outros computadores da rede exige uma configuração explícita separada.
-
-O frontend encaminha chamadas `/api` para a API pelo proxy do Vite. Dentro da rede do Compose, a API encontra o banco pelo nome do serviço `postgres`.
-
-Para parar os serviços sem apagar os dados do banco:
-
-```bash
-docker compose down
+```powershell
+docker compose logs -f --tail 30 frontend
 ```
 
-As credenciais têm valores padrão para desenvolvimento local e podem ser substituídas por variáveis em um arquivo `.env` na raiz. Não use esses valores padrão em produção.
+Quando aparecer a mensagem do Vite com a porta `5173`, o frontend estará pronto. **Ctrl+C sai dos logs; os containers continuam ligados.**
 
-O volume `postgres_data` preserva registros e comprovantes ao reiniciar os containers ou usar `docker compose down`. Não use `down -v`, reset ou limpeza de volumes no procedimento normal. Em bancos já inicializados, mudar as variáveis de senha não altera as credenciais existentes.
+Confira a API:
 
-A [matriz de validação](documentacao/VALIDACAO_MVP.md) relaciona requisitos, implementação e evidências históricas. O [roteiro de demonstração](documentacao/ROTEIRO_DEMONSTRACAO_BACKEND.md) orienta a apresentação das funcionalidades e do estado no banco.
+```powershell
+Invoke-RestMethod http://localhost:3000/api/health
+Invoke-RestMethod http://localhost:3000/api/ready
+```
 
-## Testes locais e GitHub Actions
+Ambas devem responder com `status: ok`. A primeira verifica o processo; a segunda confirma a disponibilidade do banco para a API.
 
-Para executar toda a verificação do backend com isolamento automático:
+Abra **[http://localhost:5173/login](http://localhost:5173/login)** na barra de endereço do navegador, não no campo de pesquisa do Google.
+
+| Endereço | O que abre |
+|---|---|
+| `http://localhost:5173/login` | Login do RepHouse |
+| `http://localhost:5173/cadastro` | Cadastro com confirmação por e-mail |
+| `http://localhost:3000/api/health` | Saúde do processo da API |
+| `http://localhost:3000/api/ready` | Disponibilidade do banco para a API |
+| `http://localhost:3000/api/openapi.json` | Contrato da API |
+
+## Nos próximos dias: iniciar, parar e atualizar
+
+Você **não precisa recriar o `.env`, gerar novas senhas ou repetir o seed a cada uso**.
+
+Para ligar o ambiente já preparado:
+
+```powershell
+docker compose up -d --wait postgres api frontend
+```
+
+Para parar mantendo os dados:
+
+```powershell
+docker compose stop
+```
+
+`docker compose down` também preserva o volume. **Não use `down -v`, reset ou limpeza de volumes** no procedimento diário: isso pode apagar os dados.
+
+Se editar o `.env` com os serviços ligados, recrie a API para carregar as variáveis novas:
+
+```powershell
+docker compose up -d --no-deps --force-recreate --wait api
+```
+
+Somente `docker compose restart api` não atualiza as variáveis definidas pelo Compose.
+
+Depois de receber código novo, confira as instruções da alteração. Se houver dependências novas, pare a API, repita o passo 7 no destino autorizado, atualize as permissões quando necessário e ligue a API novamente. Não presuma que `git pull` executa migrations ou instala pacotes dentro dos containers.
+
+### Atenção ao ambiente já preparado neste computador
+
+O roteiro principal é para uma cópia nova. Neste checkout, a execução atual usa um override **local, fora do Git**, que fixa a API compilada 4.2.0. Outros integrantes não precisam desse arquivo para a instalação nova.
+
+Somente para manter esse ambiente existente, use:
+
+```powershell
+docker compose --env-file .env -f docker-compose.yml -f .devops-local/principal-estavel.yml -p projeto-rephouse up -d --wait postgres api frontend
+```
+
+Use os mesmos arquivos `-f` ao recriar seus serviços. Não copie esse comando para uma instalação sem o override e a imagem local correspondente.
+
+## Configurar cadastro real e link mágico com Resend
+
+Para testar o frontend, as contas de demonstração são suficientes. Para enviar mensagens reais, cada ambiente precisa de uma configuração de e-mail autorizada.
+
+No `.env` da raiz, configure **as três variáveis juntas**:
+
+```dotenv
+RESEND_API_KEY=COLE_SOMENTE_A_SUA_CHAVE
+EMAIL_FROM=onboarding@resend.dev
+APP_PUBLIC_URL=http://localhost:5173
+```
+
+O bloco é um exemplo: substitua a chave pelo token real, que começa com `re_`. Não use `VITE_RESEND_API_KEY`, não coloque a chave no frontend e não a envie em chat ou commit.
+
+- Com `onboarding@resend.dev`, o envio é restrito ao destinatário associado à conta Resend. Para outros destinatários, configure um domínio verificado e um remetente desse domínio.
+- `APP_PUBLIC_URL` deve coincidir com a origem usada no navegador e estar em `CORS_ORIGINS`.
+- Depois de salvar, recrie a API conforme a seção anterior.
+- O cadastro só cria a conta após clicar no link recebido e depois em **Confirmar e entrar**, no mesmo navegador que iniciou a solicitação. O link expira em dez minutos.
+- Um link para `localhost` aberto no celular aponta para o próprio celular. Neste ambiente local, conclua o fluxo no computador que iniciou o cadastro.
+
+Não é preciso copiar uma chave de outro integrante para usar a demonstração local.
+
+## Quero trabalhar somente no frontend
+
+Você pode editar `interface/codigo` com o Docker ligado; o Vite do container acompanha as alterações. Para usar o Vite diretamente no Windows, mantenha API e PostgreSQL no Docker, libere a porta do frontend e execute na raiz:
+
+```powershell
+docker compose stop frontend
+npm --prefix interface ci
+npm --prefix interface run dev
+```
+
+Mantenha esse terminal aberto. O endereço continua sendo `http://localhost:5173`. Não execute os dois frontends simultaneamente na mesma porta. As chamadas `/api` usam o proxy do Vite; não copie o `.env` administrativo para `interface`.
+
+## Problemas comuns e como identificar a causa
+
+| O que aconteceu | O que conferir |
+|---|---|
+| `.env` inexistente ou variável ausente | Faça o passo 3, edite o arquivo da raiz e salve. `.env.example` não substitui `.env`. |
+| Erro de `JWT_SECRET` | Execute `npm run auth:secret` e recrie a API para carregar o valor. |
+| Erro ao conectar ao Docker ou referência a `dockerDesktopLinuxEngine` | Abra o Docker Desktop e aguarde o Engine. Confira o último comando do passo 1. |
+| Terminal não encontra `package.json` ou a configuração Compose | Você não está na raiz. Abra a pasta que contém `package.json` e `docker-compose.yml`. |
+| Autenticação PostgreSQL recusada | Confira a correspondência da senha e da URL. Se já havia volume, preserve as credenciais com que ele foi criado. |
+| Tabela ausente na API | As migrations não foram aplicadas nesse banco. Confira o destino e o passo 7. |
+| Falta de permissão ou senha técnica vazia | Confira o passo 8. Não substitua a conta limitada pela administrativa na API. |
+| Erro sobre `codigo/gerado/prisma` ou dependência ausente na API | Confira se o passo 7 terminou com sucesso antes de iniciar a API. |
+| Porta `5432`, `3000` ou `5173` ocupada | Pode haver outro PostgreSQL, Vite ou projeto Docker ligado. Identifique o processo antes de mudar as portas. |
+| Frontend iniciado, mas a página não abre | Confira os logs: a instalação inicial de pacotes pode não ter terminado. |
+| A página abre, mas o cadastro está indisponível | Falta configurar as três variáveis de e-mail. Para desenvolvimento sem e-mail, use o passo 9. |
+| Login de um colega não funciona no seu computador | Os bancos são independentes. Use as contas criadas no seu ambiente. |
+| E-mail não chega | Confira remetente, destinatário permitido e spam. O remetente de teste não envia para qualquer pessoa. |
+| Link do e-mail abre erro de conexão no celular | `localhost` no celular não é seu computador. Siga a orientação do fluxo local. |
+| API não reflete uma nova dependência | Atualize as dependências onde o processo roda; instalar no Windows não atualiza o volume Linux do container. |
+
+Para investigar:
+
+```powershell
+docker compose ps -a
+docker compose logs --tail 60 api
+docker compose logs --tail 60 frontend
+docker compose logs --tail 30 postgres
+```
+
+Ao pedir ajuda, informe **qual passo falhou, o comando e a mensagem de erro**, removendo senhas, tokens e URLs com credenciais. Não mande o `.env` inteiro.
+
+## Testes: use o banco dedicado
+
+Os testes têm um PostgreSQL próprio: `rabbu_mvp_test`, porta **5544**. Não aponte os testes para o banco usado no site.
+
+Com as dependências da raiz instaladas e Docker Desktop aberto:
 
 ```powershell
 npm run test:completo
 ```
 
-Com Docker Desktop aberto e as dependências instaladas, esse comando prepara somente o PostgreSQL de testes na porta 5544 e usa schemas temporários. Não altera `.env` nem o banco da equipe. Executa a regressão anterior e os novos testes por HTTP real; falhas e testes ignorados impedem aprovação. Veja a [especificação e matriz dos fluxos críticos](documentacao/TESTES_FLUXOS_CRITICOS.md), a [lista de bugs reproduzidos](documentacao/BUGS_REQUEST_SPECS.md) e o [resultado local](documentacao/evidencias/validacao-request-specs.json). Não inclui E2E de navegador, carga ou recuperação operacional.
+O comando prepara somente o banco dedicado, executa build, tipos, contrato e os testes do backend em schemas temporários. Não troca o `.env` da aplicação nem remove seu banco local.
 
-O procedimento manual abaixo permanece como alternativa histórica para quem também executa a suíte de navegador da interface; ela é separada dos novos request specs.
-
-Com Node.js 24 e dependências instaladas na raiz e em `interface`, prepare somente o PostgreSQL dedicado aos testes:
+Para a suíte do frontend:
 
 ```powershell
+npm --prefix interface ci
 docker compose -f interface/docker-compose.test.yml up -d --wait postgres
-$env:TEST_DATABASE_URL='postgresql://rephouse_interface_test:rephouse_interface_test_local@127.0.0.1:5544/rabbu_mvp_test'
-$env:DATABASE_URL=$env:TEST_DATABASE_URL
-npm run db:deploy
-npm run verificar
 npm --prefix interface run verificar
-git diff --exit-code -- documentacao/openapi.json integracao/api.d.ts
 ```
 
-Use um terminal exclusivo para esses comandos; feche-o ao terminar para não reaproveitar a URL de testes em uma execução da aplicação. O banco `rabbu_mvp_test` usa a porta 5544 e volume próprio. As migrations acima são aplicadas somente nele; os testes usam transações revertidas ou schemas descartáveis. Não use o banco da equipe.
+No Windows, os testes de navegador usam Microsoft Edge por padrão. Não precisam de conta real nem da chave Resend: usam dados fictícios e integração externa controlada.
 
-O GitHub Actions continua em pushes e PRs para `main` e `homologacao`, além do acionamento manual. Valida o backend com Node.js 24, PostgreSQL 18 temporário, instalação pelo lockfile, migrations, regressão completa e contrato/tipos sincronizados. Os testes de navegador da interface são executados localmente pelo comando acima. Nenhum evento do workflow executa carga, recuperação, backup, restauração ou deploy. Resultados locais e remotos são registrados separadamente.
+**Últimos resultados completos registrados:** 337 testes do backend aprovados; frontend com 104 aprovações e três falhas em investigação. As jornadas de perfil passaram. Esses números são registros anteriores, não garantia de aprovação integral em uma nova execução.
 
-## Recursos opcionais preservados
+O GitHub Actions valida pushes e PRs para `main` e `homologacao`, além do acionamento manual. Usa banco temporário, confere o backend e a sincronização de `documentacao/openapi.json` com `integracao/api.d.ts`. O workflow atual não faz deploy.
 
-A [auditoria do schema](documentacao/auditoria-schema/RELATORIO.md) registra o inventário e as contagens anteriores. As [migrations adicionais e suas reversões](documentacao/auditoria-schema/IMPLEMENTACAO.md) foram preparadas para validação exclusivamente no PostgreSQL de testes; o banco da equipe não foi migrado nesta etapa. Os testes SQL fazem parte de `npm run test:completo`.
+## Referência rápida
 
-Dockerfile, Compose compilado, ambiente de homologação, scripts de backup/restauração e ensaios de carga/recuperação continuam disponíveis. Não são requisitos da terceira apresentação nem etapas do Actions atual. Os guias [operacional](documentacao/OPERACAO_BACKEND.md), [de homologação](documentacao/HOMOLOGACAO_BACKEND.md) e [de consolidação](documentacao/CONSOLIDACAO_BACKEND.md) identificam essas alternativas e seus registros anteriores. Planejamento de hospedagem, custos de provedor e escalabilidade fica para outra etapa.
+| Parte | Tecnologia / localização |
+|---|---|
+| Interface | React, TypeScript, Vite e Tailwind; pasta `interface` |
+| API | Node.js 24, Express e TypeScript; pasta `codigo` |
+| Banco | PostgreSQL 18 com Prisma; pasta `prisma` |
+| Contrato gerado | `documentacao/openapi.json` |
+| Tipos de integração | `integracao/api.d.ts` |
+| Ambiente local | `docker-compose.yml` |
 
-Comprovantes são armazenados no PostgreSQL, junto ao pagamento, na mesma transação. Veja [migração e operação](documentacao/COMPROVANTES_POSTGRESQL.md) e os [tipos e exemplos para integração](integracao/README.md).
+O backend é um monólito modular em camadas. As operações financeiras usam transações ACID; os pagamentos são registros manuais, sem processamento bancário. Fotos e comprovantes ficam no PostgreSQL e exigem autenticação para acesso.
 
-Na versão 2.1.0, o backend oferece suporte ao Google. Consulte o [guia de configuração e validação](documentacao/AUTENTICACAO_GOOGLE.md). A interface principal agora usa o design do PR #2 e ainda precisa incorporar o botão Google; a validação real com o provedor também depende do Client ID e das contas de teste.
+O Git compartilha código e migrations. **Ele não sincroniza usuários, despesas, fotos, arquivos `.env` ou volumes PostgreSQL entre computadores.** Os dados persistem no volume local após reiniciar os containers.
 
-## Integração do novo frontend
-
-O design do [PR #2](https://github.com/Mirandaszx/projeto-Rephouse/pull/2) foi adotado na pasta `interface` e é servido em **http://localhost:5173**. O login está em `/login`, o cadastro em `/cadastro` e o painel em `/republica`. Os caminhos antigos com `/novo` redirecionam para os atuais. Ele usa o adaptador `/api/front/v1`; a API 2.1.0 em `/api` mantém a paginação. Consulte o [guia da interface](interface/README.md) e o [guia de integração](documentacao/INTEGRACAO_FRONTEND_PR2.md).
+Scripts de backup, restauração, carga e ambientes alternativos continuam no repositório. Não fazem parte da primeira instalação deste guia e não precisam ser executados para trabalhar no frontend.
