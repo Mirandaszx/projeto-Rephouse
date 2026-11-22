@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test'
 
+// Instancia HTTP isolada por arquivo; os controles reais permanecem habilitados.
+test.use({ extraHTTPHeaders: { 'x-interface-test-run': process.env.REPHOUSE_INTERFACE_TEST_RUN ?? '', 'x-interface-suite': 'rotas.spec.ts' } })
+
 test('links públicos usam login e cadastro definitivos', async ({ page }) => {
   await page.goto('/')
   await expect(page.locator('a[href^="/novo"]')).toHaveCount(0)

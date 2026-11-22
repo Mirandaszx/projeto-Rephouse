@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test'
 import { mkdir, readFile } from 'node:fs/promises'
 
+// Instancia HTTP isolada por arquivo; os controles reais permanecem habilitados.
+test.use({ extraHTTPHeaders: { 'x-interface-test-run': process.env.REPHOUSE_INTERFACE_TEST_RUN ?? '', 'x-interface-suite': 'conta-layout.spec.ts' } })
+
 test('perfil e financeiro usam a largura central mesmo com o CSS base carregado por último', async ({ page }) => {
   test.setTimeout(90000)
   const accounts = JSON.parse(await readFile('../.devops-local/interface/gestao-contas.json', 'utf8')) as Record<string, { token: string }>
@@ -15,7 +18,7 @@ test('perfil e financeiro usam a largura central mesmo com o CSS base carregado 
       for (const path of ['/republica/perfil', '/republica/financeiro']) {
         await page.goto(path)
         await expect(page.locator('.rep-account-shell')).toBeVisible()
-        await page.getByRole('combobox', { name: 'Aparência', exact: true }).selectOption(theme)
+        await page.getByRole('switch', { name: 'Modo escuro', exact: true }).press(theme === 'dark' ? 'ArrowRight' : 'ArrowLeft')
         if (path.endsWith('/financeiro')) await expect(page.getByText('Nenhuma despesa no seu histórico.', { exact: true })).toBeVisible()
         // Reproduz a ordem de estilos observada no servidor, independentemente do HMR.
         await page.evaluate(() => {

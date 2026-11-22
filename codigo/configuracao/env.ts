@@ -11,6 +11,12 @@ const environmentSchema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   JWT_SECRET: z.string().min(32),
   GOOGLE_CLIENT_ID: z.preprocess(value => value === '' ? undefined : value, z.string().regex(/^[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/).optional()),
+  RESEND_API_KEY: z.preprocess(value => value === '' ? undefined : value, z.string().regex(/^re_[A-Za-z0-9_-]+$/).optional()),
+  EMAIL_FROM: z.preprocess(value => value === '' ? undefined : value, z.email().optional()),
+  APP_PUBLIC_URL: z.preprocess(value => value === '' ? undefined : value, z.url().refine(value => {
+    const url = new URL(value)
+    return ['http:', 'https:'].includes(url.protocol) && value === url.origin && !url.username && !url.password
+  }, 'APP_PUBLIC_URL deve ser uma origem HTTP(S), sem caminho.').optional()),
   CORS_ORIGINS: z.string().default('').transform(value => value.split(',').map(origin => origin.trim()).filter(Boolean))
     .pipe(z.array(z.url().refine(value => {
       const url = new URL(value)
@@ -20,6 +26,13 @@ const environmentSchema = z.object({
     const protocol = new URL(value).protocol
     return protocol === 'postgresql:' || protocol === 'postgres:'
   }, 'DATABASE_URL deve usar PostgreSQL.'),
+}).superRefine((env, ctx) => {
+  const provided = [env.RESEND_API_KEY, env.EMAIL_FROM, env.APP_PUBLIC_URL].filter(Boolean).length
+  if (provided > 0 && provided < 3) ctx.addIssue({ code: 'custom', message: 'Configure RESEND_API_KEY, EMAIL_FROM e APP_PUBLIC_URL em conjunto.' })
+  if (env.NODE_ENV === 'production' && env.APP_PUBLIC_URL && !env.APP_PUBLIC_URL.startsWith('https://')) {
+    ctx.addIssue({ code: 'custom', path: ['APP_PUBLIC_URL'], message: 'Produção exige HTTPS nos links de autenticação.' })
+  }
+  if (env.APP_PUBLIC_URL && !env.CORS_ORIGINS.includes(env.APP_PUBLIC_URL)) ctx.addIssue({ code: 'custom', path: ['CORS_ORIGINS'], message: 'Inclua APP_PUBLIC_URL entre as origens permitidas.' })
 })
 
 export type Environment = z.infer<typeof environmentSchema>

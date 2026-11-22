@@ -30,5 +30,6 @@ function change(value: Appearance) {
 }
 export function useAppearance() {
   const value = useSyncExternalStore(subscribe, () => preference)
-  return { preference: value, change }
+  const theme = useSyncExternalStore(subscribe, () => preference === 'system' ? (system.matches ? 'dark' : 'light') : preference)
+  return { preference: value, theme, change }
 }

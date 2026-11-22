@@ -3,6 +3,10 @@ import { randomUUID } from 'node:crypto'
 import { mkdir } from 'node:fs/promises'
 import type { components } from '../../integracao/api.js'
 import { contrast } from './auxiliares/contraste'
+import { registerByApi } from './auxiliares/email-harness'
+
+// Instancia HTTP isolada por arquivo; os controles reais permanecem habilitados.
+test.use({ extraHTTPHeaders: { 'x-interface-test-run': process.env.REPHOUSE_INTERFACE_TEST_RUN ?? '', 'x-interface-suite': 'painel.spec.ts' } })
 
 type Schemas = components['schemas']
 const api = 'http://127.0.0.1:3405/api'
@@ -11,9 +15,7 @@ const email = `painel-${randomUUID()}@integracao.rephouse.test`
 let token = ''
 
 test.beforeAll(async ({ request }) => {
-  const response = await request.post(api + '/auth/register', { data: { nome: 'Camila Oliveira', email, senha: password } })
-  expect(response.status()).toBe(201)
-  token = (await response.json() as Schemas['Sessao']).token
+  token = (await registerByApi(request, { nome: 'Camila Oliveira', email, senha: password })).token
   const headers = { Authorization: `Bearer ${token}` }
   const house = await request.post(api + '/republicas', { headers, data: { nome: 'República Jardim' } })
   expect(house.status()).toBe(201)
@@ -44,6 +46,12 @@ async function enterDashboard(page: Page) {
 
 test('visão geral resume dados reais e mantém despesas completas e convite nas páginas próprias', async ({ page, request }) => {
   await enterDashboard(page)
+  const actions = page.locator('.workspace-heading-actions')
+  await expect(actions.getByRole('button', { name: '＋ Nova despesa', exact: true })).toHaveCount(0)
+  await actions.getByRole('link', { name: 'Meu perfil', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Meu perfil', exact: true })).toBeVisible()
+  await expect(page.getByLabel('Nome', { exact: true })).toHaveValue('Camila Oliveira')
+  await enterDashboard(page)
   const metrics = page.getByRole('region', { name: 'Resumo da república' })
   await expect(metrics.locator('.rep-metric')).toHaveCount(4)
   const dashboardResponse = await request.get(api + '/dashboard', { headers: { Authorization: `Bearer ${token}` } })
@@ -61,6 +69,7 @@ test('visão geral resume dados reais e mantém despesas completas e convite nas
   await expect(tasks).not.toContainText('Tarefa do painel 6')
   await expect(page.getByText('Código de entrada', { exact: true })).toHaveCount(0)
   await page.getByRole('link', { name: 'Ver todas as despesas', exact: true }).click()
+  await expect(page.getByRole('button', { name: '＋ Nova despesa', exact: true })).toBeVisible()
   await expect(page.locator('#despesas li')).toHaveCount(8)
   await page.getByRole('radio', { name: 'Pagas', exact: true }).click()
   await expect(page.getByText('Nenhuma despesa neste filtro.', { exact: true })).toBeVisible()
@@ -91,8 +100,9 @@ test('modais, rótulos externos e seletores mantêm contraste nos temas claro e 
   await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
   await enterDashboard(page)
   for (const theme of ['light', 'dark']) {
-    await page.getByRole('combobox', { name: 'Aparência', exact: true }).selectOption(theme)
+    await page.getByRole('switch', { name: 'Modo escuro', exact: true }).press(theme === 'dark' ? 'ArrowRight' : 'ArrowLeft')
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
+    await page.goto('/republica/despesas')
     await page.getByRole('button', { name: '＋ Nova despesa', exact: true }).click()
     const dialog = page.getByRole('dialog', { name: 'Nova despesa', exact: true })
     await dialog.getByLabel('Descrição', { exact: true }).fill('Conta de exemplo')

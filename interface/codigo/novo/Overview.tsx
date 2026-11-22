@@ -3,19 +3,19 @@ import { ArrowUpRight, CheckCheck, ClipboardCheck, Clock3, ReceiptText, Wallet }
 import { request, brl as money } from '../api'
 import { GlisseButton } from '../rebuild/GlisseButton'
 import { Badge, EmptyState, PersonMark, SectionHeading } from '../interno/WorkspaceUI'
-import { brasilDay } from '../interno/presentation'
+import { brasilDay, financialState } from '../interno/presentation'
 import './overview.css'
 
 export type Share = { id: string; membroId: string; valorDevido: string; valorPago: string; situacaoVencimento?: string; valorRestante?: string }
 export type Expense = { id: string; titulo: string; categoria: string; valorTotal: string; vencimento: string; criadaEm: string; rateios: Share[]; dataReferencia?: string; situacaoVencimento?: string; recorrencia?: { id: string; competencia: string } | null }
-type Task = { id: string; titulo: string; status: 'ABERTA' | 'CONCLUIDA'; prazo: string | null; responsavelId: string }
+type Task = { id: string; titulo: string; status: 'ABERTA' | 'CONCLUIDA'; prazo: string | null; responsavelId: string | null }
 type Props = {
   token: string
   revision: number
   memberId?: string
-  members: { id: string; usuario: { nome: string } }[]
+  members: import('../gestao/types').Member[]
   expenses: Expense[]
-  dashboard: { totalPendente: string; totalPagoNoMes: string; tarefasAbertas: number; financeiroIndividual?: import('../gestao/types').Schemas['ResumoIndividual']; financeiroIndividualGeral?: import('../gestao/types').Schemas['ResumoIndividual'] }
+  dashboard: { totalPendente: string; totalPagoNoMes: string; tarefasAbertas: number; dataReferencia?: string; financeiroIndividual?: import('../gestao/types').Schemas['ResumoIndividual']; financeiroIndividualGeral?: import('../gestao/types').Schemas['ResumoIndividual'] }
   disabled: boolean
   onPay: (expense: Expense, share: Share) => void
   onCreateExpense?: () => void
@@ -66,7 +66,7 @@ export default function Overview({ token, revision, memberId, members, expenses,
       </div>
     </section>
     {dashboard.financeiroIndividual && <div className="finance-period-summary" aria-label="Suas contas do mês"><span>Vencimento em {dashboard.financeiroIndividual.competencia?.split('-').reverse().join('/')}</span><span>Sua parte: {money.format(Number(dashboard.financeiroIndividual.totalDevido))}</span><span>Pago dessas contas: {money.format(Number(dashboard.financeiroIndividual.totalPago))}</span><span>Saldo do mês: {money.format(Number(dashboard.financeiroIndividual.saldoPendente))}</span></div>}
-    {mine.length > 0 && <section className="finance-pending" aria-label="Minhas pendências"><SectionHeading title="Minhas pendências" description="Suas parcelas em aberto nesta república."><a href="/republica/financeiro">Ver meu histórico <ArrowUpRight size={15} aria-hidden="true" /></a></SectionHeading>{mine.map(({ expense, share }) => <div className="finance-pending-row" key={share.id}><div><strong>{expense.titulo}</strong><small>Vence em {date(expense.vencimento)}</small></div><strong>{money.format(Number(share.valorRestante ?? balance(share) / 100))}</strong><GlisseButton variant="secondary" disabled={disabled} onClick={() => onPay(expense, share)}>Registrar pagamento</GlisseButton></div>)}</section>}
+    {mine.length > 0 && <section className="finance-pending" aria-label="Minhas pendências"><SectionHeading title="Minhas pendências" description="Suas parcelas em aberto nesta república."><a href="/republica/financeiro">Ver meu histórico <ArrowUpRight size={15} aria-hidden="true" /></a></SectionHeading>{mine.map(({ expense, share }) => { const state = financialState(expense.vencimento, balance(share), Number(share.valorPago), expense.dataReferencia ?? dashboard.dataReferencia ?? today, share.situacaoVencimento ?? expense.situacaoVencimento); return <div className="finance-pending-row" key={share.id}><div><strong>{expense.titulo}</strong><small>Vence em {date(expense.vencimento)}</small><div className="finance-pending-statuses"><Badge tone={state.tone}>{state.label}</Badge>{Number(share.valorPago) > 0 && <Badge tone="warning">Pagamento parcial</Badge>}</div></div><strong>{money.format(Number(share.valorRestante ?? balance(share) / 100))}</strong><GlisseButton variant="secondary" disabled={disabled} onClick={() => onPay(expense, share)}>Registrar pagamento</GlisseButton></div>})}</section>}
     <div className="rep-overview-grid">
       <section className="rep-overview-panel" aria-labelledby="recent-expenses-title">
         <SectionHeading id="recent-expenses-title" title="Despesas recentes" description={mine.length ? 'Outros registros da casa.' : 'Os últimos registros da casa.'}><a href="/republica/despesas" aria-label="Ver todas as despesas">Ver todas <ArrowUpRight size={15} aria-hidden="true" /></a></SectionHeading>
@@ -83,7 +83,7 @@ export default function Overview({ token, revision, memberId, members, expenses,
       <section className="rep-overview-panel" aria-labelledby="pending-tasks-title">
         <SectionHeading id="pending-tasks-title" title="Tarefas pendentes" description="Próximos afazeres da casa."><a href="/republica/tarefas" aria-label="Ver todas as tarefas">Ver todas <ArrowUpRight size={15} aria-hidden="true" /></a></SectionHeading>
         {error ? <div className="rep-panel-empty"><p role="alert">{error}</p><GlisseButton variant="secondary" onClick={() => { setError(''); setTasks(null); setAttempt(value => value + 1) }}>Tentar carregar tarefas</GlisseButton></div> : !pending ? <p className="rep-panel-loading" role="status">Carregando tarefas…</p> : !pending.length ? <EmptyState title="Tudo em dia nas tarefas." description="As próximas tarefas abertas aparecerão aqui." /> : <ul className="rep-pending-tasks">{pending.map(task => <li key={task.id}>
-          <PersonMark name={members.find(member => member.id === task.responsavelId)?.usuario.nome ?? '?'} /><div><strong>{task.titulo}</strong><div className="rep-pending-task-meta"><small>{task.responsavelId === memberId ? 'Você' : members.find(member => member.id === task.responsavelId)?.usuario.nome ?? 'Responsável indisponível'}</small><span><Clock3 size={14} aria-hidden="true" />{task.prazo ? date(task.prazo) : 'Sem prazo definido'}</span>{task.prazo && task.prazo.slice(0, 10) < today && <Badge tone="danger">Em atraso</Badge>}</div></div>
+          <PersonMark name={members.find(member => member.id === task.responsavelId)?.usuario.nome ?? '?'} userId={members.find(member => member.id === task.responsavelId)?.usuario.id} photo={members.find(member => member.id === task.responsavelId)?.usuario.foto} context={members.find(member => member.id === task.responsavelId)?.republicaId} token={token} /><div><strong>{task.titulo}</strong><div className="rep-pending-task-meta"><small>{task.responsavelId === memberId ? 'Você' : members.find(member => member.id === task.responsavelId)?.usuario.nome ?? 'Responsável indisponível'}</small><span><Clock3 size={14} aria-hidden="true" />{task.prazo ? date(task.prazo) : 'Sem prazo definido'}</span>{task.prazo && task.prazo.slice(0, 10) < today && <Badge tone="danger">Em atraso</Badge>}</div></div>
         </li>)}</ul>}
       </section>
     </div>

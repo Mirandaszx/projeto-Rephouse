@@ -14,7 +14,7 @@ export function databaseCodes(error: unknown): Set<string> {
 export function classifyDatabaseError(error: unknown): {status:number;code:string;message:string}|undefined {
   const codes=databaseCodes(error)
   const has=(values:string[])=>values.some(code=>codes.has(code))
-  if(has(['40001','40P01','P2034']))return {status:503,code:'RETRY_LATER',message:'Conflito temporário. Tente novamente com a mesma chave de pagamento.'}
+  if(has(['40001','40P01','P2034']))return {status:503,code:'RETRY_LATER',message:'Conflito temporário. Tente novamente com a mesma chave da solicitação.'}
   if(has(['ECONNREFUSED','ECONNRESET','ETIMEDOUT','EPIPE','57P01','57P02','57P03','53300','08000','08001','08003','08006','57014','P1001','P1002','P1008','P1017','P2024','P2028']))return {status:503,code:'DATABASE_UNAVAILABLE',message:'Banco temporariamente indisponível.'}
   if(has(['RH001','23503','23001','P2003']))return {status:409,code:'DOMAIN_CONFLICT',message:'A operação conflita com o estado atual dos dados.'}
   if(has(['23505','P2002']))return {status:409,code:'CONFLICT',message:'Já existe um registro com estes dados.'}

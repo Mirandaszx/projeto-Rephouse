@@ -1,5 +1,5 @@
 export interface CriarTarefaInput {
-  responsavelId: string
+  responsavelId?: string | null
   titulo: string
   descricao?: string
   prazo?: Date | null

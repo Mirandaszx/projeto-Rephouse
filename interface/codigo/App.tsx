@@ -54,6 +54,7 @@ function App() {
     setError('')
     try {
       if (!token) {
+        if (register) { window.location.assign('/cadastro'); return }
         const result = await request<{ token: string }>(register ? '/auth/register' : '/auth/login', undefined, fields)
         sessionStorage.setItem('rephouse-token', result.token)
         setToken(result.token)

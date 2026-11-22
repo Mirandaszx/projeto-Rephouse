@@ -1,22 +1,26 @@
-import { hash, verify, argon2id } from 'argon2'
+import { verify } from 'argon2'
 import { SignJWT, jwtVerify } from 'jose'
 import type { PrismaClient, Usuario } from '../../gerado/prisma/client.js'
-import { executarTransacaoAcid } from '../../infraestrutura/banco/transaction.js'
 import { withActor, type Actor } from '../../compartilhado/context.js'
 import { AppError } from '../../compartilhado/http/app-error.js'
 import { z } from 'zod'
 import { AuthRepository } from './auth.repository.js'
-import type { CadastroInput, LoginInput } from './auth.types.js'
+import type { LoginInput } from './auth.types.js'
 import { createGoogleService, type GoogleOptions, type GoogleProof } from './google.service.js'
+import { createEmailService, type EmailProof } from './email.service.js'
+import type { EmailOptions } from '../../infraestrutura/email/resend.js'
+import { notifyMembership } from '../notificacoes/notificacoes.service.js'
+import { fotoPublica, fotoSelect } from '../perfil/foto.service.js'
 
 function publicUser(user: Usuario) {
   const { id, nome, email, tipoUsuario, ativo, criadoEm } = user
   return { id, nome, email, tipoUsuario, ativo, criadoEm }
 }
 
-export function createAuthService(db: PrismaClient, secret: string, googleOptions?: GoogleOptions) {
+export function createAuthService(db: PrismaClient, secret: string, googleOptions?: GoogleOptions, emailOptions?: EmailOptions) {
   const repository = new AuthRepository()
   const google = createGoogleService(db, googleOptions)
+  const email = createEmailService(db, emailOptions)
   const key = new TextEncoder().encode(secret)
   async function token(user: Usuario) {
     return new SignJWT({ ver: user.versaoToken }).setProtectedHeader({ alg: 'HS256' })
@@ -24,18 +28,16 @@ export function createAuthService(db: PrismaClient, secret: string, googleOption
       .setExpirationTime('1h').sign(key)
   }
   return {
-    methods: google.methods,
+    methods: () => ({ ...google.methods(), email: { habilitado: email.enabled() } }),
+    register: email.register,
+    requestEmail: email.request,
+    async confirmEmail(proof: EmailProof, cookie?: string) {
+      const result = await email.confirm(proof, cookie)
+      return { token: await token(result.user), usuario: publicUser(result.user), acaoRepublica: result.acaoRepublica }
+    },
     challenge: google.challenge.bind(google),
     async googleLogin(proof: GoogleProof, cookie?: string) {
       const user = await google.login(proof, cookie)
-      return { token: await token(user), usuario: publicUser(user) }
-    },
-    async register(input: CadastroInput) {
-      // Hash é calculado fora do retry: a callback transacional contém apenas acesso ao banco.
-      const senhaHash = await hash(input.senha, { type: argon2id })
-      const user = await executarTransacaoAcid(db, tx => repository.criar(tx, {
-        nome: input.nome, email: input.email, senhaHash,
-      }))
       return { token: await token(user), usuario: publicUser(user) }
     },
     async login(input: LoginInput) {
@@ -57,6 +59,8 @@ export function createAuthService(db: PrismaClient, secret: string, googleOption
     me: (actor: Actor) => withActor(db, actor, async (tx, user) => ({
       ...publicUser(user),
       membro: await repository.vinculoAtual(tx, user.id),
+      foto: fotoPublica(await tx.fotoPerfil.findUnique({ where: { usuarioId: user.id }, select: fotoSelect })),
+      emailConfirmadoEm: (await tx.emailVerificado.findUnique({ where: { usuarioId: user.id } }))?.verificadoEm ?? null,
     })),
     edit: (actor: Actor, nome: string) => withActor(db, actor, (tx, user) => repository.editarNome(tx, user.id, nome)),
     logout: (actor: Actor) => withActor(db, actor, async (tx, user) => {
@@ -85,9 +89,12 @@ export function createAuthService(db: PrismaClient, secret: string, googleOption
         if (user.tipoUsuario === 'USUARIO_MASTER' && await repository.outrosMasters(tx, user.id) === 0) {
           throw new AppError(409, 'LAST_MASTER', 'Outro MASTER ativo precisa permanecer na plataforma.')
         }
+        const memberships = await tx.membroRepublica.findMany({where:{usuarioId:user.id,ativo:true}})
         await repository.encerrarVinculos(tx, user.id)
+        for (const member of memberships) await notifyMembership(tx, member, user.id, 'MEMBRO_SAIU')
         // Exclusão lógica é definitiva na API: conserva FKs e invalida todos os tokens.
         await repository.excluir(tx, user.id)
+        await tx.fotoPerfil.deleteMany({ where: { usuarioId: user.id } })
       })
     },
   }

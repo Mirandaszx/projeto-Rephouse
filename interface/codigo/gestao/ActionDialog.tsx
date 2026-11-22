@@ -1,7 +1,9 @@
+import ErrorNotice from '../interno/ErrorNotice'
+import type { Feedback } from '../interno/feedback'
 import { useEffect, useId, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { GlisseButton } from '../rebuild/GlisseButton'
-import { errorMessage } from './types'
+import { errorFeedback } from './types'
 import { useDialogMotion } from '../interno/useDialogMotion'
 import './management.css'
 
@@ -12,7 +14,7 @@ export default function ActionDialog({ title, confirm, children, onClose, onSubm
   const cancel = useRef<HTMLButtonElement>(null)
   const lock = useRef(false)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState<Feedback>('')
   const id = useId()
   useEffect(() => {
     const element = dialog.current!
@@ -28,11 +30,11 @@ export default function ActionDialog({ title, confirm, children, onClose, onSubm
       lock.current = true
       setBusy(true)
       setError('')
-      void onSubmit(data).then(() => close(onClose)).catch(failure => setError(errorMessage(failure))).finally(() => { lock.current = false; setBusy(false) })
+      void onSubmit(data).then(() => close(onClose)).catch(failure => setError(errorFeedback(failure))).finally(() => { lock.current = false; setBusy(false) })
     }}>
       <h2 id={id}>{title}</h2>
-      <fieldset disabled={busy}>{children}</fieldset>
-      {error && <p className="rep-action-error" role="alert">{error}</p>}
+      <fieldset disabled={busy} inert={busy}>{children}</fieldset>
+      {error && <ErrorNotice error={error} />}
       <footer><button ref={cancel} type="button" className="rep-logout" disabled={busy} onClick={() => void close(onClose)}>Cancelar</button><GlisseButton type="submit" tint={danger ? '#9f3834' : undefined} disabled={busy}>{busy ? 'Salvando…' : confirm}</GlisseButton></footer>
     </form>
   </dialog>

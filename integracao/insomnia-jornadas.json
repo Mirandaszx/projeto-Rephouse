@@ -47,7 +47,9 @@
         "republicaAuroraId": "",
         "republicaHorizonteId": "",
         "codigoAurora": "",
-        "codigoHorizonte": ""
+        "codigoHorizonte": "",
+        "emailLinkId": "",
+        "emailLinkToken": ""
       },
       "dataPropertyOrder": null,
       "color": null,
@@ -57,14 +59,18 @@
       "_id": "req_cadastro",
       "parentId": "__WORKSPACE_ID__",
       "_type": "request",
-      "name": "01 Cadastrar conta sem república",
-      "description": "Esperado HTTP 201. Guarde usuario.id em usuarioNovoId e token em tokenNovo.",
+      "name": "01 Solicitar cadastro (aguarda e-mail)",
+      "description": "HTTP 202 sem usuario nem token. Exige envio configurado. Conserve cookies e use a mesma origem/navegador. Complete a confirmacao antes do login. Veja documentacao/AUTENTICACAO_EMAIL.md.",
       "method": "POST",
       "url": "{{ _.base_url }}/api/auth/register",
       "headers": [
         {
           "name": "Content-Type",
           "value": "application/json"
+        },
+        {
+          "name": "Origin",
+          "value": "http://localhost:5173"
         }
       ],
       "body": {
@@ -73,8 +79,8 @@
       },
       "parameters": [],
       "authentication": {},
-      "settingStoreCookies": false,
-      "settingSendCookies": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
       "settingDisableRenderRequestBody": false,
       "settingEncodeUrl": true,
       "settingRebuildPath": true,
@@ -840,8 +846,8 @@
       "_id": "req_normalCriar",
       "parentId": "__WORKSPACE_ID__",
       "_type": "request",
-      "name": "29 NORMAL tenta criar tarefa",
-      "description": "Esperado HTTP 403. ",
+      "name": "29 NORMAL cria tarefa para si",
+      "description": "Esperado HTTP 201. Moradores podem criar tarefas para si ou disponiveis; atribuicao a outro morador exige administrador.",
       "method": "POST",
       "url": "{{ _.base_url }}/api/tarefas",
       "headers": [
@@ -856,7 +862,7 @@
       ],
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"titulo\": \"Sem permissão\",\n  \"responsavelId\": \"{{ _.membroAnaId }}\"\n}"
+        "text": "{\n  \"titulo\": \"Tarefa criada pelo morador\",\n  \"responsavelId\": \"{{ _.membroAnaId }}\"\n}"
       },
       "parameters": [],
       "authentication": {},
@@ -1601,6 +1607,62 @@
       "settingEncodeUrl": true,
       "settingRebuildPath": true,
       "settingFollowRedirects": "global"
+    },
+    {
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "method": "POST",
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Origin",
+          "value": "http://localhost:5173"
+        }
+      ],
+      "_id": "req_email_solicitar",
+      "name": "01b Solicitar link de acesso",
+      "description": "HTTP 202 generico. Conta existente; sem token nesta resposta. Ler o e-mail no navegador da solicitacao.",
+      "url": "{{ _.base_url }}/api/auth/email/solicitar",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"novo@integracao.rephouse.test\",\n  \"finalidade\": \"login\"\n}"
+      }
+    },
+    {
+      "parentId": "__WORKSPACE_ID__",
+      "_type": "request",
+      "method": "POST",
+      "parameters": [],
+      "authentication": {},
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Origin",
+          "value": "http://localhost:5173"
+        }
+      ],
+      "_id": "req_email_confirmar",
+      "name": "01c Confirmar link por POST",
+      "description": "HTTP 200 com sessao. Preencha ID e token do fragmento recebido, sem versionar esses valores. Precisa do mesmo cookie de solicitacao. Token usado ou expirado: 401. Limpe os segredos depois do teste.",
+      "url": "{{ _.base_url }}/api/auth/email/confirmar",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"id\": \"{{ _.emailLinkId }}\",\n  \"token\": \"{{ _.emailLinkToken }}\"\n}"
+      }
     }
   ]
 }

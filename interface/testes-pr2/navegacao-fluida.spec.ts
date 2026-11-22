@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test'
 import { prepare } from './auxiliares/modernizacao-fixture'
 
+// Instancia HTTP isolada por arquivo; os controles reais permanecem habilitados.
+test.use({ extraHTTPHeaders: { 'x-interface-test-run': process.env.REPHOUSE_INTERFACE_TEST_RUN ?? '', 'x-interface-suite': 'navegacao-fluida.spec.ts' } })
+
 declare global {
   interface Window {
     routeMarker?: string

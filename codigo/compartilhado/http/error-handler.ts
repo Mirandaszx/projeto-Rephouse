@@ -56,7 +56,7 @@ export const errorHandler: ErrorRequestHandler = (error: unknown, _request, resp
 
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
     if (error.code === 'P2034') {
-      response.status(503).json({ error: { code: 'RETRY_LATER', message: 'Conflito temporário. Tente novamente com a mesma chave de pagamento.' } })
+      response.status(503).json({ error: { code: 'RETRY_LATER', message: 'Conflito temporário. Tente novamente com a mesma chave da solicitação.' } })
       return
     }
     if (error.code === 'P2002') {

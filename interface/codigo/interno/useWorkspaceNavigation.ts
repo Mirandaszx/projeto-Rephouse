@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
+import { workspacePaths } from './routes'
 
-const paths = new Set(['/republica', '/republica/despesas', '/republica/tarefas', '/republica/moradores', '/republica/perfil', '/republica/financeiro', '/republica/configuracoes', '/admin'])
 const pathname = () => window.location.pathname.replace(/\/$/, '')
 
 /** Navegação somente dentro da área existente; links públicos e modificados continuam nativos. */
@@ -13,7 +13,7 @@ export function useWorkspaceNavigation() {
       if (!link || link.hasAttribute('download') || (link.target && link.target !== '_self') || document.querySelector('dialog[open]')) return
       const url = new URL(link.href)
       const path = url.pathname.replace(/\/$/, '')
-      if (url.origin !== window.location.origin || !paths.has(path) || url.search || url.hash) return
+      if (url.origin !== window.location.origin || !workspacePaths.has(path) || url.search || url.hash) return
       event.preventDefault()
       if (path === pathname()) return
       window.history.pushState(null, '', url.pathname)

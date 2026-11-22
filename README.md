@@ -2,7 +2,15 @@
 
 Aplicação web para organização de repúblicas e residências compartilhadas.
 
-O backend está na versão **2.2.0**: as listagens da API principal retornam `{dados,paginacao}`, com `pagina=1` e `limite=20` por padrão. Veja o [guia de integração](documentacao/INTEGRACAO_BACKEND.md) para os contratos.
+O código local evoluiu para **4.2.0**, com [foto e informações do perfil](documentacao/PERFIL_E_FOTO.md): enquadramento, troca e remoção, avatares autenticados e confirmação por link somente quando registrada. A versão foi ativada no principal local em 22/11/2026, após autorização, backup conferido e atualização das permissões: **26 migrations aplicadas, nenhuma pendente**, dados e volume preservados. Veja a [evidência de ativação](documentacao/evidencias/ativacao-perfil-principal-2026-11-22.json). Backend: 337 testes aprovados. As oito jornadas de perfil passaram; a última suíte completa do frontend registrou três falhas descritas no guia, sem aprovação global.
+
+A entrega **4.1.0** acrescentou [avisos gerais e aba Todas](documentacao/NOTIFICACOES_GERAIS.md). Todas reúne tarefas, despesas e entrada/saída de moradores; Tarefas e Despesas mantêm seus filtros. A implementação foi validada no banco dedicado. Após autorização explícita, a migration foi ativada no principal com backup, atualização das permissões e preservação dos dados e volumes. Veja a [evidência de ativação](documentacao/evidencias/ativacao-gerais-principal-2026-11-21.json).
+
+A entrega **4.0.0** introduziu [tarefas compartilhadas e notificações internas em tempo real](documentacao/NOTIFICACOES_E_TAREFAS.md). Moradores criam tarefas disponíveis ou para si e podem assumir uma disponível. O sino separa avisos de tarefas e vencimentos, com leitura individual e persistência no PostgreSQL. As duas migrations 4.0.0 foram ativadas em 21/11/2026, após autorização, backup e conferência dos dados e permissões. O contrato permite `responsavelId: null`; a listagem de notificações permanece paginada inclusive em `/api/front/v1`. Veja a [evidência dessa ativação](documentacao/evidencias/ativacao-notificacoes-principal-2026-11-21.json).
+
+A autenticação por e-mail, introduzida na **3.0.0** e ativada em 20/11/2026, permanece preservada. Novos cadastros aguardam confirmação por e-mail e há login por link mágico; o envio real pelo Resend ainda não foi validado. Veja [configuração, ativação e limitações](documentacao/AUTENTICACAO_EMAIL.md). As contas existentes conservam login por senha. As listagens principais continuam retornando `{dados,paginacao}`, com `pagina=1` e `limite=20` por padrão.
+
+A [revisão 2.2.1](documentacao/CORRECOES_2_2_1.md) corrige entradas monetárias inválidas e acrescenta proteção opcional por `Idempotency-Key` nas criações de despesas e tarefas. Os formulários usam essa proteção e conservam tentativas incertas em memória. Em 20/11/2026, após autorização explícita e backup, as dez migrations pendentes foram aplicadas no banco principal local e as permissões atualizadas. Os dados anteriores e os volumes foram preservados; os testes continuam usando o banco dedicado.
 
 Para integrar conta, repúblicas, moradores, tarefas e MASTER, siga o [roteiro sem operações financeiras](documentacao/JORNADAS_INTEGRACAO.md). Ele inclui coleção Insomnia, exemplos fetch e demonstração isolada por `npm run integracao:demo`.
 
@@ -10,7 +18,9 @@ Na terceira apresentação, o foco é demonstrar funcionalidades, arquitetura, b
 
 O [financeiro 2.2.0](documentacao/FINANCEIRO_2_2.md) acrescenta recorrências mensais, avisos de vencimento e resumo individual calculado no backend. A demonstração isolada está disponível em `npm run financeiro:demo`; o registro manual de pagamentos permanece preservado.
 
-**Uso diário com dados persistentes:** execute o Compose principal e acesse `http://localhost:5173/login`. A API usa o banco configurado no `.env` e o volume PostgreSQL existente. Os comandos `financeiro:demo` e `integracao:demo` criam ambientes descartáveis com contas fictícias; não use seus links para acessar as contas reais da equipe. A demonstração financeira na porta 5175 não compartilha os dados do ambiente principal.
+A extensão de [término das recorrências](documentacao/RECORRENCIA_DATA_FIM.md) permite escolher até qual dia, mês e ano uma conta repete. Está ativa no principal local após autorização e backup, na ocasião com 25 migrations, nenhuma pendência e dados/volume preservados. Sua [evidência de ativação](documentacao/evidencias/ativacao-recorrencia-fim-principal-2026-11-21.json) é independente da ativação anterior de notificações.
+
+**Uso diário com dados persistentes:** acesse `http://localhost:5173/login`. Neste checkout, o override local `.devops-local/principal-estavel.yml`, descrito no [guia operacional](documentacao/OPERACAO_BACKEND.md), mantém a imagem compilada 4.2.0, incluindo Sharp. A API usa o banco configurado no `.env` e o volume PostgreSQL existente. Os comandos `financeiro:demo` e `integracao:demo` criam ambientes descartáveis com contas fictícias; não use seus links para acessar as contas reais da equipe. A demonstração financeira na porta 5175 não compartilha os dados do ambiente principal.
 
 ## Stack
 
@@ -35,6 +45,7 @@ rotas e serviços. A migração inclui pagamentos parciais, cobrança após saí
 república e exclusão lógica da própria conta. A primeira interface React já integra
 acesso, perfil, repúblicas, moradores e tarefas. Consulte o [guia do frontend](interface/README.md)
 e a [direção visual escolhida](documentacao/DIRECAO_VISUAL_FRONTEND.md).
+O [sistema visual atual](DESIGN.md) concentra tokens, temas e componentes; os [ajustes da revisão Impeccable](documentacao/REFINAMENTO_IMPECCABLE_2026_11_20.md) registram o tratamento de erros, foco e carregamento por página.
 Veja [MIGRACAO_DJANGO.md](documentacao/MIGRACAO_DJANGO.md) para as regras e os endpoints.
 O [guia de integração do backend](documentacao/INTEGRACAO_BACKEND.md) explica
 o contrato importável, CORS, contas de demonstração e a verificação automatizada.
@@ -52,7 +63,7 @@ npm test
 npm run dev
 ```
 
-Migrations aprovadas são executadas separadamente com a conta administrativa; a API usa `DATABASE_URL` limitada. Siga o [guia de permissões PostgreSQL](documentacao/PERMISSOES_POSTGRESQL.md). No banco da equipe deste checkout, as nove migrations da auditoria continuam pendentes e não devem ser aplicadas pelo procedimento de inicialização.
+Migrations aprovadas são executadas separadamente com a conta administrativa; a API usa `DATABASE_URL` limitada. Siga o [guia de permissões PostgreSQL](documentacao/PERMISSOES_POSTGRESQL.md). O banco principal local deste checkout tem 21 migrations aplicadas, sem pendências na conferência de 20/11/2026. Outros ambientes exigem conferência e autorização próprias.
 
 `npm run dev` usa `tsx` com recarga automática. Para compilar e executar o resultado:
 
@@ -76,7 +87,7 @@ para gerar o segredo JWT local. O banco padrão desta versão é `rabbu_mvp`.
 As migrations e a preparação das dependências são operações administrativas explícitas. Reiniciar a API não aplica migrations.
 
 A modelagem segue o documento **RABBU — MVP / Primeira Entrega (3 perfis)**.
-O modelo atual possui 14 tabelas, incluindo autenticação Google e quatro tabelas de recorrências. Usuários, repúblicas, membros, despesas, rateios, pagamentos, comprovantes e tarefas permanecem preservados.
+O modelo atual possui 15 tabelas de domínio, incluindo autenticação Google, quatro tabelas de recorrências e o controle de criações idempotentes. Usuários, repúblicas, membros, despesas, rateios, pagamentos, comprovantes e tarefas permanecem preservados.
 As operações financeiras usam transações ACID com isolamento `SERIALIZABLE`,
 rollback em caso de falha e repetição limitada de conflitos de concorrência.
 Veja [a documentação do banco](documentacao/BANCO_DE_DADOS.md) para relações, regras,
@@ -92,7 +103,7 @@ docker compose --profile manutencao run --rm migracoes npm run db:permissoes -- 
 docker compose up -d --wait api frontend
 ```
 
-O serviço manual `migracoes` instala pelo lockfile e prepara o banco; `db:permissoes` separa a conta administrativa da conta da API. Para o ambiente existente, preserve o override e siga o [guia operacional](documentacao/OPERACAO_BACKEND.md), sem aplicar migrations pendentes. Nas execuções seguintes, `docker compose up -d --wait api frontend` reutiliza as dependências e os dados. A aplicação fica disponível em:
+O serviço manual `migracoes` instala pelo lockfile e prepara o banco; `db:permissoes` separa a conta administrativa da conta da API. Para o ambiente existente, preserve o override e siga o [guia operacional](documentacao/OPERACAO_BACKEND.md). Não aplique migrations futuras sem conferir o destino e sua autorização. Nas execuções seguintes, `docker compose up -d --wait api frontend` reutiliza as dependências e os dados. A aplicação fica disponível em:
 
 - Frontend: http://localhost:5173
 - API: http://localhost:3000/api/health

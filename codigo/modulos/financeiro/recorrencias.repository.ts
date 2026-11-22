@@ -6,7 +6,8 @@ export const recurringInclude = {
 export type RecurringRecord = Prisma.RecorrenciaDespesaGetPayload<{ include: typeof recurringInclude }>
 export function recurringPublic(item: RecurringRecord) {
   return { id: item.id, republicaId: item.republicaId, despesaOrigemId: item.despesaOrigemId,
-    inicio: item.inicio.toISOString().slice(0, 7), proximaCompetencia: item.proximaCompetencia.toISOString().slice(0, 7),
+    inicio: item.inicio.toISOString().slice(0, 7), fim: item.fim?.toISOString().slice(0, 10) ?? null,
+    proximaCompetencia: item.proximaCompetencia.toISOString().slice(0, 7),
     ativa: item.ativa, pausaMotivo: item.pausaMotivo,
     configuracoes: item.configuracoes.map(config => ({ id: config.id, vigencia: config.vigencia.toISOString().slice(0, 7),
       titulo: config.titulo, categoria: config.categoria, valorTotal: config.valorTotal.toFixed(2), diaVencimento: config.diaVencimento,

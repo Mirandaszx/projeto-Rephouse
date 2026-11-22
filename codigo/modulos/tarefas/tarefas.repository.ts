@@ -8,9 +8,9 @@ export class TarefasRepository {
   }
   contar(tx:Prisma.TransactionClient,republicaId:string){return tx.tarefa.count({where:{republicaId}})}
   listar(tx: Prisma.TransactionClient, republicaId: string,page:PageInput) {
-    return tx.tarefa.findMany({ ...pageArgs(page),where: { republicaId }, orderBy: [{ status: 'asc' }, { prazo: 'asc' },{id:'asc'}] })
+    return tx.tarefa.findMany({ ...pageArgs(page),where: { republicaId }, include: { responsavel: { include: { usuario: { select: { ativo: true, excluidoEm: true } } } } }, orderBy: [{ status: 'asc' }, { prazo: 'asc' },{id:'asc'}] })
   }
   buscar(tx: Prisma.TransactionClient, id: string, republicaId: string) {
-    return tx.tarefa.findFirst({ where: { id, republicaId }, include: { responsavel: true } })
+    return tx.tarefa.findFirst({ where: { id, republicaId }, include: { responsavel: { include: { usuario: { select: { ativo: true, excluidoEm: true } } } } } })
   }
 }

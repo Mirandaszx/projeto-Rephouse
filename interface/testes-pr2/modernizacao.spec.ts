@@ -2,6 +2,9 @@ import { test, expect } from '@playwright/test'
 import { contrast } from './auxiliares/contraste'
 import { prepare, shots, type Fixture } from './auxiliares/modernizacao-fixture'
 
+// Instancia HTTP isolada por arquivo; os controles reais permanecem habilitados.
+test.use({ extraHTTPHeaders: { 'x-interface-test-run': process.env.REPHOUSE_INTERFACE_TEST_RUN ?? '', 'x-interface-suite': 'modernizacao.spec.ts' } })
+
 test('identidade interna mantém largura, contraste e navegação nos dois temas e seis tamanhos', async ({ page }) => {
   test.setTimeout(180000)
   const fixture: Fixture = {}

@@ -17,17 +17,15 @@
 .rep-internal .finance-recurring-row small{font-size:14px}
 .rep-internal .finance-period-summary{display:flex;flex-wrap:wrap;gap:8px 20px;margin-block:12px;font-size:14px}
 .rep-internal .finance-statuses{display:flex;flex-wrap:wrap;gap:6px}
-.rep-internal .finance-filters{max-width:100%;overflow-x:auto;padding:2px}
+.rep-internal .finance-filters{min-width:0;max-width:100%;overflow-x:auto;padding:2px;scrollbar-width:none}
+.rep-internal .finance-filters::-webkit-scrollbar{display:none}
 .rep-internal .finance-pending{margin-block:20px;padding:20px;border:1px solid var(--app-border);border-radius:14px;background:var(--app-surface)}
 .rep-internal .finance-pending-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding-block:12px;border-top:1px solid var(--app-border)}
 .rep-internal .finance-pending-row>div{flex:1;min-width:0;overflow-wrap:anywhere;display:grid;gap:4px}
 .rep-internal .finance-pending-row small{font-size:14px;color:var(--app-muted)}
+.rep-internal .finance-pending-statuses{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .rep-internal .finance-filters .lg-segmented{max-width:none}
 .rep-internal .finance-filter-group{min-width:0;max-width:100%}
-.rep-internal .finance-filter-track{display:flex;align-items:center;gap:4px;min-width:0}
-.rep-internal .finance-filter-track .finance-filters{flex:1;min-width:0;scrollbar-width:thin;scrollbar-color:var(--app-control-border) transparent}
-.rep-internal .finance-filter-arrow{flex:none;display:grid;place-items:center;min-width:44px;min-height:44px;border:1px solid var(--app-control-border);border-radius:10px;background:var(--app-surface);color:var(--app-text);cursor:pointer}
-.rep-internal .finance-filter-hint{font-size:14px;color:var(--app-muted);margin:6px 0 0;line-height:1.5}
 .rep-internal .finance-split-preview{margin-top:16px;padding:16px;border-radius:10px;background:var(--app-raised);color:var(--app-text);min-width:0}
 .rep-internal .finance-split-preview h3{font-size:16px;line-height:1.5;margin:0 0 8px;font-weight:600}
 .rep-internal .finance-split-preview p{font-size:14px;line-height:1.5;margin:8px 0;color:var(--app-muted)}

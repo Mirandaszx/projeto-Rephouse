@@ -8,8 +8,9 @@ import { createRecorrenciasService } from './recorrencias.service.js'
 
 const config = z.object({ titulo: z.string().trim().min(1).max(160), categoria: z.string().trim().min(1).max(80),
   valorTotal: money, diaVencimento: z.number().int().min(1).max(31), membroIds: z.array(uuid).min(1) }).strict()
-const create = config.extend({ inicio: competenciaSchema, despesaOrigemId: uuid.optional() })
-const edit = config.partial().extend({ ativa: z.boolean().optional() }).refine(value => Object.keys(value).length > 0)
+const fim = z.iso.date().refine(value => value >= '1900-01-01' && value <= '2199-12-31').nullable().optional()
+const create = config.extend({ inicio: competenciaSchema, fim, despesaOrigemId: uuid.optional() })
+const edit = config.partial().extend({ ativa: z.boolean().optional(), fim }).refine(value => Object.keys(value).length > 0)
 
 export function createRecorrenciasRouter(db: PrismaClient, master = false) {
   const router = Router({ mergeParams: true }), service = createRecorrenciasService(db)

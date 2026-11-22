@@ -3,6 +3,9 @@ import { mkdir } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { prepare } from './auxiliares/modernizacao-fixture'
 
+// Instancia HTTP isolada por arquivo; os controles reais permanecem habilitados.
+test.use({ extraHTTPHeaders: { 'x-interface-test-run': process.env.REPHOUSE_INTERFACE_TEST_RUN ?? '', 'x-interface-suite': 'motion-superficies.spec.ts' } })
+
 const shots = fileURLToPath(new URL('../../.devops-local/interface/imagens/motion-superficies', import.meta.url))
 async function ready(page: Page, path = '/republica/despesas') {
   await prepare(page)

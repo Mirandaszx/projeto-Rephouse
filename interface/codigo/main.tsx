@@ -4,12 +4,14 @@ import { lazy, Suspense } from 'react'
 import './index.css'
 import './aparencia/appearance'
 import './aparencia/appearance.css'
+import { workspacePaths } from './interno/routes'
 
 const App = lazy(() => import('./App'))
 const DesignSystem = lazy(() => import('./DesignSystem'))
 const Republica = lazy(() => import('./novo/Republica'))
 const Auth = lazy(() => import('./novo/Auth'))
 const Home = lazy(() => import('./rebuild/Home'))
+const NotFound = lazy(() => import('./interno/NotFound'))
 
 const path = window.location.pathname.replace(/\/$/, '')
 // Mantém os favoritos antigos, mas toda navegação nova usa os caminhos definitivos.
@@ -23,12 +25,12 @@ const previousRoutes: Record<string, string> = {
   '/novo/admin': '/admin',
 }
 const redirect = previousRoutes[path]
-const screen = path === '/login' || path === '/cadastro'
-  ? <Auth register={path.endsWith('/cadastro')} />
-  : path === '/republica' || path.startsWith('/republica/') || path === '/admin'
+const screen = path === '/login' || path === '/cadastro' || path === '/confirmar-email'
+  ? <Auth register={path.endsWith('/cadastro')} confirm={path === '/confirmar-email'} />
+  : workspacePaths.has(path)
     ? <Republica />
     : path === '/design-system' ? <DesignSystem />
-      : path === '/legado' ? <App /> : <Home />
+      : path === '/legado' ? <App /> : path === '' ? <Home /> : <NotFound />
 
 if (redirect) {
   window.location.replace(redirect + window.location.search + window.location.hash)

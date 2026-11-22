@@ -3,6 +3,9 @@ import type { components } from '../../integracao/api.js'
 import { mkdir } from 'node:fs/promises'
 import { contrast } from './auxiliares/contraste'
 
+// Instancia HTTP isolada por arquivo; os controles reais permanecem habilitados.
+test.use({ extraHTTPHeaders: { 'x-interface-test-run': process.env.REPHOUSE_INTERFACE_TEST_RUN ?? '', 'x-interface-suite': 'jornadas.spec.ts' } })
+
 type Schemas = components['schemas']
 const password = 'Senha-interface-teste-2026'
 const api = 'http://127.0.0.1:3405/api'

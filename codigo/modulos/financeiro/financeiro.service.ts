@@ -11,6 +11,7 @@ import {paymentPublic,type ReceiptInput} from '../../infraestrutura/armazenament
 import { civilDate } from '../../configuracao/time-zone.js'
 import { expensesWhere, personalWhere, personalSummary, expenseView, shareView } from './financeiro.consultas.js'
 import type { FinancialFilter } from './dominio/competencia.js'
+import { executarCriacao } from '../../compartilhado/idempotencia-criacao.js'
 
 const repository = new FinanceiroRepository()
 
@@ -60,11 +61,10 @@ async function pagar(tx: Prisma.TransactionClient, dados: RegistrarPagamentoInpu
 
 export function createFinanceiroService(db: PrismaClient) {
   return {
-    create: (actor: Actor, input: Omit<CriarDespesaInput, 'republicaId' | 'criadaPorId'>, scope?: string) => withActor(db, actor, async (tx, user) => {
-      const republic = await republicContext(tx, user, scope)
-      requireAdmin(user, republic)
-      const data = { ...input, republicaId: republic.id, criadaPorId: user.id }
-      await validarSelecao(tx, republic.id, input.membroIds)
+    create: (actor: Actor, input: Omit<CriarDespesaInput, 'republicaId' | 'criadaPorId'>, scope?: string, key?: string) => executarCriacao(db, actor, 'DESPESA', key, scope,
+      [input.titulo, input.categoria, new Prisma.Decimal(input.valorTotal).toFixed(2), input.vencimento.toISOString().slice(0, 10), [...input.membroIds].sort()], async (tx, user, republicaId) => {
+      const data = { ...input, republicaId, criadaPorId: user.id }
+      await validarSelecao(tx, republicaId, input.membroIds)
       const parcelas = parcelasValidas(input.valorTotal, input.membroIds)
       const expense = await repository.criarDespesa(tx, data)
       await repository.criarRateios(tx, expense.id, parcelas)

@@ -7,6 +7,9 @@ import type { components } from '../../integracao/api'
 type Schemas = components['schemas']
 type Session = { token: string; id: string; email: string }
 // A jornada acompanha a mesma conta: administrador, transferência, troca e saída.
+// Instancia HTTP isolada por arquivo; os controles reais permanecem habilitados.
+test.use({ extraHTTPHeaders: { 'x-interface-test-run': process.env.REPHOUSE_INTERFACE_TEST_RUN ?? '', 'x-interface-suite': 'gestao.spec.ts' } })
+
 test.describe.configure({ mode: 'serial' })
 let accounts: Record<string, Session>
 let house: Schemas['Republica'], otherHouse: Schemas['Republica']
@@ -255,7 +258,7 @@ test('novas páginas e modais cabem nos temas claro e escuro; envio duplicado é
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await enter(page, 'morador', '/republica')
   for (const theme of ['light', 'dark']) {
-    await page.getByRole('combobox', { name: 'Aparência', exact: true }).first().selectOption(theme)
+    await page.getByRole('switch', { name: 'Modo escuro', exact: true }).press(theme === 'dark' ? 'ArrowRight' : 'ArrowLeft')
     for (const width of [320, 390, 768, 1440]) {
       await page.setViewportSize({ width, height: 900 })
       for (const path of ['/republica/perfil', '/republica/financeiro', '/republica/configuracoes', '/republica/moradores']) {
@@ -276,7 +279,7 @@ test('novas páginas e modais cabem nos temas claro e escuro; envio duplicado é
   }
   await enter(page, 'master', '/admin')
   for (const theme of ['light', 'dark']) {
-    await page.getByRole('combobox', { name: 'Aparência', exact: true }).selectOption(theme)
+    await page.getByRole('switch', { name: 'Modo escuro', exact: true }).press(theme === 'dark' ? 'ArrowRight' : 'ArrowLeft')
     for (const width of [320, 390, 768, 1440]) {
       await page.setViewportSize({ width, height: 900 })
       await expect(page.getByRole('button', { name: /^Bloquear / }).first()).toBeVisible()

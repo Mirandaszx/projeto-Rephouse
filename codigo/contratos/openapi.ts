@@ -49,31 +49,36 @@ const recurrenceOrigin = nullable(object({ id: uuid, competencia: monthInput }))
 const recurringConfig = { titulo: { type: 'string', minLength: 1, maxLength: 160 }, categoria: { type: 'string', minLength: 1, maxLength: 80 },
   valorTotal: positiveMoney, diaVencimento: { type: 'integer', minimum: 1, maximum: 31 }, membroIds: { type: 'array', minItems: 1, uniqueItems: true, items: uuid } }
 const schemas: Record<string, Schema> = {
+  FotoPerfil: object({ versao: { type: 'string', pattern: '^[a-f0-9]{64}$' }, atualizadaEm: timestamp }),
   Error: object({ error: object({ code: { type: 'string' }, message: { type: 'string' } }) }),
-  Usuario: object(usuarioFields),
+  Usuario: object({ ...usuarioFields, foto: nullable(ref('FotoPerfil')) }, Object.keys(usuarioFields)),
   UsuarioMaster: object({ ...usuarioFields, excluidoEm: nullable(timestamp) }),
   Sessao: object({ token: { type: 'string', description: 'Bearer JWT válido por uma hora.' }, usuario: ref('Usuario') }),
+  EmailPendente: object({ confirmacaoPendente: { const: true }, message: { type: 'string' } }),
+  ConfirmacaoEmail: object({ token: { type: 'string' }, usuario: ref('Usuario'), acaoRepublica: { enum: ['criar','entrar',null] } }),
   Republica: object({ id: uuid, nome: { type: 'string' }, endereco: nullable({ type: 'string' }), codigoEntrada: { type: 'string' }, adminId: uuid, ativa: { type: 'boolean' }, criadaEm: timestamp }),
   Membro: object(membroFields),
-  MembroListado: object({ ...membroFields, usuario: object({ id: uuid, nome: { type: 'string' }, email: { type: 'string', format: 'email' } }) }),
-  MinhaConta: object({ ...usuarioFields, membro: nullable(object({ ...membroFields, republica: ref('Republica') })) }),
+  MembroListado: object({ ...membroFields, usuario: object({ id: uuid, nome: { type: 'string' }, email: { type: 'string', format: 'email' }, foto: nullable(ref('FotoPerfil')) }, ['id','nome','email']) }),
+  MinhaConta: object({ ...usuarioFields, membro: nullable(object({ ...membroFields, republica: ref('Republica') })), foto: nullable(ref('FotoPerfil')), emailConfirmadoEm: nullable(timestamp) }, [...Object.keys(usuarioFields),'membro']),
   Pagamento: object({ id: uuid, rateioId: uuid, membroId: uuid, valor: money, comprovanteUrl: nullable({ type: 'string', pattern: '^/api/pagamentos/[a-f0-9-]+/comprovante$' }), dataPagamento: timestamp }),
   Rateio: object({ ...rateioFields, ...financialMetadata, valorRestante: money, pagamentos: array(ref('Pagamento')) }, Object.keys(rateioFields)),
   RateioPessoal: object({ ...rateioFields, ...financialMetadata, valorRestante: money, pagamentos: array(ref('Pagamento')), despesa: object({ id: uuid, titulo: { type: 'string' }, categoria: { type: 'string' }, vencimento: storedDate, republica: object({ id: uuid, nome: { type: 'string' } }) }) }, [...Object.keys(rateioFields), 'pagamentos', 'despesa']),
   DespesaResumo: object({ ...despesaFields, ...financialMetadata, recorrencia: recurrenceOrigin }, Object.keys(despesaFields)),
   Despesa: object({ ...despesaFields, ...financialMetadata, recorrencia: recurrenceOrigin, rateios: array(ref('Rateio')) }, [...Object.keys(despesaFields), 'rateios']),
-  Tarefa: object({ id: uuid, republicaId: uuid, responsavelId: uuid, titulo: { type: 'string' }, descricao: nullable({ type: 'string' }), prazo: nullable(storedDate), status: { enum: ['ABERTA', 'CONCLUIDA'] }, criadaEm: timestamp }),
+  Tarefa: object({ id: uuid, republicaId: uuid, responsavelId: nullable(uuid), criadorId: nullable(uuid), responsavelAtivo: nullable({type:'boolean'}), titulo: { type: 'string' }, descricao: nullable({ type: 'string' }), prazo: nullable(storedDate), status: { enum: ['ABERTA', 'CONCLUIDA'] }, criadaEm: timestamp }, ['id','republicaId','responsavelId','titulo','descricao','prazo','status','criadaEm']),
+  Notificacao: object({ id: uuid, categoria: {enum:['TAREFAS','DESPESAS','GERAIS']}, tipo:{enum:['TAREFA_CRIADA','TAREFA_ASSUMIDA','TAREFA_REATRIBUIDA','TAREFA_CONCLUIDA','TAREFA_LIBERADA','TAREFA_REABERTA','DESPESA_PROXIMA','DESPESA_VENCE_HOJE','MEMBRO_ENTROU','MEMBRO_SAIU']}, titulo:{type:'string'}, atorNome:nullable({type:'string'}), tarefaId:nullable(uuid), despesaId:nullable(uuid), vencimento:nullable(storedDate), lidaEm:nullable(timestamp), criadoEm:timestamp }),
+  NotificacoesNaoLidas: object({tarefas:{type:'integer',minimum:0},despesas:{type:'integer',minimum:0},gerais:{type:'integer',minimum:0},total:{type:'integer',minimum:0}},['tarefas','despesas','total']),
   Painel: object({ ...painelFields, dataReferencia: dateInput, financeiroIndividual: ref('ResumoIndividual'), financeiroIndividualGeral: ref('ResumoIndividual') }, Object.keys(painelFields)),
   ResumoIndividual: object({ competencia: nullable(monthInput), dataReferencia: dateInput, totalDevido: money, totalPago: money, saldoPendente: money, totalItens: { type: 'integer', minimum: 0 }, rateiosPendentes: { type: 'integer', minimum: 0 } }),
-  CriarRecorrencia: object({ ...recurringConfig, inicio: monthInput, despesaOrigemId: uuid }, [...Object.keys(recurringConfig), 'inicio']),
-  EditarRecorrencia: { ...object({ ...recurringConfig, ativa: { type: 'boolean' } }, []), minProperties: 1 },
-  Recorrencia: object({ id: uuid, republicaId: uuid, despesaOrigemId: nullable(uuid), inicio: monthInput, proximaCompetencia: monthInput,
+  CriarRecorrencia: object({ ...recurringConfig, inicio: monthInput, fim: nullable(dateInput), despesaOrigemId: uuid }, [...Object.keys(recurringConfig), 'inicio']),
+  EditarRecorrencia: { ...object({ ...recurringConfig, fim: nullable(dateInput), ativa: { type: 'boolean' } }, []), minProperties: 1 },
+  Recorrencia: object({ id: uuid, republicaId: uuid, despesaOrigemId: nullable(uuid), inicio: monthInput, fim: nullable(dateInput), proximaCompetencia: monthInput,
     ativa: { type: 'boolean' }, pausaMotivo: nullable({ type: 'string' }), configuracoes: array(object({ ...recurringConfig, id: uuid, vigencia: monthInput })) }),
   CompetenciaRecorrencia: object({ competencia: monthInput, estado: { enum: ['GERADA', 'PENDENTE_REVISAO', 'BLOQUEADA', 'REVISADA'] }, motivo: nullable({ type: 'string' }), despesaId: nullable(uuid), revisadaEm: nullable(timestamp) }),
   PainelMaster: object({ ...painelFields, usuarios: { type: 'integer', minimum: 0 }, republicas: { type: 'integer', minimum: 0 } }),
-  Cadastro: object({ nome: nameInput, email: { type: 'string', format: 'email', maxLength: 254 }, senha: password }),
+  Cadastro: object({ nome: nameInput, email: { type: 'string', format: 'email', maxLength: 254 }, senha: password, acaoRepublica: { enum: ['criar','entrar'], default: 'criar' } }, ['nome','email','senha']),
   Login: object({ email: { type: 'string', format: 'email', maxLength: 254 }, senha: password }),
-  MetodosAutenticacao: object({ google: object({ habilitado: { type: 'boolean' }, clientId: nullable({ type: 'string' }) }) }),
+  MetodosAutenticacao: object({ google: object({ habilitado: { type: 'boolean' }, clientId: nullable({ type: 'string' }) }), email: object({ habilitado: { type: 'boolean' } }) }),
   DesafioGoogleInput: object({ finalidade: { enum: ['login', 'exclusao'], default: 'login' } }, []),
   DesafioGoogle: object({ desafioId: uuid, nonce: { type: 'string' }, expiraEm: timestamp }),
   LoginGoogle: object({ credential: { type: 'string', minLength: 1, maxLength: 16000, writeOnly: true }, desafioId: uuid, senha: password }, ['credential', 'desafioId']),
@@ -81,7 +86,7 @@ const schemas: Record<string, Schema> = {
   EditarRepublica: object({ nome: nameInput, endereco: nullable({ type: 'string', maxLength: 255 }) }, []),
   CodigoEntrada: object({ codigoEntrada: { type: 'string', pattern: '^[A-Za-z0-9]{6,32}$', description: 'Espaços nas pontas são removidos e letras são convertidas para maiúsculas.' } }),
   CriarDespesa: object({ titulo: { type: 'string', minLength: 1, maxLength: 160 }, categoria: { type: 'string', minLength: 1, maxLength: 80 }, valorTotal: positiveMoney, vencimento: dateInput, membroIds: { type: 'array', minItems: 1, items: uuid, description: 'IDs de vínculos de membros ativos da mesma república; não são IDs de usuários.' } }),
-  CriarTarefa: object({ titulo: { type: 'string', minLength: 1, maxLength: 160 }, responsavelId: uuid, descricao: { type: 'string', maxLength: 5000 }, prazo: nullable(dateInput) }, ['titulo', 'responsavelId']),
+  CriarTarefa: object({ titulo: { type: 'string', minLength: 1, maxLength: 160 }, responsavelId: nullable(uuid), descricao: { type: 'string', maxLength: 5000 }, prazo: nullable(dateInput) }, ['titulo']),
   RegistrarPagamento: object({ rateioId: uuid, valor: positiveMoney }),
 }
 schemas.EditarDespesa = { ...schemas.CriarDespesa, required: [] }
@@ -132,13 +137,26 @@ const taskInput = { titulo: 'Limpar cozinha', responsavelId: membro.id, prazo: '
 add('/api/health', 'get', 'Verificar o processo HTTP', { public: true, tag: 'Documentação', response: object({ status: { const: 'ok' } }), output: { status: 'ok' } })
 const ready = add('/api/ready', 'get', 'Verificar conexão ao PostgreSQL', { public: true, tag: 'Documentação', description: 'Consulta SELECT 1; responde em até dois segundos, sem detalhes da conexão.', response: object({ status: { const: 'ok' } }), output: { status: 'ok' } })
 ready.responses['503'] = { description: 'PostgreSQL indisponível.', content: { 'application/json': { schema: object({ status: { const: 'unavailable' } }), example: { status: 'unavailable' } } } }
-add('/api/openapi.json', 'get', 'Obter o contrato OpenAPI', { public: true, tag: 'Documentação', response: { type: 'object', required: ['openapi', 'info', 'paths', 'components'] }, output: { openapi: '3.1.0', info: { title: 'RepHouse API', version: '2.2.0' }, paths: {}, components: {} } })
-const cadastro = add('/api/auth/register', 'post', 'Cadastrar conta independente', { public: true, tag: 'Autenticação', status: 201, body: ref('Cadastro'), input: { nome: usuario.nome, email: usuario.email, senha: 'SuaSenhaDeTeste123!' }, response: ref('Sessao'), output: { token: 'JWT_RECEBIDO_DA_API', usuario }, description: 'Sempre cria NORMAL; campos de privilégio são rejeitados. O e-mail é normalizado. E-mail já utilizado, inclusive por conta excluída, retorna 409.' })
+add('/api/openapi.json', 'get', 'Obter o contrato OpenAPI', { public: true, tag: 'Documentação', response: { type: 'object', required: ['openapi', 'info', 'paths', 'components'] }, output: { openapi: '3.1.0', info: { title: 'RepHouse API', version: '4.2.0' }, paths: {}, components: {} } })
+const cadastro = add('/api/auth/register', 'post', 'Solicitar cadastro com confirmação obrigatória', { public: true, tag: 'Autenticação', status: 202, body: ref('Cadastro'), input: { nome: usuario.nome, email: usuario.email, senha: 'SuaSenhaDeTeste123!' }, response: ref('EmailPendente'), output: { confirmacaoPendente: true, message: 'Confira seu e-mail.' }, description: 'Não cria usuário nem sessão antes da confirmação. Sempre cria NORMAL na confirmação; campos de privilégio são rejeitados. Contas antigas continuam acessando por senha. E-mail já utilizado retorna 409. Link de dez minutos, uso único, no mesmo navegador. Origin permitido e cookie HttpOnly obrigatórios. Sem envio configurado, retorna 503. Mudança incompatível em relação ao cadastro com sessão imediata da versão 2.x.' })
 const login = add('/api/auth/login', 'post', 'Autenticar por e-mail e senha', { public: true, tag: 'Autenticação', body: ref('Login'), input: { email: usuario.email, senha: 'SuaSenhaDeTeste123!' }, response: ref('Sessao'), output: { token: 'JWT_RECEBIDO_DA_API', usuario }, description: 'Token de uma hora. Contas bloqueadas ou excluídas não autenticam. Ao expirar, faça login novamente; não há refresh token.' })
 login.responses['401'] = { description: 'Credenciais incorretas ou conta indisponível.', content: { 'application/json': { schema: ref('Error'), example: { error: { code: 'INVALID_CREDENTIALS', message: 'E-mail ou senha inválidos.' } } } } }
 cadastro.description += ' Cadastro e login compartilham limite de 20 tentativas por IP a cada 15 minutos.'
 add('/api/auth/logout', 'post', 'Invalidar todos os tokens da conta', { status: 204, tag: 'Autenticação' })
-add('/api/auth/metodos', 'get', 'Consultar métodos de autenticação', { public: true, tag: 'Autenticação', response: ref('MetodosAutenticacao'), output: { google: { habilitado: false, clientId: null } } })
+add('/api/auth/metodos', 'get', 'Consultar métodos de autenticação', { public: true, tag: 'Autenticação', response: ref('MetodosAutenticacao'), output: { google: { habilitado: false, clientId: null }, email: { habilitado: false } } })
+const requestEmail = add('/api/auth/email/solicitar', 'post', 'Solicitar link mágico ou reenviar confirmação', { public: true, tag: 'Autenticação', status: 202,
+  body: object({ email: { type: 'string', format: 'email', maxLength: 254 }, finalidade: { enum: ['login','cadastro'], default: 'login' } }, ['email']),
+  input: { email: usuario.email, finalidade: 'login' },
+  response: ref('EmailPendente'), output: { confirmacaoPendente: true, message: 'Confira seu e-mail.' },
+  description: 'Resposta genérica para conta desconhecida, bloqueada ou excluída e para limite por e-mail. Até três envios em 15 minutos, com intervalo mínimo de 60 segundos. Reenvio de cadastro exige o mesmo cookie. Não cria contas automaticamente. Link substitui os anteriores da mesma finalidade. Não valida a posse do e-mail até consumir o token.' })
+const confirmEmail = add('/api/auth/email/confirmar', 'post', 'Confirmar e-mail e emitir sessão', { public: true, tag: 'Autenticação',
+  body: object({ id: uuid, token: { type: 'string', pattern: '^[A-Za-z0-9_-]{43}$' } }), response: ref('ConfirmacaoEmail'),
+  input: { id: id(9, 3), token: 'a'.repeat(43) },
+  output: { token: 'JWT_RECEBIDO_DA_API', usuario, acaoRepublica: 'criar' }, description: 'POST explícito após abrir /confirmar-email. Revalida expiração, uso único, cookie do navegador, origem, conta ativa e versão de revogação na mesma transação. GET não consome o link. O segredo vai no fragmento do link e não deve ser registrado nem persistido pelo cliente.' })
+for (const operation of [cadastro, requestEmail, confirmEmail]) {
+  for (const status of ['401','403','503']) operation.responses[status] = { description: status === '503' ? 'Envio de e-mail indisponível ou não configurado.' : 'Link ou origem não autorizado.', content: { 'application/json': { schema: ref('Error'), example: { error: { code: status === '503' ? 'EMAIL_DISABLED' : status === '403' ? 'EMAIL_ORIGIN_FORBIDDEN' : 'EMAIL_LINK_INVALID', message: status === '503' ? 'O envio de e-mails ainda não foi configurado.' : 'Link ou origem não autorizado.' } } } } }
+  operation.parameters = [{ name: 'Origin', in: 'header', required: true, schema: { type: 'string', format: 'uri' } }]
+}
 const googleChallenge = add('/api/auth/google/desafio', 'post', 'Criar desafio Google de cinco minutos', { public: true, tag: 'Autenticação', body: ref('DesafioGoogleInput'), input: { finalidade: 'login' }, response: ref('DesafioGoogle'), output: { desafioId: id(9, 1), nonce: 'NONCE_ALEATORIO_RECEBIDO', expiraEm: agora }, description: 'Exige Origin configurada. Cookie rephouse_google HttpOnly; SameSite=Lax; Path=/api; Secure em produção. Use /api na mesma origem. Exclusão exige Bearer vigente; vincula usuário e versão da sessão. 60 desafios/IP/15min. Nonce e cookie têm somente hashes no banco.' })
 const googleLogin = add('/api/auth/google', 'post', 'Entrar ou vincular Google', { public: true, tag: 'Autenticação', body: ref('LoginGoogle'), input: { credential: 'CREDENCIAL_GOOGLE', desafioId: id(9, 1) }, response: ref('Sessao'), output: { token: 'JWT_RECEBIDO_DA_API', usuario }, description: 'Exige Origin autorizada, cookie do desafio e nonce válido. Primeiro acesso cria NORMAL sem senha; sub identifica a conta. 409 GOOGLE_LINK_REQUIRED pede a senha da conta existente; reenvie a mesma credencial/desafio com senha antes de expirar. Erros revertem o consumo; sucesso consome uma vez. Compartilha 20 tentativas/IP/15min com login e cadastro. Não reativa contas. 503 GOOGLE_UNAVAILABLE ou GOOGLE_DISABLED.' })
 for (const operation of [googleChallenge, googleLogin]) {
@@ -147,6 +165,12 @@ for (const operation of [googleChallenge, googleLogin]) {
 }
 googleChallenge.responses['200']!.headers = { 'Set-Cookie': { schema: { type: 'string' }, description: 'Cookie transitório HttpOnly; nunca disponibilizado ao JavaScript.' } }
 add('/api/me', 'get', 'Consultar conta e vínculo atual', { tag: 'Conta', response: ref('MinhaConta'), output: { ...usuario, membro: { ...membro, republica } } })
+const photoUpload = add('/api/me/foto', 'post', 'Adicionar ou substituir a própria foto', { tag: 'Conta', response: ref('FotoPerfil'), output: { versao: 'a'.repeat(64), atualizadaEm: agora }, description: 'JPEG, PNG ou WebP estático até 5 MiB e 25 megapixels. Recorte em pixels na imagem orientada: x, y, largura, altura; quadrado. Servidor valida e gera WebP 512×512, até 512 KiB, sem metadados. Original descartado. Revalida sessão na transação; dois uploads em andamento no máximo por instância.' })
+photoUpload.requestBody = { required: true, content: { 'multipart/form-data': { schema: object({ imagem: { type: 'string', format: 'binary' }, recorte: { type: 'string', description: 'JSON {x,y,largura,altura} com inteiros na orientação visual da foto.' } }) } } }
+photoUpload.responses['413'] = { description: 'Foto maior que 5 MiB.', content: { 'application/json': { schema: ref('Error'), example: { error: { code: 'LIMIT_FILE_SIZE', message: 'A foto deve ter no máximo 5 MiB.' } } } } }
+add('/api/me/foto', 'delete', 'Remover a própria foto', { tag: 'Conta', status: 204, description: 'Idempotente: ausência de foto também retorna 204. Não altera o histórico financeiro.' })
+const photoRead = add('/api/usuarios/{id}/foto', 'get', 'Consultar foto autenticada', { tag: 'Conta', description: 'Somente o proprietário ou morador ativo da mesma casa atual, com contas habilitadas. Sem privilégio global MASTER. Ausência e acesso indevido retornam 404. Cache-Control: no-store; token somente no header.' })
+photoRead.responses['200'] = { description: 'Foto WebP normalizada.', content: { 'image/webp': { schema: { type: 'string', format: 'binary' } } } }
 add('/api/me', 'patch', 'Editar o próprio nome', { tag: 'Conta', body: object({ nome: nameInput }), input: { nome: 'Ana Silva' }, response: ref('Usuario'), output: { ...usuario, nome: 'Ana Silva' } })
 add('/api/me', 'delete', 'Excluir logicamente a própria conta', { status: 204, tag: 'Conta', body: { oneOf: [object({ senha: password }), object({ credential: { type: 'string', minLength: 1, maxLength: 16000, writeOnly: true }, desafioId: uuid })] }, input: { senha: 'SuaSenhaDeTeste123!' }, description: 'Confirma senha ou Google vinculado à própria conta (desafio finalidade exclusao, cookie e Origin). 409: OUTSTANDING_DEBT, TRANSFER_ADMIN_REQUIRED ou LAST_MASTER. Preserva histórico e e-mail; encerra vínculos e revoga tokens. Conta excluída não pode ser reativada.' })
 add('/api/me/financeiro', 'get', 'Listar os próprios rateios atuais e antigos', { tag: 'Financeiro', response: array(ref('RateioPessoal')), output: [personal], description: 'A saída da república mantém acesso somente ao próprio histórico, sem consultar os demais moradores.' })
@@ -163,12 +187,20 @@ add('/api/membros/{id}', 'patch', 'Desativar vínculo de morador', { admin: true
 for (const prefix of ['/api', '/api/master/republicas/{republicaId}']) {
   const tag = prefix === '/api' ? 'Financeiro' : 'MASTER'
   add(`${prefix}/despesas`, 'get', 'Listar despesas e rateios', { tag, response: array(ref('Despesa')), output: [{ ...despesa, rateios }], description: 'Escopo da república autorizada. Listagem paginada.' })
-  add(`${prefix}/despesas`, 'post', 'Criar despesa com rateio igual entre selecionados', { tag, admin: true, status: 201, body: ref('CriarDespesa'), input: expenseInput, response: ref('Despesa'), output: { ...despesa, rateios: rateios.map(r => ({ ...r, valorPago: '0.00', status: 'PENDENTE' })) }, description: 'Participantes ativos da mesma república. Sobra de centavos distribuída por ordem dos IDs. Um participante assume o valor inteiro.' })
+  const createExpense = add(`${prefix}/despesas`, 'post', 'Criar despesa com rateio igual entre selecionados', { tag, admin: true, status: 201, body: ref('CriarDespesa'), input: expenseInput, response: ref('Despesa'), output: { ...despesa, rateios: rateios.map(r => ({ ...r, valorPago: '0.00', status: 'PENDENTE' })) }, description: 'Participantes ativos da mesma república. Sobra de centavos distribuída por ordem dos IDs. Um participante assume o valor inteiro.' })
   add(`${prefix}/despesas/{id}`, 'get', 'Consultar despesa com pagamentos dos rateios', { tag, response: ref('Despesa'), output: { ...despesa, rateios: rateios.map(r => ({ ...r, pagamentos: r.id === rateio.id ? [pagamento] : r.status === 'PAGO' ? [{ ...pagamento, id: id(6, 1), rateioId: r.id, membroId: r.membroId, valor: r.valorPago }] : [] })) } })
   add(`${prefix}/despesas/{id}`, 'patch', 'Editar despesa', { tag, admin: true, body: ref('EditarDespesa'), input: { titulo: 'Internet atualizada' }, response: ref('Despesa'), output: { ...despesa, titulo: 'Internet atualizada', rateios }, description: 'Valor e participantes ficam bloqueados após o primeiro pagamento (409 FINANCIAL_HISTORY_LOCKED). Título, categoria e vencimento podem ser editados.' })
   add(`${prefix}/tarefas`, 'get', 'Listar tarefas', { tag: prefix === '/api' ? 'Tarefas' : tag, response: array(ref('Tarefa')), output: [tarefa] })
-  add(`${prefix}/tarefas`, 'post', 'Criar tarefa para membro ativo', { tag: prefix === '/api' ? 'Tarefas' : tag, admin: true, status: 201, body: ref('CriarTarefa'), input: taskInput, response: ref('Tarefa'), output: tarefa })
-  add(`${prefix}/tarefas/{id}`, 'patch', 'Editar ou concluir tarefa', { tag: prefix === '/api' ? 'Tarefas' : tag, body: ref('EditarTarefa'), input: { status: 'CONCLUIDA' }, response: ref('Tarefa'), output: { ...tarefa, status: 'CONCLUIDA' }, description: 'ADMIN e MASTER gerenciam. Morador só pode enviar status=CONCLUIDA para uma tarefa atribuída a seu vínculo ativo.' })
+  const createTask = add(`${prefix}/tarefas`, 'post', 'Criar tarefa disponível ou atribuída', { tag: prefix === '/api' ? 'Tarefas' : tag, status: 201, body: ref('CriarTarefa'), input: taskInput, response: ref('Tarefa'), output: tarefa, description:'Qualquer morador ativo cria tarefa disponível (responsavelId ausente/null) ou para si. ADMIN/MASTER podem atribuir a outro morador ativo.' })
+  for (const creation of [createExpense, createTask]) {
+    creation.parameters ??= []
+    creation.parameters.push({ name: 'Idempotency-Key', in: 'header', required: false, schema: uuid,
+      description: 'UUID público por criação. Mesma chave, usuário, operação e dados retornam a resposta original (201); dados ou república diferentes retornam 409 IDEMPOTENCY_CONFLICT. Nova chave permite criação intencional igual. Sem header não há proteção contra reenvios; header inválido retorna 400. Sessão e permissão são revalidadas em todo reenvio.' })
+  }
+  add(`${prefix}/tarefas/{id}`, 'get', 'Consultar tarefa', { tag:'Tarefas',response:ref('Tarefa'),output:tarefa })
+  add(`${prefix}/tarefas/{id}`, 'patch', 'Editar, concluir ou reabrir tarefa', { tag: prefix === '/api' ? 'Tarefas' : tag, body: ref('EditarTarefa'), input: { status: 'CONCLUIDA' }, response: ref('Tarefa'), output: { ...tarefa, status: 'CONCLUIDA' }, description: 'ADMIN/MASTER gerenciam. Criador edita título, descrição e prazo enquanto disponível. Responsável ativo conclui/reabre; só administrador troca responsável. Conclusão exige responsável.' })
+  add(`${prefix}/tarefas/{id}/assumir`, 'post', 'Assumir tarefa disponível', { tag:'Tarefas',body:object({}),input:{},response:ref('Tarefa'),output:tarefa,description:'Associa ao vínculo ativo do próprio solicitante. Concorrente de outro morador recebe 409 TASK_ALREADY_ASSIGNED; repetição pelo mesmo responsável não duplica evento.' })
+  add(`${prefix}/tarefas/{id}/liberar`, 'post', 'Liberar tarefa aberta', { tag:'Tarefas',body:object({}),input:{},response:ref('Tarefa'),output:{...tarefa,responsavelId:null},description:'Responsável ativo ou administrador; não libera tarefa concluída.' })
   add(`${prefix}/dashboard`, 'get', 'Consultar indicadores da república', { tag: prefix === '/api' ? 'Painel' : tag, response: ref('Painel'), output: painel, description: 'Inclui dívida de ex-moradores. O mês segue APP_TIME_ZONE, padrão horário de Brasília (America/Sao_Paulo); todos os indicadores usam a mesma transação.' })
 }
 const payment = add('/api/pagamentos', 'post', 'Registrar pagamento parcial ou integral', { tag: 'Financeiro', status: 201, body: ref('RegistrarPagamento'), input: { rateioId: rateio.id, valor: '10.00' }, response: ref('Pagamento'), output: pagamento, description: 'Somente proprietário do rateio, inclusive após sair da república. Saldo não pode ser ultrapassado. Idempotency-Key UUID obrigatório: repetir o mesmo conteúdo retorna o mesmo pagamento (201); mudar valor, rateio ou arquivo retorna 409. Não movimenta dinheiro e não possui estorno, edição ou exclusão nesta entrega.' })
@@ -201,7 +233,7 @@ const summary = add('/api/me/financeiro/resumo', 'get', 'Consultar resumo das pr
 summary.parameters = [...financialParameters, { name: 'republicaId', in: 'query', schema: uuid }]
 paths['/api/me/financeiro']!.get!.parameters ??= []
 paths['/api/me/financeiro']!.get!.parameters!.push(...summary.parameters)
-const recurringExample = { id: id(10,1), republicaId: republica.id, despesaOrigemId: null, inicio: '2026-11', proximaCompetencia: '2026-12', ativa: true, pausaMotivo: null,
+const recurringExample = { id: id(10,1), republicaId: republica.id, despesaOrigemId: null, inicio: '2026-11', fim: null, proximaCompetencia: '2026-12', ativa: true, pausaMotivo: null,
   configuracoes: [{ id: id(11,1), vigencia: '2026-11', titulo: 'Internet', categoria: 'INTERNET', valorTotal: '120.00', diaVencimento: 20, membroIds: [membro.id] }] }
 for (const prefix of ['/api', '/api/master/republicas/{republicaId}']) {
   const expenseList = paths[`${prefix}/despesas`]!.get!
@@ -210,17 +242,24 @@ for (const prefix of ['/api', '/api/master/republicas/{republicaId}']) {
   add(`${prefix}/recorrencias`, 'get', 'Listar recorrências mensais', { response: array(ref('Recorrencia')), output: [recurringExample], tag: 'Financeiro' })
   const createRecurring = add(`${prefix}/recorrencias`, 'post', 'Criar recorrência e primeira competência aplicável', { admin: true, status: 201, tag: 'Financeiro', body: ref('CriarRecorrencia'),
     input: { titulo: 'Internet', categoria: 'INTERNET', valorTotal: '120.00', diaVencimento: 20, inicio: '2026-11', membroIds: [membro.id] }, response: ref('Recorrencia'), output: recurringExample,
-    description: 'Idempotência obrigatória. Participantes fixos; início no mês atual ou futuro. Vencimento já passado exige próximo mês. Dias inexistentes usam o último dia do mês. Origem avulsa exige início após seu mês e após o mês atual.' })
+    description: 'Idempotência obrigatória. Participantes fixos; início no mês atual ou futuro. Vencimento já passado exige próximo mês. Dias inexistentes usam o último dia do mês. Origem avulsa exige início após seu mês e após o mês atual. fim é opcional, inclusivo pelo vencimento civil (1900 a 2199); deve incluir o primeiro vencimento. Ausente ou null mantém repetição sem prazo. Não gera despesa nem pendência de revisão depois do limite.' })
   createRecurring.parameters ??= []
   createRecurring.parameters.push({ name: 'Idempotency-Key', in: 'header', required: true, schema: uuid })
   add(`${prefix}/recorrencias/{id}`, 'get', 'Consultar configuração da recorrência', { response: ref('Recorrencia'), output: recurringExample, tag: 'Financeiro' })
   add(`${prefix}/recorrencias/{id}`, 'patch', 'Editar ou desativar recorrência', { admin: true, body: ref('EditarRecorrencia'), input: { ativa: false }, response: ref('Recorrencia'), output: { ...recurringExample, ativa: false }, tag: 'Financeiro',
-    description: 'Configurações valem a partir do próximo mês, sem reescrever despesas ou versões anteriores. ativa=false não exclui histórico. Reativação exige participantes ativos.' })
+    description: 'Configurações valem a partir do próximo mês, sem reescrever despesas ou versões anteriores. fim altera imediatamente o limite para competências ainda não geradas; null remove o limite, omitir mantém o existente. A data não pode anteceder o início. Despesas já geradas permanecem independentes. ativa=false não exclui histórico. Reativação exige participantes ativos e ativa=true; mudar fim não reativa automaticamente uma recorrência encerrada.' })
   add(`${prefix}/recorrencias/{id}/competencias`, 'get', 'Consultar competências e pendências de revisão', { response: array(ref('CompetenciaRecorrencia')), output: [{ competencia: '2026-11', estado: 'GERADA', motivo: null, despesaId: despesa.id, revisadaEm: null }], tag: 'Financeiro' })
   const review = add(`${prefix}/recorrencias/{id}/competencias/{competencia}/revisar`, 'post', 'Marcar competência não gerada como revisada', { admin: true, status: 204, body: object({}), input: {}, tag: 'Financeiro', description: 'Não cria pagamentos nem altera saldos. Cadastre uma despesa avulsa se a revisão identificar cobrança necessária. Competências geradas não podem ser revisadas.' })
   review.parameters = review.parameters!.map(parameter => (parameter as { name: string }).name === 'competencia' ? { name: 'competencia', in: 'path', required: true, schema: monthInput } : parameter)
 }
 
+const noticeList=add('/api/notificacoes','get','Listar notificações da república atual',{tag:'Notificações',response:array(ref('Notificacao')),output:[]})
+noticeList.parameters=[{name:'categoria',in:'query',schema:{enum:['TODAS','TAREFAS','DESPESAS','GERAIS'],default:'TAREFAS'}}]
+add('/api/notificacoes/nao-lidas','get','Contar avisos ativos não lidos',{tag:'Notificações',response:ref('NotificacoesNaoLidas'),output:{tarefas:0,despesas:0,gerais:0,total:0}})
+add('/api/notificacoes/{id}/lida','patch','Marcar aviso próprio como lido',{tag:'Notificações',status:204,body:object({}),input:{}})
+add('/api/notificacoes/lidas','patch','Marcar a categoria ou todas como lidas',{tag:'Notificações',status:204,body:object({categoria:{enum:['TODAS','TAREFAS','DESPESAS','GERAIS']}}),input:{categoria:'TODAS'}})
+const streamNotices=add('/api/notificacoes/eventos','get','Receber atualizações por SSE',{tag:'Notificações',description:'Use fetch com Authorization Bearer; nunca envie JWT na URL. Eventos conectado/atualizar pedem reconciliação por HTTP. sessao-encerrada/contexto-encerrado encerram o contexto; indisponivel permite reconexão. Heartbeat e autorização em até 15 segundos.'})
+streamNotices.responses['200']={description:'Fluxo autenticado, sem transação de longa duração.',content:{'text/event-stream':{schema:{type:'string'},example:'event: conectado\ndata: {}\n\n'}}}
 const pageMetadata=object({pagina:{type:'integer',minimum:1},limite:{type:'integer',minimum:1,maximum:100},totalItens:{type:'integer',minimum:0},totalPaginas:{type:'integer',minimum:0}})
 for(const operations of Object.values(paths)){
   const operation=operations.get
@@ -245,7 +284,7 @@ for (const [path, operations] of Object.entries(paths)) {
     operation.description += ' Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.'
     const media = operation.responses['200']?.content?.['application/json']
     const properties = media?.schema.properties as Record<string, Schema> | undefined
-    if (media && properties?.dados?.type === 'array') {
+    if (media && properties?.dados?.type === 'array' && !path.startsWith('/api/notificacoes')) {
       media.schema = properties.dados
       media.example = (media.example as { dados: unknown }).dados
       operation.parameters = operation.parameters?.filter(parameter => !['pagina', 'limite'].includes((parameter as { name: string }).name))
@@ -265,9 +304,9 @@ for (const operations of Object.values(paths)) for (const operation of Object.va
 
 export const openApiDocument = {
   openapi: '3.1.0',
-  info: { title: 'RepHouse API', version: '2.2.0', description: 'Backend TypeScript. Listagens retornam {dados,paginacao}. Dinheiro é string decimal. Datas de entrada usam YYYY-MM-DD; datas civis de saída usam ISO à meia-noite UTC. Relatórios e vencimentos seguem APP_TIME_ZONE, padrão horário de Brasília (America/Sao_Paulo). Exemplos são ilustrativos. Endpoints protegidos usam Authorization: Bearer TOKEN; CORS não substitui autorização.' },
+  info: { title: 'RepHouse API', version: '4.2.0', description: 'Backend TypeScript. Listagens retornam {dados,paginacao}. Dinheiro é string decimal. Datas de entrada usam YYYY-MM-DD; datas civis de saída usam ISO à meia-noite UTC. Relatórios e vencimentos seguem APP_TIME_ZONE, padrão horário de Brasília (America/Sao_Paulo). Exemplos são ilustrativos. Endpoints protegidos usam Authorization: Bearer TOKEN; CORS não substitui autorização.' },
   servers: [{ url: 'http://localhost:3000', description: 'Desenvolvimento local; ajuste ao ambiente da equipe.' }],
-  tags: ['Documentação', 'Autenticação', 'Conta', 'Repúblicas', 'Financeiro', 'Tarefas', 'Painel', 'MASTER', 'Frontend (compatibilidade)'].map(name => ({ name })),
+  tags: ['Documentação', 'Autenticação', 'Conta', 'Repúblicas', 'Financeiro', 'Tarefas', 'Notificações', 'Painel', 'MASTER', 'Frontend (compatibilidade)'].map(name => ({ name })),
   security: [{ bearerAuth: [] }],
   components: { securitySchemes: { bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' } }, schemas },
   paths,

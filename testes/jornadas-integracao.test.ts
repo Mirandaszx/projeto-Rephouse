@@ -11,6 +11,7 @@ import {consultarMinhaConta,listarMoradores,criarTarefa,listarTarefas,concluirTa
 import {abrirAmbienteIntegracao} from '../ferramentas/integracao/ambiente.js'
 import {validarResposta} from './auxiliares/contrato.js'
 import {openApiDocument} from '../codigo/openapi.js'
+import {testMailbox} from './auxiliares/email.js'
 
 interface Requisicao {_id:string;_type:string;parentId:string;method:string;url:string;headers:{name:string;value:string}[];body:{text?:string};description:string}
 type Sessao=components['schemas']['Sessao']
@@ -24,7 +25,9 @@ test('integração: coleção Insomnia e exemplos com API HTTP e PostgreSQL reai
   // Falhar sem configuração é intencional: esta jornada nunca é aprovada como ignorada.
   const environment=await abrirAmbienteIntegracao(process.env.TEST_DATABASE_URL,senha)
   let unavailable=false
-  const server=createApp({database:environment.db,jwtSecret:secret,corsOrigins:['http://localhost:5173'],log:()=>{},readiness:async()=>{
+  const mailbox=testMailbox()
+  let cookie=''
+  const server=createApp({database:environment.db,jwtSecret:secret,corsOrigins:['http://localhost:5173'],email:mailbox.options,log:()=>{},readiness:async()=>{
     if(unavailable)throw new Error('falha controlada da dependência')
     return environment.db.$queryRaw`SELECT 1`
   }}).listen(0,'127.0.0.1')
@@ -42,7 +45,8 @@ test('integração: coleção Insomnia e exemplos com API HTTP e PostgreSQL reai
     async function request<T=Record<string,unknown>>(id:string,status:number){
       const spec=requests.find(resource=>resource._id===`req_${id}`);assert.ok(spec,`Requisição ausente: ${id}`)
       const url=render(spec.url),path=url.slice(base.length)
-      const response=await fetch(url,{method:spec.method,headers:Object.fromEntries(spec.headers.map(header=>[header.name,render(header.value)])),body:spec.body.text?render(spec.body.text):undefined})
+      const response=await fetch(url,{method:spec.method,headers:{Cookie:cookie,...Object.fromEntries(spec.headers.map(header=>[header.name,render(header.value)]))},body:spec.body.text?render(spec.body.text):undefined})
+      cookie=response.headers.get('set-cookie')?.split(';')[0]??cookie
       assert.equal(response.status,status,`${id}: HTTP inesperado`)
       assert.match(response.headers.get('X-Request-Id')??'',/^[a-f0-9-]{36}$/)
       assert.equal(response.headers.get('Cache-Control'),'no-store')
@@ -76,7 +80,12 @@ test('integração: coleção Insomnia e exemplos com API HTTP e PostgreSQL reai
       }
     })
     await t.test('cadastro, login, perfil e contexto sem república respeitam o contrato',async()=>{
-      const registered=await request<Sessao>('cadastro',201)
+      await request('cadastro',202)
+      assert.equal(await environment.db.usuario.count({where:{email:'novo@integracao.rephouse.test'}}),0)
+      await request('email_solicitar',202)
+      const proof=mailbox.proof('novo@integracao.rephouse.test')
+      vars.emailLinkId=proof.id;vars.emailLinkToken=proof.token
+      const registered=await request<Sessao>('email_confirmar',200)
       vars.tokenNovo=registered.token;vars.usuarioNovoId=registered.usuario.id
       await authenticate('Novo')
       assert.equal((await request<components['schemas']['MinhaConta']>('meNovo',200)).membro,null)
@@ -117,8 +126,11 @@ test('integração: coleção Insomnia e exemplos com API HTTP e PostgreSQL reai
       assert.equal(example.prazo,'2030-01-15T00:00:00.000Z')
       const task=await request<Tarefa>('criarTarefa',201);vars.tarefaId=task.id
       const before=await environment.db.tarefa.count()
-      for(const [id,status] of [['concluirOutraPessoa',403],['concluirOutraRepublica',404],['responsavelExterno',400],['normalCriar',403]] as const)await request(id,status)
+      for(const [id,status] of [['concluirOutraPessoa',403],['concluirOutraRepublica',404],['responsavelExterno',400]] as const)await request(id,status)
       assert.equal(await environment.db.tarefa.count(),before)
+      const residentTask=await request<Tarefa>('normalCriar',201)
+      assert.equal(residentTask.responsavelId,vars.membroAnaId)
+      assert.equal(await environment.db.tarefa.count(),before+1)
       assert.equal((await environment.db.tarefa.findUniqueOrThrow({where:{id:task.id}})).status,'ABERTA')
       const result=await concluirTarefa(base,vars.tokenAna!,example.id)
       validarResposta('PATCH',`/api/tarefas/${example.id}`,200,result)
@@ -126,7 +138,7 @@ test('integração: coleção Insomnia e exemplos com API HTTP e PostgreSQL reai
       await request('concluir',200);await request('normalEditar',403)
       assert.equal((await environment.db.tarefa.findUniqueOrThrow({where:{id:task.id}})).titulo,'Limpar cozinha')
       const tasks=await listarTarefas(base,vars.tokenAna!)
-      validarResposta('GET','/api/tarefas',200,tasks);assert.equal(tasks.paginacao.totalItens,2)
+      validarResposta('GET','/api/tarefas',200,tasks);assert.equal(tasks.paginacao.totalItens,3)
       await request('listarTarefas',200)
       await assert.rejects(concluirTarefa(base,vars.tokenCarla!,task.id),error=>error instanceof ErroResposta&&error.status===404&&!!error.requestId)
     })

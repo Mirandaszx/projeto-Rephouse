@@ -10,6 +10,7 @@ import { abrirAmbienteIntegracao } from '../ferramentas/integracao/ambiente.js'
 import { validarResposta } from './auxiliares/contrato.js'
 import type { components } from '../integracao/api.js'
 import { AppError } from '../codigo/compartilhado/http/app-error.js'
+import { hash, argon2id } from 'argon2'
 
 type Session = components['schemas']['Sessao']
 type Challenge = components['schemas']['DesafioGoogle']
@@ -32,6 +33,7 @@ test('Google: assinatura real controlada, HTTP e PostgreSQL isolado', { timeout:
     request: <T = Record<string, unknown>>(path: string, body?: unknown, token?: string, method?: string, headers?: Record<string, string>) => Promise<{ status: number; body: T; response: Response }>
     challenge: (purpose?: string, token?: string) => Promise<Challenge>
     cookie: () => string
+    register: (input: {nome:string;email:string;senha:string}) => Promise<{status:number;body:Session}>
   }) => Promise<void>
   async function scenario(name: string, run: Runner, enabled = true, secureCookies = false) {
     await t.test(name, async () => {
@@ -66,8 +68,13 @@ test('Google: assinatura real controlada, HTTP e PostgreSQL isolado', { timeout:
         assert.match(header, /HttpOnly/); assert.match(header, /SameSite=Lax/); assert.match(header, /Path=\/api/)
         return result.body
       }
+      async function register(input: {nome:string;email:string;senha:string}) {
+        // Conta preexistente é preparação da vinculação Google; cadastro confirmado tem suíte própria.
+        await env.db.usuario.create({data:{nome:input.nome,email:input.email,senhaHash:await hash(input.senha,{type:argon2id})}})
+        return request<Session>('/auth/login',{email:input.email,senha:input.senha})
+      }
       try {
-        await run({ request, challenge, cookie: () => cookie })
+        await run({ request, register, challenge, cookie: () => cookie })
         const recorded = JSON.stringify(logs)
         for (const secret of secrets.filter(value => value.length > 16)) assert.ok(!recorded.includes(secret), 'Logs não podem expor credenciais')
       }
@@ -76,7 +83,7 @@ test('Google: assinatura real controlada, HTTP e PostgreSQL isolado', { timeout:
   }
   try {
     await scenario('sem configuração mantém senha, oculta Google e rejeita desafio', async ({ request }) => {
-      assert.deepEqual((await request('/auth/metodos', undefined, undefined, 'GET')).body, { google: { habilitado: false, clientId: null } })
+      assert.deepEqual((await request('/auth/metodos', undefined, undefined, 'GET')).body, { google: { habilitado: false, clientId: null }, email: { habilitado: false } })
       assert.equal((await request('/auth/google/desafio', {})).status, 503)
       assert.equal((await request('/auth/login', { email: 'ana@integracao.rephouse.test', senha })).status, 200)
     }, false)
@@ -95,9 +102,9 @@ test('Google: assinatura real controlada, HTTP e PostgreSQL isolado', { timeout:
       assert.equal(returned.body.usuario.id, user.id); assert.equal(returned.body.usuario.email, email)
       assert.equal(await env.db.identidadeGoogle.count({ where: { sub } }), 1)
     })
-    await scenario('email existente exige senha e preserva perfil, vínculo e tarefa após transferência', async ({ request, challenge }) => {
+    await scenario('email existente exige senha e preserva perfil, vínculo e tarefa após transferência', async ({ request, challenge, register }) => {
       const email = `${randomUUID()}@google.example.test`, sub = randomUUID()
-      const registered = await request<Session>('/auth/register', { nome: 'Administrador local', email, senha })
+      const registered = await register({ nome: 'Administrador local', email, senha })
       const republic = await request<{ codigoEntrada: string; id: string }>('/republicas', { nome: 'Casa Google' }, registered.body.token)
       const member = await request<{id:string}>('/republicas/entrar', {codigoEntrada:republic.body.codigoEntrada}, (await request<Session>('/auth/login',{email:'bruno@integracao.rephouse.test',senha})).body.token)
       const task = await request<{id:string}>('/tarefas', {titulo:'Guardar histórico',responsavelId:member.body.id}, registered.body.token)
@@ -149,9 +156,9 @@ test('Google: assinatura real controlada, HTTP e PostgreSQL isolado', { timeout:
       const results=await Promise.all([request('/auth/google',proof),request('/auth/google',proof)])
       assert.deepEqual(results.map(r=>r.status).sort(),[200,401])
     })
-    await scenario('vinculação concorrente conserva uma identidade e o mesmo usuário', async ({request,challenge})=>{
+    await scenario('vinculação concorrente conserva uma identidade e o mesmo usuário', async ({request,challenge,register})=>{
       const email=`${randomUUID()}@google.example.test`,sub=randomUUID()
-      const registered=await request<Session>('/auth/register',{nome:'Vínculo concorrente',email,senha})
+      const registered=await register({nome:'Vínculo concorrente',email,senha})
       const a=await challenge(),b=await challenge()
       const results=await Promise.all([request<Session>('/auth/google',{credential:await credential(a,email,sub),desafioId:a.desafioId,senha}),request<Session>('/auth/google',{credential:await credential(b,email,sub),desafioId:b.desafioId,senha})])
       for(const result of results){assert.equal(result.status,200);assert.equal(result.body.usuario.id,registered.body.usuario.id)}
@@ -184,8 +191,8 @@ test('Google: assinatura real controlada, HTTP e PostgreSQL isolado', { timeout:
       const last=await request<{error:{code:string}}>('/me',{credential:await credential(md,'master@integracao.rephouse.test','master-google'),desafioId:md.desafioId},master.body.token,'DELETE')
       assert.equal(last.status,409);assert.equal(last.body.error.code,'LAST_MASTER')
     })
-    await scenario('revogação impede confirmação Google de uma sessão antiga', async ({ request, challenge }) => {
-      const local=await request<Session>('/auth/register',{nome:'Revogado',email:`${randomUUID()}@google.example.test`,senha})
+    await scenario('revogação impede confirmação Google de uma sessão antiga', async ({ request, challenge, register }) => {
+      const local=await register({nome:'Revogado',email:`${randomUUID()}@google.example.test`,senha})
       const sub=randomUUID(), link=await challenge()
       await request('/auth/google',{credential:await credential(link,local.body.usuario.email,sub),desafioId:link.desafioId,senha})
       const proof=await challenge('exclusao',local.body.token)
@@ -193,10 +200,10 @@ test('Google: assinatura real controlada, HTTP e PostgreSQL isolado', { timeout:
       assert.equal((await request('/auth/google/desafio',{finalidade:'exclusao'},local.body.token)).status,401)
       assert.equal((await request('/me',{credential:await credential(proof,local.body.usuario.email,sub),desafioId:proof.desafioId},local.body.token,'DELETE')).status,401)
     })
-    await scenario('conta Google mantém dívida após saída e não pode excluir antes de quitar',async({request,challenge})=>{
+    await scenario('conta Google mantém dívida após saída e não pode excluir antes de quitar',async({request,challenge,register})=>{
       const email=`${randomUUID()}@google.example.test`,sub=randomUUID(),first=await challenge()
       const google=(await request<Session>('/auth/google',{credential:await credential(first,email,sub),desafioId:first.desafioId})).body
-      const owner=(await request<Session>('/auth/register',{nome:'Admin dívida',email:`${randomUUID()}@google.example.test`,senha})).body
+      const owner=(await register({nome:'Admin dívida',email:`${randomUUID()}@google.example.test`,senha})).body
       const republic=await request<{codigoEntrada:string}>('/republicas',{nome:'Dívida Google'},owner.token)
       const member=await request<{id:string}>('/republicas/entrar',{codigoEntrada:republic.body.codigoEntrada},google.token)
       assert.equal((await request('/despesas',{titulo:'Conta existente',categoria:'CASA',valorTotal:'10.00',vencimento:'2030-01-20',membroIds:[member.body.id]},owner.token)).status,201)

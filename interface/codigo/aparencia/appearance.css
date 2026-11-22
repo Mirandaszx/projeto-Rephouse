@@ -51,6 +51,16 @@ input:-webkit-autofill { -webkit-text-fill-color: var(--app-text); caret-color: 
 .appearance-control[data-compact=true] label { color: var(--app-text); }
 .appearance-control[data-compact=true] label span { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .appearance-control[data-compact=true] select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; }
+.appearance-switch { position: relative; display: inline-flex; align-items: center; width: 104px; height: 44px; padding: 4px; flex: none; border: 1px solid var(--app-control-border); border-radius: 999px; background: var(--app-raised); color: var(--app-muted); cursor: pointer; touch-action: pan-y; user-select: none; -webkit-tap-highlight-color: transparent; }
+.appearance-switch-thumb { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / 2); border-radius: inherit; background: var(--app-surface); transition: transform 220ms var(--ease-out, cubic-bezier(.23, 1, .32, 1)); pointer-events: none; }
+.appearance-switch-icon { position: relative; display: flex; align-items: center; justify-content: center; width: 50%; height: 100%; pointer-events: none; }
+.appearance-switch-icon[data-active=true] { color: var(--app-text); }
+.appearance-switch[data-dark=true] .appearance-switch-icon[data-active=true] svg { fill: currentColor; }
+.appearance-switch[data-dragging=true] { cursor: grabbing; }
+.appearance-switch:is([data-dragging=true], [data-keyboard=true]) .appearance-switch-thumb { transition: none; }
+.appearance-switch:focus-visible { outline: 3px solid var(--app-focus); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .appearance-switch-thumb { transition: none; } }
+@media (forced-colors: active) { .appearance-switch { border-color: ButtonText; } .appearance-switch-thumb { background: Highlight; } .appearance-switch-icon[data-active=true] { color: HighlightText; } }
 .auth-panel { position: relative; }
 .auth-appearance { position: absolute; top: 18px; right: 24px; z-index: 2; }
 .rep-mobile-actions, .rep-onboarding-actions, .rh-admin-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }

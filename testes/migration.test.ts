@@ -15,6 +15,9 @@ import { createApp } from '../codigo/app.js'
 import { validarResposta } from './auxiliares/contrato.js'
 import { demonstracao, semearDemonstracao } from '../codigo/infraestrutura/banco/demonstracao.js'
 import {pagar,baixarComprovante,ErroResposta} from '../integracao/exemplos.js'
+import { testMailbox } from './auxiliares/email.js'
+import { hash, argon2id } from 'argon2'
+import { createAuthService } from '../codigo/modulos/autenticacao/auth.service.js'
 
 const url = process.env.TEST_DATABASE_URL
 const dedicated = url && new URL(url).pathname === '/rabbu_mvp_test'
@@ -36,21 +39,24 @@ test('migração: jornada HTTP, privacidade, exclusão e concorrência', { skip:
   const db = createDatabase(isolated.toString())
   const directory = await mkdtemp(join(tmpdir(), 'rephouse-receipts-'))
   let server: ReturnType<ReturnType<typeof createApp>['listen']> | undefined
+  const mailbox = testMailbox()
+  let cookie = ''
   try {
     for (const migration of (await readdir('prisma/migracoes')).filter(n => /^\d/.test(n)).sort()) {
       await setup.query(await readFile(`prisma/migracoes/${migration}/migration.sql`, 'utf8'))
     }
-    server = createApp({ database: db, jwtSecret: 'segredo-de-testes-isolados-com-mais-de-32-caracteres' }).listen(0, '127.0.0.1')
+    server = createApp({ database: db, jwtSecret: 'segredo-de-testes-isolados-com-mais-de-32-caracteres', email: mailbox.options, corsOrigins: ['http://localhost:5173'] }).listen(0, '127.0.0.1')
     await once(server, 'listening')
     const address = server.address()
     assert.ok(address && typeof address !== 'string')
     const base = `http://127.0.0.1:${address.port}`
     async function request<T = Record<string, unknown>>(method: string, path: string, token?: string, data?: unknown, key?: string) {
-      const headers: Record<string,string> = { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+      const headers: Record<string,string> = { Origin: 'http://localhost:5173', Cookie: cookie, ...(token ? { Authorization: `Bearer ${token}` } : {}) }
       if (key) headers['Idempotency-Key'] = key
       const form = data instanceof FormData
       if (data && !form) headers['Content-Type'] = 'application/json'
       const res = await fetch(`${base}${path}`, { method, headers, body: data ? form ? data : JSON.stringify(data) : undefined })
+      cookie = res.headers.get('set-cookie')?.split(';')[0] ?? cookie
       assert.match(res.headers.get('x-request-id') ?? '',/^[a-f0-9-]{36}$/)
       const content = await res.text()
       const body = content ? JSON.parse(content) : {}
@@ -60,9 +66,18 @@ test('migração: jornada HTTP, privacidade, exclusão e concorrência', { skip:
     }
     const senha = 'Senha-forte-de-testes123!'
     async function register(nome: string) {
-      const res = await request<Session>('POST','/api/auth/register', undefined, { nome, email: `${randomUUID()}@example.test`, senha })
-      assert.equal(res.status, 201, JSON.stringify(res.body))
-      return res.body
+      const email = `${randomUUID()}@example.test`
+      const res = await request('POST','/api/auth/register', undefined, { nome, email, senha })
+      assert.equal(res.status, 202, JSON.stringify(res.body))
+      const confirmed = await request<Session>('POST','/api/auth/email/confirmar', undefined, mailbox.proof(email))
+      assert.equal(confirmed.status, 200)
+      return confirmed.body
+    }
+    async function prepareAccount(nome: string) {
+      // Preparação das corridas de negócio não consome o limitador dos testes de autenticação.
+      const email=`${randomUUID()}@example.test`
+      await db.usuario.create({data:{nome,email,senhaHash:await hash(senha,{type:argon2id})}})
+      return createAuthService(db,'segredo-de-testes-isolados-com-mais-de-32-caracteres').login({email,senha})
     }
     const admin = await register('Admin A')
     const morador = await register('Morador')
@@ -95,7 +110,8 @@ test('migração: jornada HTTP, privacidade, exclusão e concorrência', { skip:
       adminMember = members.body.find(m => m.usuarioId === admin.usuario.id)!
       assert.equal((await request('POST','/api/republicas/entrar',morador.token,{codigoEntrada:republicB.body.codigoEntrada})).status,409)
       assert.equal((await request('GET','/api/master/usuarios',morador.token)).status,403)
-      assert.equal((await request('POST','/api/tarefas',morador.token,{titulo:'Proibida',responsavelId:membro.id})).status,403)
+      // Moradores agora criam tarefas; atribuir a outra pessoa continua administrativo.
+      assert.equal((await request('POST','/api/tarefas',morador.token,{titulo:'Atribuição proibida',responsavelId:adminMember.id})).status,403)
     })
     await t.test('despesa e rateio fecham exatamente, sem aceitar identidade do cliente', async () => {
       const external = await db.membroRepublica.findFirstOrThrow({where:{republicaId:republicB.body.id}})
@@ -283,7 +299,7 @@ test('migração: jornada HTTP, privacidade, exclusão e concorrência', { skip:
       assert.ok((await request<{id:string}[]>('GET','/api/tarefas',morador.token)).body.some(item=>item.id===task.body.id))
       assert.ok(!(await request<{id:string}[]>('GET','/api/tarefas',admin.token)).body.some(item=>item.id===task.body.id))
       assert.equal((await request('PATCH',`/api/tarefas/${task.body.id}`,admin.token,{titulo:'Invasão'})).status,404)
-      const vizinho = await register('Vizinho')
+      const vizinho = await prepareAccount('Vizinho')
       assert.equal((await request('POST','/api/republicas/entrar',vizinho.token,{codigoEntrada:republicB.body.codigoEntrada})).status,201)
       assert.equal((await request('PATCH',`/api/tarefas/${task.body.id}`,vizinho.token,{status:'CONCLUIDA'})).status,403)
       assert.equal((await request('PATCH',`/api/tarefas/${task.body.id}`,morador.token,{status:'CONCLUIDA'})).status,200)
@@ -326,7 +342,7 @@ test('migração: jornada HTTP, privacidade, exclusão e concorrência', { skip:
       assert.equal((await request('PATCH',`/api/master/usuarios/${morador.usuario.id}/status`,master.token,{ativo:true})).status,409)
     })
     await t.test('conta sem república pode ser excluída; último MASTER permanece ativo', async () => {
-      const independent = await register('Sem república')
+      const independent = await prepareAccount('Sem república')
       assert.equal((await request('DELETE','/api/me',independent.token,{senha})).status,204)
       const last = await request<{error:{code:string}}>('DELETE','/api/me',master.token,{senha})
       assert.equal(last.status,409)
@@ -434,7 +450,7 @@ test('migração: jornada HTTP, privacidade, exclusão e concorrência', { skip:
       assert.equal(item.rateios[0]!.valorPago.toFixed(2),paid.status===201?'40.00':'0.00')
     })
     await t.test('excluir conta concorrente com nova dívida não deixa usuário excluído devedor',async()=>{
-      const user=await register('Concorrência de conta')
+      const user=await prepareAccount('Concorrência de conta')
       const joined=await request<Member>('POST','/api/republicas/entrar',user.token,{codigoEntrada:republicA.body.codigoEntrada})
       const [deleted,created]=await Promise.all([request('DELETE','/api/me',user.token,{senha}),request('POST','/api/despesas',admin.token,{titulo:'Nova dívida',categoria:'OUTROS',valorTotal:'10.00',vencimento:'2035-01-01',membroIds:[joined.body.id]})])
       assert.ok((deleted.status===204&&[400,409].includes(created.status))||(deleted.status===409&&created.status===201),JSON.stringify([deleted,created]))
@@ -442,7 +458,7 @@ test('migração: jornada HTTP, privacidade, exclusão e concorrência', { skip:
       if(stored.excluidoEm)assert.equal(await db.rateioDespesa.count({where:{membro:{usuarioId:stored.id}}}),0)
     })
     await t.test('bloqueios concorrentes preservam pelo menos um MASTER ativo',async()=>{
-      const second=await register('Segundo Master concorrente')
+      const second=await prepareAccount('Segundo Master concorrente')
       await db.usuario.update({where:{id:second.usuario.id},data:{tipoUsuario:'USUARIO_MASTER'}})
       await db.usuario.update({where:{id:demonstracao.contas[0]!.id},data:{ativo:false}})
       assert.equal(await db.usuario.count({where:{tipoUsuario:'USUARIO_MASTER',ativo:true}}),2)

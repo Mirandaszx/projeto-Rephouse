@@ -13,8 +13,7 @@
 .rep-management-dialog fieldset:disabled { opacity: .7; }
 .rep-management-dialog p { line-height: 1.6; margin: 0; }
 .rep-management-dialog :is(p, small) { overflow-wrap: anywhere; }
-.rep-action-error { padding: 12px; background: #fff1ec; color: #8b3129 !important; border: 1px solid #c57e6b; border-radius: 10px; overflow-wrap: anywhere; }
-:root[data-theme=dark] .rep-action-error { color: #ffd4c3 !important; background: #452a25; border-color: #b8735d; }
+.rep-action-error { padding: 12px; background: var(--workspace-error-bg,#fff1ec); color: var(--workspace-error-text,#8b3129) !important; border: 1px solid var(--workspace-error-border,#c57e6b); border-radius: 10px; overflow-wrap: anywhere; }
 .rep-danger-zone { border-color: #bd8278; }
 .rep-management-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .rep-management-note { font-size: .85rem; line-height: 1.6; color: var(--app-muted); }

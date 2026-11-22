@@ -1,5 +1,7 @@
 # Tarefas
 
-Rotas, controller, service e repository implementam listagem, criação e edição de tarefas com responsável obrigatório e prazo opcional.
+Rotas, controller, service e repository implementam listagem, detalhe, criação, edição, associação e liberação. Tarefa aberta pode ficar sem responsável; prazo é opcional.
 
-O service valida administrador e vínculo na república para criar/atribuir tarefas; o morador conclui somente as tarefas atribuídas a ele. O repository recebe `tx` quando participar de uma operação transacional. As consultas sempre restringem a república autorizada.
+Morador ativo cria tarefa disponível ou para si e assume uma disponível. Criador edita o conteúdo enquanto disponível; responsável ativo conclui, reabre ou libera; administrador gerencia e atribui a outro membro. Concorrência é resolvida em transação Serializable. O repository recebe `tx`; consultas restringem a república autorizada.
+
+Autoria não é inventada para tarefas antigas. Versão interna identifica transições e eventos persistentes; criação e notificações confirmam ou revertem juntas. Idempotência preserva snapshots e autorização da operação. Despesas continuam administrativas. Consulte [o guia da versão 4.0.0](../../../documentacao/NOTIFICACOES_E_TAREFAS.md).

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react'
 
 export function allowsSurfaceMotion(element: HTMLElement | null) {
   return element?.closest<HTMLElement>('.rep-internal')?.dataset.workspaceInput === 'pointer'
@@ -11,6 +11,16 @@ export function useDialogMotion() {
   const opener = useRef<HTMLElement | null>(null)
   const pending = useRef<{ promise: Promise<void>; cancel: () => void } | null>(null)
 
+  // Um formulário remontado após showModal pode remover o campo que recebeu foco.
+  // Recupera somente nessa situação; não interfere na digitação nem na saída.
+  useLayoutEffect(() => {
+    const element = dialog.current
+    if (!element?.open || pending.current || element.contains(document.activeElement)) return
+    const controls = element.querySelectorAll<HTMLElement>('input:not([type="hidden"]), select, textarea, button, a[href], [tabindex]')
+    const target = Array.from(controls).find(node => !node.matches(':disabled, [tabindex="-1"]') && !node.closest('[inert]') && node.getClientRects().length > 0)
+    target?.focus({ preventScroll: true })
+  })
+
   useEffect(() => () => { pending.current?.cancel() }, [])
 
   const open = useCallback(() => {
@@ -19,6 +29,9 @@ export function useDialogMotion() {
     opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
     element.dataset.motionInstant = String(!allowsSurfaceMotion(element))
     element.showModal()
+    // Na tentativa incerta, os campos continuam bloqueados. Reabrir começa pela
+    // ação segura, mesmo que os detalhes de suporte tenham ficado expandidos.
+    if (element.querySelector('fieldset[inert]')) element.querySelector<HTMLButtonElement>('footer button:not(:disabled)')?.focus({ preventScroll: true })
   }, [])
 
   const close = useCallback((onClosed?: () => void) => {

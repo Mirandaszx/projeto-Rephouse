@@ -14,6 +14,9 @@ async function submit(page: Page) {
   await page.mouse.move(0, 0)
 }
 
+// Instancia HTTP isolada por arquivo; os controles reais permanecem habilitados.
+test.use({ extraHTTPHeaders: { 'x-interface-test-run': process.env.REPHOUSE_INTERFACE_TEST_RUN ?? '', 'x-interface-suite': 'auth-feedback.spec.ts' } })
+
 test('erro de acesso tem orientação clara e código recolhido que pode ser copiado', async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: {

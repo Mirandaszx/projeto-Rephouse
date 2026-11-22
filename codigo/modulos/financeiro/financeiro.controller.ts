@@ -37,7 +37,7 @@ export function createFinanceiroController(service: FinanceiroService, master = 
     res.send(Buffer.from(file.conteudo))
   }
   return {
-    create: endpoint((req, actor) => service.create(actor, expenseSchema.parse(req.body), scope(req)), 201),
+    create: endpoint((req, actor) => service.create(actor, expenseSchema.parse(req.body), scope(req), uuid.optional().parse(req.get('Idempotency-Key'))), 201),
     list: collectionEndpoint((req, actor, page) => service.list(actor, page, scope(req), financialFilters.parse(req.query)), false, financialQueryShape),
     detail: endpoint((req, actor) => service.detail(actor, idParam(req), scope(req))),
     edit: endpoint((req, actor) => service.edit(actor, idParam(req), expenseSchema.partial().parse(req.body), scope(req))),

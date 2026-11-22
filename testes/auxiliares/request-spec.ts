@@ -7,6 +7,7 @@ import { validarDestinoTestes } from '../../ferramentas/integracao/destino-teste
 import { validarResposta } from './contrato.js'
 import type { components } from '../../integracao/api.js'
 import type { GoogleOptions } from '../../codigo/modulos/autenticacao/google.service.js'
+import { testMailbox } from './email.js'
 
 export type Schemas = components['schemas']
 export type Session = Schemas['Sessao']
@@ -20,19 +21,23 @@ export async function abrirRequestSpec(google?: GoogleOptions) {
   validarDestinoTestes(process.env.TEST_DATABASE_URL)
   const env = await abrirAmbienteIntegracao(process.env.TEST_DATABASE_URL, password)
   const logs: Record<string, unknown>[] = []
-  const server = createApp({ database: env.db, jwtSecret: secret, corsOrigins: ['http://localhost:5173'], google, log: event => { logs.push(event) } }).listen(0, '127.0.0.1')
+  const mailbox = testMailbox()
+  const server = createApp({ database: env.db, jwtSecret: secret, corsOrigins: ['http://localhost:5173'], google, email: mailbox.options, log: event => { logs.push(event) } }).listen(0, '127.0.0.1')
   await once(server, 'listening')
   const address = server.address()
   assert.ok(address && typeof address !== 'string')
   const base = `http://127.0.0.1:${address.port}`
+  let emailCookie = ''
   async function request<T = { error: { code: string; message: string } }>(method: string, path: string, token?: string, data?: unknown, key?: string, extraHeaders: Record<string, string> = {}) {
     const form = data instanceof FormData
     const response = await fetch(base + path, {
       method, signal: AbortSignal.timeout(15000),
-      headers: { Origin: 'http://localhost:5173', ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      headers: { Origin: 'http://localhost:5173', Cookie: emailCookie, ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(data !== undefined && !form ? { 'Content-Type': 'application/json' } : {}), ...(key ? { 'Idempotency-Key': key } : {}), ...extraHeaders },
       body: data === undefined ? undefined : form ? data : JSON.stringify(data),
     })
+    const setCookie = response.headers.getSetCookie().find(value => value.startsWith('rephouse_email='))
+    if (setCookie) emailCookie = setCookie.split(';')[0]!
     const text = await response.text()
     const body: T = text ? JSON.parse(text) : undefined
     assert.match(response.headers.get('x-request-id') ?? '', /^[a-f0-9-]{36}$/)
@@ -49,9 +54,12 @@ export async function abrirRequestSpec(google?: GoogleOptions) {
     return result.body
   }
   async function register() {
-    const result = await request<Session>('POST', '/api/auth/register', undefined, { nome: 'Pessoa fictícia', email: `${randomUUID()}@request.rephouse.test`, senha: password })
-    assert.equal(result.status, 201)
-    return result.body
+    const email = `${randomUUID()}@request.rephouse.test`
+    const result = await request('POST', '/api/auth/register', undefined, { nome: 'Pessoa fictícia', email, senha: password })
+    assert.equal(result.status, 202)
+    const confirmed = await request<Session>('POST', '/api/auth/email/confirmar', undefined, mailbox.proof(email))
+    assert.equal(confirmed.status, 200)
+    return confirmed.body
   }
   async function house(admin: Session) {
     const result = await request<Schemas['Republica']>('POST', '/api/republicas', admin.token, { nome: 'Casa request spec' })
@@ -77,10 +85,10 @@ export async function abrirRequestSpec(google?: GoogleOptions) {
   }
   async function close() {
     server.closeAllConnections()
-    try { await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve())) }
+    try { if (server.listening) await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve())) }
     finally { await env.close() }
   }
-  return { ...env, server, base, logs, request, account, register, house, join, members, expense, close }
+  return { ...env, server, base, logs, mailbox, emailCookie: () => emailCookie, request, account, register, house, join, members, expense, close }
 }
 
 export async function contextoCasa() {

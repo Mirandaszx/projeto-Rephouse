@@ -1,9 +1,13 @@
 import { test, expect } from '@playwright/test'
 import { randomUUID } from 'node:crypto'
 import { mkdir } from 'node:fs/promises'
+import { confirmInBrowser } from './auxiliares/email-harness'
 
 const password = 'Senha-interface-teste-2026'
 const captures = '../.devops-local/interface/imagens/cadastro-republica'
+
+// Instancia HTTP isolada por arquivo; os controles reais permanecem habilitados.
+test.use({ extraHTTPHeaders: { 'x-interface-test-run': process.env.REPHOUSE_INTERFACE_TEST_RUN ?? '', 'x-interface-suite': 'acesso.spec.ts' } })
 
 test('cadastro pelo novo formulário cria a conta e mantém a sessão real', async ({ page, request }) => {
   const email = `casinha-${randomUUID()}@integracao.rephouse.test`
@@ -15,7 +19,8 @@ test('cadastro pelo novo formulário cria a conta e mantém a sessão real', asy
   await page.getByLabel('Senha', { exact: true }).fill(password)
   const response = page.waitForResponse(res => res.url().endsWith('/api/auth/register') && res.request().method() === 'POST')
   await page.getByRole('button', { name: 'Criar minha conta', exact: true }).click()
-  expect((await response).status()).toBe(201)
+  expect((await response).status()).toBe(202)
+  await confirmInBrowser(page, email)
   await expect(page).toHaveURL(/\/republica\?acao=criar$/)
   await expect(page.getByLabel('Nome da república', { exact: true })).toBeVisible()
   const token = await page.evaluate(() => sessionStorage.getItem('rephouse-token'))

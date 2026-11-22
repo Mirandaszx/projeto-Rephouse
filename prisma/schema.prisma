@@ -49,8 +49,60 @@ model Usuario {
   desafiosGoogle          DesafioGoogle[]
   recorrenciasCriadas     RecorrenciaDespesa[]
   competenciasRevisadas   CompetenciaRecorrencia[]
+  operacoesCriacao        OperacaoCriacao[]
+  emailVerificado        EmailVerificado?
+  linksEmail             LinkEmail[]
+  tarefasCriadas         Tarefa[] @relation("CriadorTarefa")
+  eventosNotificacao     EventoNotificacao[]
+  foto                   FotoPerfil?
 
   @@map("usuarios")
+}
+
+model FotoPerfil {
+  usuarioId String @id @map("usuario_id") @db.Uuid
+  conteudo Bytes
+  mimeType String @map("mime_type") @db.VarChar(32)
+  tamanho Int
+  hashSha256 String @map("hash_sha256") @db.Char(64)
+  atualizadaEm DateTime @default(now()) @map("atualizada_em") @db.Timestamptz(3)
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  @@map("fotos_perfil")
+}
+
+model EmailVerificado {
+  usuarioId String @id @map("usuario_id") @db.Uuid
+  verificadoEm DateTime @default(now()) @map("verificado_em") @db.Timestamptz(3)
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  @@map("emails_verificados")
+}
+
+model LinkEmail {
+  id String @id @db.Uuid
+  finalidade String @db.VarChar(10)
+  email String @db.VarChar(254)
+  tokenHash String @unique @map("token_hash") @db.Char(64)
+  cookieHash String @map("cookie_hash") @db.Char(64)
+  usuarioId String? @map("usuario_id") @db.Uuid
+  versaoToken Int? @map("versao_token")
+  nome String? @db.VarChar(120)
+  senhaHash String? @map("senha_hash") @db.VarChar(255)
+  acaoRepublica String? @map("acao_republica") @db.VarChar(6)
+  criadoEm DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
+  expiraEm DateTime @map("expira_em") @db.Timestamptz(3)
+  consumidoEm DateTime? @map("consumido_em") @db.Timestamptz(3)
+  usuario Usuario? @relation(fields: [usuarioId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  @@index([email, finalidade, criadoEm(sort: Desc)], map: "links_email_consulta_idx")
+  @@index([expiraEm], map: "links_email_expiracao_idx")
+  @@map("links_email")
+}
+
+model LimiteEnvioEmail {
+  emailHash String @id @map("email_hash") @db.Char(64)
+  janelaInicio DateTime @map("janela_inicio") @db.Timestamptz(3)
+  ultimoEnvio DateTime @map("ultimo_envio") @db.Timestamptz(3)
+  quantidade Int
+  @@map("limites_envio_email")
 }
 
 model IdentidadeGoogle {
@@ -89,6 +141,8 @@ model Republica {
   despesas      Despesa[]
   tarefas       Tarefa[]
   recorrencias  RecorrenciaDespesa[]
+  operacoesCriacao OperacaoCriacao[]
+  eventosNotificacao EventoNotificacao[]
 
   @@index([adminId])
   @@map("republicas")
@@ -107,6 +161,8 @@ model MembroRepublica {
   pagamentos Pagamento[]
   selecoesRecorrentes RecorrenciaParticipante[]
   tarefas    Tarefa[]
+  notificacoes Notificacao[]
+  eventosVinculo EventoNotificacao[]
 
   @@unique([usuarioId, republicaId])
   @@index([republicaId, ativo])
@@ -129,6 +185,7 @@ model Despesa {
   rateios   RateioDespesa[]
   competenciaRecorrente CompetenciaRecorrencia?
   recorrenciaOriginada RecorrenciaDespesa?
+  operacaoCriacao OperacaoCriacao?
 
   @@index([republicaId, status, vencimento])
   @@index([criadaPorId])
@@ -147,6 +204,7 @@ model RateioDespesa {
   despesa   Despesa         @relation(fields: [despesaId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   membro    MembroRepublica @relation(fields: [membroId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   pagamentos Pagamento[]
+  eventosNotificacao EventoNotificacao[]
 
   @@unique([despesaId, membroId])
   @@index([membroId, status])
@@ -187,7 +245,9 @@ model Comprovante {
 model Tarefa {
   id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   republicaId   String       @map("republica_id") @db.Uuid
-  responsavelId String       @map("responsavel_id") @db.Uuid
+  responsavelId String?      @map("responsavel_id") @db.Uuid
+  criadorId     String?      @map("criador_id") @db.Uuid
+  versao        Int          @default(0)
   titulo        String       @db.VarChar(160)
   descricao     String?
   prazo         DateTime?    @db.Date
@@ -195,11 +255,72 @@ model Tarefa {
   criadaEm      DateTime     @default(now()) @map("criada_em") @db.Timestamptz(3)
 
   republica   Republica       @relation(fields: [republicaId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  responsavel MembroRepublica @relation(fields: [responsavelId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  responsavel MembroRepublica? @relation(fields: [responsavelId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  criador Usuario? @relation("CriadorTarefa", fields: [criadorId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  eventosNotificacao EventoNotificacao[]
+  operacaoCriacao OperacaoCriacao?
 
   @@index([republicaId, status, prazo])
   @@index([responsavelId, status])
   @@map("tarefas")
+}
+
+model EventoNotificacao {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  republicaId String @map("republica_id") @db.Uuid
+  categoria String @db.VarChar(10)
+  tipo String @db.VarChar(32)
+  titulo String @db.VarChar(160)
+  atorId String? @map("ator_id") @db.Uuid
+  tarefaId String? @map("tarefa_id") @db.Uuid
+  tarefaVersao Int? @map("tarefa_versao")
+  membroEventoId String? @map("membro_evento_id") @db.Uuid
+  rateioId String? @map("rateio_id") @db.Uuid
+  vencimento DateTime? @db.Date
+  criadoEm DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
+  republica Republica @relation(fields: [republicaId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  ator Usuario? @relation(fields: [atorId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  tarefa Tarefa? @relation(fields: [tarefaId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  rateio RateioDespesa? @relation(fields: [rateioId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  membroEvento MembroRepublica? @relation(fields: [membroEventoId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  destinatarios Notificacao[]
+  @@unique([tarefaId, tarefaVersao, tipo], map: "eventos_tarefa_versao_tipo_key")
+  @@unique([rateioId, vencimento, tipo], map: "eventos_rateio_vencimento_tipo_key")
+  @@index([membroEventoId])
+  @@index([republicaId, criadoEm])
+  @@map("eventos_notificacao")
+}
+
+model Notificacao {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  eventoId String @map("evento_id") @db.Uuid
+  membroId String @map("membro_id") @db.Uuid
+  lidaEm DateTime? @map("lida_em") @db.Timestamptz(3)
+  criadoEm DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
+  evento EventoNotificacao @relation(fields: [eventoId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  membro MembroRepublica @relation(fields: [membroId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  @@unique([eventoId, membroId])
+  @@index([membroId, lidaEm, criadoEm])
+  @@map("notificacoes")
+}
+
+model OperacaoCriacao {
+  usuarioId String @map("usuario_id") @db.Uuid
+  operacao String @db.VarChar(16)
+  chave String @db.Uuid
+  republicaId String @map("republica_id") @db.Uuid
+  hashRequisicao String @map("hash_requisicao") @db.Char(64)
+  despesaId String? @unique @map("despesa_id") @db.Uuid
+  tarefaId String? @unique @map("tarefa_id") @db.Uuid
+  resposta Json
+  criadaEm DateTime @default(now()) @map("criada_em") @db.Timestamptz(3)
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  republica Republica @relation(fields: [republicaId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  despesa Despesa? @relation(fields: [despesaId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  tarefa Tarefa? @relation(fields: [tarefaId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  @@id([usuarioId, operacao, chave], map: "operacoes_criacao_pkey")
+  @@index([republicaId], map: "operacoes_criacao_republica_idx")
+  @@map("operacoes_criacao")
 }
 
 model RecorrenciaDespesa {
@@ -208,6 +329,7 @@ model RecorrenciaDespesa {
   criadaPorId String @map("criada_por_id") @db.Uuid
   despesaOrigemId String? @unique @map("despesa_origem_id") @db.Uuid
   inicio DateTime @db.Date
+  fim DateTime? @db.Date
   proximaCompetencia DateTime @map("proxima_competencia") @db.Date
   ativa Boolean @default(true)
   pausaMotivo String? @map("pausa_motivo") @db.VarChar(60)

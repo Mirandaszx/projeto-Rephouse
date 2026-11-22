@@ -10,6 +10,9 @@ export default defineConfig(({ mode }) => ({
     host: "0.0.0.0",
     port: 5173,
     strictPort: true,
+    // Windows + Docker pode perder eventos do bind mount. O Compose habilita
+    // polling; a execução nativa conserva o observador padrão.
+    watch: process.env.REPHOUSE_VITE_POLLING === 'true' ? { usePolling: true, interval: 1000 } : undefined,
     proxy: {
       "/api": {
         target:

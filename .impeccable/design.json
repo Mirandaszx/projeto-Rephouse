@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-20T23:36:42.559Z",
+  "title": "Design System: RepHouse",
+  "extensions": {
+    "colorMeta": {
+      "green": {
+        "role": "primary",
+        "displayName": "Verde profundo"
+      },
+      "lime": {
+        "role": "primary",
+        "displayName": "Verde-claro de destaque"
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Fundo claro quente"
+      }
+    },
+    "motion": [
+      {
+        "name": "dialog-enter",
+        "value": "180ms cubic-bezier(.23,1,.32,1)",
+        "purpose": "Entrada do diálogo por apontador, sem movimento reduzido."
+      },
+      {
+        "name": "dialog-exit",
+        "value": "140ms cubic-bezier(.23,1,.32,1)",
+        "purpose": "Saída do diálogo, mantendo bloqueio e retorno do foco."
+      },
+      {
+        "name": "expense-filter",
+        "value": "350ms cubic-bezier(.77,0,.175,1)",
+        "purpose": "Deslize de seleção aprovado pelo usuário; teclado imediato."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "mobile-navigation",
+        "value": "720px"
+      },
+      {
+        "name": "auth-story",
+        "value": "900px"
+      },
+      {
+        "name": "desktop-sidebar",
+        "value": "1024px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Ação principal",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ação principal interna; o aplicativo usa GlisseButton.",
+      "html": "<button class=\"ds-primary\">Salvar</button>",
+      "css": ".ds-primary{min-height:44px;padding:10px 16px;border:1px solid transparent;border-radius:999px;font:550 14px/1.4 Inter,system-ui,sans-serif;background:var(--app-accent,#205448);color:var(--ds-on-accent,#fff);cursor:pointer}.ds-primary:hover{filter:brightness(.96)}.ds-primary:focus-visible{outline:3px solid var(--app-focus,#32715e);outline-offset:3px}.ds-primary:active{filter:brightness(.92)}.ds-primary:disabled{opacity:.65;cursor:not-allowed}"
+    },
+    {
+      "name": "Ação secundária",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Ação auxiliar sem competir com o envio principal.",
+      "html": "<button class=\"ds-secondary\">Cancelar</button>",
+      "css": ".ds-secondary{min-height:44px;padding:10px 16px;border:1px solid transparent;border-radius:999px;font:550 14px/1.4 Inter,system-ui,sans-serif;background:var(--app-raised,#eeeae1);color:var(--app-text,#193732);cursor:pointer}.ds-secondary:hover{filter:brightness(.96)}.ds-secondary:focus-visible{outline:3px solid var(--app-focus,#32715e);outline-offset:3px}.ds-secondary:active{filter:brightness(.92)}"
+    },
+    {
+      "name": "Campo com rótulo externo",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Nome do campo sempre visível, inclusive após preenchimento.",
+      "html": "<label class=\"ds-field\">Descrição<input type=\"text\" placeholder=\"Conta da casa\"></label>",
+      "css": ".ds-field{display:grid;gap:7px;color:var(--app-text,#193732);font:500 14px/1.5 Inter,system-ui,sans-serif}.ds-field input{min-height:48px;min-width:0;padding:12px;border:1px solid var(--app-control-border,#7b8c80);border-radius:10px;background:var(--app-input-bg,#fff);color:inherit;font:400 16px/1.4 Inter,system-ui,sans-serif}.ds-field input:focus-visible{outline:3px solid var(--app-focus,#32715e);outline-offset:3px}.ds-field input:disabled{opacity:.65}"
+    },
+    {
+      "name": "Situação textual",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Estado com texto, sem depender somente de cor.",
+      "html": "<span class=\"ds-badge\">Pagamento parcial</span>",
+      "css": ".ds-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;background:var(--rep-mint,#e8eee3);color:var(--app-accent,#205448);font:500 14px/1.5 Inter,system-ui,sans-serif}"
+    },
+    {
+      "name": "Painel interno",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "Superfície para um grupo funcional, com borda e sem sombra decorativa.",
+      "html": "<section class=\"ds-panel\"><h2>Pessoas da casa</h2><p>Moradores e responsabilidades.</p></section>",
+      "css": ".ds-panel{min-width:0;padding:24px;border:1px solid var(--app-border,#dedfd5);border-radius:14px;background:var(--app-surface,#fff);color:var(--app-text,#193732);font:400 16px/1.5 Inter,system-ui,sans-serif}.ds-panel h2{margin:0 0 8px;font-size:20px;font-weight:600}.ds-panel p{margin:0;color:var(--app-muted,#596960)}"
+    },
+    {
+      "name": "Navegação da casa",
+      "kind": "nav",
+      "refersTo": "navigation",
+      "description": "Destinos da casa com identificação da página atual.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Navegação da casa\"><a href=\"/republica\" aria-current=\"page\">Visão geral</a><a href=\"/republica/despesas\">Despesas</a><a href=\"/republica/tarefas\">Tarefas</a></nav>",
+      "css": ".ds-nav{display:grid;gap:8px;padding:16px;background:var(--workspace-rail,#205448);font:550 14px/1.5 Inter,system-ui,sans-serif}.ds-nav a{display:flex;align-items:center;min-height:46px;padding:10px 12px;border-radius:10px;color:var(--workspace-rail-text,#f5f6e9);text-decoration:none}.ds-nav a[aria-current=page]{background:var(--workspace-lime,#d2ec9c);color:#193732}.ds-nav a:focus-visible{outline:3px solid var(--workspace-lime,#d2ec9c);outline-offset:3px}@media(hover:hover) and (pointer:fine){.ds-nav a:not([aria-current=page]):hover{background:#32695a}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Dividir a casa. Compartilhar uma boa rotina.",
+    "overview": "Interface acolhedora e editorial, conforme direção já aprovada. Telas operacionais priorizam leitura e conclusão de tarefas; o acesso conserva sua casa ilustrada.",
+    "keyCharacteristics": [
+      "Verde profundo",
+      "Fundos claros quentes",
+      "Temas claro e escuro",
+      "Informação financeira estável"
+    ],
+    "rules": [],
+    "dos": [
+      "Preservar a identidade aprovada",
+      "Diferenciar a conta e a parcela individual",
+      "Conferir teclado e responsividade"
+    ],
+    "donts": [
+      "Não animar valores financeiros",
+      "Não repetir a casa nas telas internas",
+      "Não misturar código de suporte com a orientação principal"
+    ]
+  }
+}

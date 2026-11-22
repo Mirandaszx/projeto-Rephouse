@@ -5,6 +5,8 @@ import { AppError } from '../../compartilhado/http/app-error.js'
 import { RepublicasRepository } from './republicas.repository.js'
 import type { CriarRepublicaInput } from './republicas.types.js'
 import {pageResult,type PageInput} from '../../compartilhado/http/pagination.js'
+import { notifyMembership } from '../notificacoes/notificacoes.service.js'
+import { fotoPublica } from '../perfil/foto.service.js'
 
 export function createRepublicasService(db: PrismaClient) {
   const repository = new RepublicasRepository()
@@ -16,12 +18,15 @@ export function createRepublicasService(db: PrismaClient) {
     }
     // Não se apaga nem se desconecta usuario_id: ele autoriza o pagamento das dívidas antigas.
     await repository.desativar(tx, member.id)
+    await notifyMembership(tx, member, user.id, 'MEMBRO_SAIU')
   }
   async function entrar(tx: Prisma.TransactionClient, user: Usuario, codigo: string) {
     if (await repository.ativo(tx, user.id)) throw new AppError(409, 'ALREADY_MEMBER', 'Saia da república atual antes de entrar em outra.')
     const republic = await repository.porCodigo(tx, codigo)
     if (!republic || !republic.ativa) throw new AppError(404, 'NOT_FOUND', 'Código de entrada inválido ou indisponível.')
-    return repository.vincular(tx, user.id, republic.id)
+    const member = await repository.vincular(tx, user.id, republic.id)
+    await notifyMembership(tx, member, user.id, 'MEMBRO_ENTROU')
+    return member
   }
   return {
     create: (actor: Actor, input: CriarRepublicaInput) => withActor(db, actor, async (tx, user) => {
@@ -49,7 +54,11 @@ export function createRepublicasService(db: PrismaClient) {
     members: (actor: Actor, inativos: boolean,page:PageInput, scope?: string) => withActor(db, actor, async (tx, user) => {
       const republic = await republicContext(tx, user, scope)
       if (inativos) requireAdmin(user, republic)
-      return pageResult(await repository.listar(tx,republic.id,inativos,page),await repository.contar(tx,republic.id,inativos),page)
+      const rows = await repository.listar(tx,republic.id,inativos,page)
+      return pageResult(rows.map(row => {
+        const { ativo, excluidoEm, foto, ...publicUser } = row.usuario
+        return { ...row, usuario: { ...publicUser, foto: !scope && row.ativo && ativo && !excluidoEm ? fotoPublica(foto) : null } }
+      }),await repository.contar(tx,republic.id,inativos),page)
     }),
     deactivate: (actor: Actor, id: string, scope?: string) => withActor(db, actor, async (tx, user) => {
       const republic = await republicContext(tx, user, scope)
@@ -57,7 +66,9 @@ export function createRepublicasService(db: PrismaClient) {
       const member = await repository.membro(tx, id, republic.id)
       if (!member) throw new AppError(404, 'NOT_FOUND', 'Membro não encontrado.')
       if (member.usuarioId === republic.adminId) throw new AppError(409, 'TRANSFER_ADMIN_REQUIRED', 'Transfira a administração primeiro.')
-      return repository.desativar(tx, id)
+      const result = await repository.desativar(tx, id)
+      await notifyMembership(tx, result, user.id, 'MEMBRO_SAIU')
+      return result
     }),
     transfer: (actor: Actor, membroId: string, scope?: string) => withActor(db, actor, async (tx, user) => {
       const republic = await republicContext(tx, user, scope)

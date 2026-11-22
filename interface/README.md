@@ -1,5 +1,23 @@
 # Interface do RepHouse
 
+## Perfil com foto — código local 4.2.0
+
+Foto com enquadramento, troca e remoção; nome editável e dados de conta/casa para consulta. O editor usa react-easy-crop e mantém a foto anterior até a API confirmar. Avatares são carregados com autenticação em memória e usam iniciais quando não disponíveis. O principal local já serve a API 4.2.0, após backup, migration e atualização das permissões em 22/11/2026. Adicionar, trocar e remover foto estão disponíveis em Meu perfil. Veja [funcionamento, testes e limites](../documentacao/PERFIL_E_FOTO.md).
+
+## Todas e avisos gerais 4.1.0
+
+Todas reúne tarefas, despesas e entrada/saída de moradores. Tarefas e Despesas permanecem como filtros. Avisos gerais abrem Moradores após marcar a leitura. As três abas cabem em 320 px e têm navegação por teclado. A aba nova só é habilitada quando a API retorna `gerais`; a migration desta entrega foi autorizada e aplicada após backup; a API principal atual está na 4.2.0. Veja [regras, resultados e ativação](../documentacao/NOTIFICACOES_GERAIS.md).
+
+## Tarefas e notificações 4.0.0
+
+Moradores criam tarefas disponíveis ou para si, assumem e liberam tarefas e podem reabrir as próprias conclusões. Administrador conserva a gestão. O sino abre Tarefas/Despesas com leitura individual, paginação e atualizações SSE; abrir não marca os avisos como lidos. A interface distingue falha, carregamento, vazio e reconexão, respeita claro/escuro, teclado e movimento reduzido. Não há envio de avisos por e-mail.
+
+Consulte [regras, contrato e ativação](../documentacao/NOTIFICACOES_E_TAREFAS.md). As novas migrations foram aplicadas no principal em 21/11/2026, com backup e preservação dos dados. Atualize a página para carregar o sino com a API 4.0.0. A compatibilidade com APIs antigas continua escondendo o sino quando suas rotas não existem.
+
+## Autenticação 3.0.0
+
+Cadastro aguarda confirmação do e-mail; login oferece link mágico quando o backend informa envio configurado. A casinha e o layout foram preservados. `/confirmar-email` remove o segredo da URL e só confirma após clicar no botão. Abrir no mesmo navegador e origem da solicitação. As contas antigas conservam senha. Veja [configuração, segurança e testes](../documentacao/AUTENTICACAO_EMAIL.md). Sem configuração, cadastro fica indisponível e o login por senha continua funcionando.
+
 ## Financeiro 2.2.0
 
 Despesas agora incluem recorrência mensal, competência, filtros de vencimento e distinção entre conta da casa e parcela individual. O financeiro pessoal recebe os totais calculados pelo backend e mantém contas de repúblicas anteriores. Edição e desativação de recorrência não reescrevem contas existentes. A identidade visual, home, login e cadastro permanecem preservados.

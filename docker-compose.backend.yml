@@ -36,6 +36,9 @@ services:
       APP_TIME_ZONE: ${BACKEND_TIME_ZONE:-America/Sao_Paulo}
       CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      APP_PUBLIC_URL: ${APP_PUBLIC_URL:-}
     ports:
       - "127.0.0.1:${BACKEND_PORT:-3001}:3000"
     depends_on:

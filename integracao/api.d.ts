@@ -1,4 +1,44 @@
 export type paths = {
+    "/api/auth/email/confirmar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirmar e-mail e emitir sessão
+         * @description Acesso público. POST explícito após abrir /confirmar-email. Revalida expiração, uso único, cookie do navegador, origem, conta ativa e versão de revogação na mesma transação. GET não consome o link. O segredo vai no fragmento do link e não deve ser registrado nem persistido pelo cliente.
+         */
+        post: operations["post__api_auth_email_confirmar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/email/solicitar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Solicitar link mágico ou reenviar confirmação
+         * @description Acesso público. Resposta genérica para conta desconhecida, bloqueada ou excluída e para limite por e-mail. Até três envios em 15 minutos, com intervalo mínimo de 60 segundos. Reenvio de cadastro exige o mesmo cookie. Não cria contas automaticamente. Link substitui os anteriores da mesma finalidade. Não valida a posse do e-mail até consumir o token.
+         */
+        post: operations["post__api_auth_email_solicitar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/google": {
         parameters: {
             query?: never;
@@ -109,8 +149,8 @@ export type paths = {
         get?: never;
         put?: never;
         /**
-         * Cadastrar conta independente
-         * @description Acesso público. Sempre cria NORMAL; campos de privilégio são rejeitados. O e-mail é normalizado. E-mail já utilizado, inclusive por conta excluída, retorna 409. Cadastro e login compartilham limite de 20 tentativas por IP a cada 15 minutos.
+         * Solicitar cadastro com confirmação obrigatória
+         * @description Acesso público. Não cria usuário nem sessão antes da confirmação. Sempre cria NORMAL na confirmação; campos de privilégio são rejeitados. Contas antigas continuam acessando por senha. E-mail já utilizado retorna 409. Link de dez minutos, uso único, no mesmo navegador. Origin permitido e cookie HttpOnly obrigatórios. Sem envio configurado, retorna 503. Mudança incompatível em relação ao cadastro com sessão imediata da versão 2.x. Cadastro e login compartilham limite de 20 tentativas por IP a cada 15 minutos.
          */
         post: operations["post__api_auth_register"];
         delete?: never;
@@ -185,6 +225,46 @@ export type paths = {
          * @description Perfis: USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Valor e participantes ficam bloqueados após o primeiro pagamento (409 FINANCIAL_HISTORY_LOCKED). Título, categoria e vencimento podem ser editados.
          */
         patch: operations["patch__api_despesas_id"];
+        trace?: never;
+    };
+    "/api/front/v1/auth/email/confirmar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirmar e-mail e emitir sessão
+         * @description Acesso público. POST explícito após abrir /confirmar-email. Revalida expiração, uso único, cookie do navegador, origem, conta ativa e versão de revogação na mesma transação. GET não consome o link. O segredo vai no fragmento do link e não deve ser registrado nem persistido pelo cliente. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         */
+        post: operations["frontV1_post__api_auth_email_confirmar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/front/v1/auth/email/solicitar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Solicitar link mágico ou reenviar confirmação
+         * @description Acesso público. Resposta genérica para conta desconhecida, bloqueada ou excluída e para limite por e-mail. Até três envios em 15 minutos, com intervalo mínimo de 60 segundos. Reenvio de cadastro exige o mesmo cookie. Não cria contas automaticamente. Link substitui os anteriores da mesma finalidade. Não valida a posse do e-mail até consumir o token. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         */
+        post: operations["frontV1_post__api_auth_email_solicitar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/front/v1/auth/google": {
@@ -297,8 +377,8 @@ export type paths = {
         get?: never;
         put?: never;
         /**
-         * Cadastrar conta independente
-         * @description Acesso público. Sempre cria NORMAL; campos de privilégio são rejeitados. O e-mail é normalizado. E-mail já utilizado, inclusive por conta excluída, retorna 409. Cadastro e login compartilham limite de 20 tentativas por IP a cada 15 minutos. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         * Solicitar cadastro com confirmação obrigatória
+         * @description Acesso público. Não cria usuário nem sessão antes da confirmação. Sempre cria NORMAL na confirmação; campos de privilégio são rejeitados. Contas antigas continuam acessando por senha. E-mail já utilizado retorna 409. Link de dez minutos, uso único, no mesmo navegador. Origin permitido e cookie HttpOnly obrigatórios. Sem envio configurado, retorna 503. Mudança incompatível em relação ao cadastro com sessão imediata da versão 2.x. Cadastro e login compartilham limite de 20 tentativas por IP a cada 15 minutos. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
          */
         post: operations["frontV1_post__api_auth_register"];
         delete?: never;
@@ -582,7 +662,7 @@ export type paths = {
         put?: never;
         /**
          * Criar recorrência e primeira competência aplicável
-         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Idempotência obrigatória. Participantes fixos; início no mês atual ou futuro. Vencimento já passado exige próximo mês. Dias inexistentes usam o último dia do mês. Origem avulsa exige início após seu mês e após o mês atual. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Idempotência obrigatória. Participantes fixos; início no mês atual ou futuro. Vencimento já passado exige próximo mês. Dias inexistentes usam o último dia do mês. Origem avulsa exige início após seu mês e após o mês atual. fim é opcional, inclusivo pelo vencimento civil (1900 a 2199); deve incluir o primeiro vencimento. Ausente ou null mantém repetição sem prazo. Não gera despesa nem pendência de revisão depois do limite. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
          */
         post: operations["frontV1_post__api_master_republicas_republicaId_recorrencias"];
         delete?: never;
@@ -610,7 +690,7 @@ export type paths = {
         head?: never;
         /**
          * Editar ou desativar recorrência
-         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Configurações valem a partir do próximo mês, sem reescrever despesas ou versões anteriores. ativa=false não exclui histórico. Reativação exige participantes ativos. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Configurações valem a partir do próximo mês, sem reescrever despesas ou versões anteriores. fim altera imediatamente o limite para competências ainda não geradas; null remove o limite, omitir mantém o existente. A data não pode anteceder o início. Despesas já geradas permanecem independentes. ativa=false não exclui histórico. Reativação exige participantes ativos e ativa=true; mudar fim não reativa automaticamente uma recorrência encerrada. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
          */
         patch: operations["frontV1_patch__api_master_republicas_republicaId_recorrencias_id"];
         trace?: never;
@@ -669,8 +749,8 @@ export type paths = {
         get: operations["frontV1_get__api_master_republicas_republicaId_tarefas"];
         put?: never;
         /**
-         * Criar tarefa para membro ativo
-         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         * Criar tarefa disponível ou atribuída
+         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Qualquer morador ativo cria tarefa disponível (responsavelId ausente/null) ou para si. ADMIN/MASTER podem atribuir a outro morador ativo. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
          */
         post: operations["frontV1_post__api_master_republicas_republicaId_tarefas"];
         delete?: never;
@@ -686,17 +766,61 @@ export type paths = {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Consultar tarefa
+         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         */
+        get: operations["frontV1_get__api_master_republicas_republicaId_tarefas_id"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
         /**
-         * Editar ou concluir tarefa
-         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. ADMIN e MASTER gerenciam. Morador só pode enviar status=CONCLUIDA para uma tarefa atribuída a seu vínculo ativo. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         * Editar, concluir ou reabrir tarefa
+         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. ADMIN/MASTER gerenciam. Criador edita título, descrição e prazo enquanto disponível. Responsável ativo conclui/reabre; só administrador troca responsável. Conclusão exige responsável. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
          */
         patch: operations["frontV1_patch__api_master_republicas_republicaId_tarefas_id"];
+        trace?: never;
+    };
+    "/api/front/v1/master/republicas/{republicaId}/tarefas/{id}/assumir": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Assumir tarefa disponível
+         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Associa ao vínculo ativo do próprio solicitante. Concorrente de outro morador recebe 409 TASK_ALREADY_ASSIGNED; repetição pelo mesmo responsável não duplica evento. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         */
+        post: operations["frontV1_post__api_master_republicas_republicaId_tarefas_id_assumir"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/front/v1/master/republicas/{republicaId}/tarefas/{id}/liberar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Liberar tarefa aberta
+         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Responsável ativo ou administrador; não libera tarefa concluída. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         */
+        post: operations["frontV1_post__api_master_republicas_republicaId_tarefas_id_liberar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/front/v1/master/republicas/{republicaId}/transferir-admin": {
@@ -847,6 +971,30 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/front/v1/me/foto": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Adicionar ou substituir a própria foto
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. JPEG, PNG ou WebP estático até 5 MiB e 25 megapixels. Recorte em pixels na imagem orientada: x, y, largura, altura; quadrado. Servidor valida e gera WebP 512×512, até 512 KiB, sem metadados. Original descartado. Revalida sessão na transação; dois uploads em andamento no máximo por instância. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         */
+        post: operations["frontV1_post__api_me_foto"];
+        /**
+         * Remover a própria foto
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Idempotente: ausência de foto também retorna 204. Não altera o histórico financeiro. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         */
+        delete: operations["frontV1_delete__api_me_foto"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/front/v1/membros": {
         parameters: {
             query?: never;
@@ -885,6 +1033,106 @@ export type paths = {
          * @description Perfis: USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Não apaga o histórico. O administrador atual precisa transferir sua responsabilidade antes. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
          */
         patch: operations["frontV1_patch__api_membros_id"];
+        trace?: never;
+    };
+    "/api/front/v1/notificacoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar notificações da república atual
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Resposta paginada: dados e paginacao. Página além do resultado retorna dados vazio. Parâmetros inválidos ou desconhecidos retornam 400. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         */
+        get: operations["frontV1_get__api_notificacoes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/front/v1/notificacoes/{id}/lida": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Marcar aviso próprio como lido
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         */
+        patch: operations["frontV1_patch__api_notificacoes_id_lida"];
+        trace?: never;
+    };
+    "/api/front/v1/notificacoes/eventos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Receber atualizações por SSE
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Use fetch com Authorization Bearer; nunca envie JWT na URL. Eventos conectado/atualizar pedem reconciliação por HTTP. sessao-encerrada/contexto-encerrado encerram o contexto; indisponivel permite reconexão. Heartbeat e autorização em até 15 segundos. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         */
+        get: operations["frontV1_get__api_notificacoes_eventos"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/front/v1/notificacoes/lidas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Marcar a categoria ou todas como lidas
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         */
+        patch: operations["frontV1_patch__api_notificacoes_lidas"];
+        trace?: never;
+    };
+    "/api/front/v1/notificacoes/nao-lidas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Contar avisos ativos não lidos
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         */
+        get: operations["frontV1_get__api_notificacoes_nao_lidas"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/front/v1/pagamentos": {
@@ -942,7 +1190,7 @@ export type paths = {
         put?: never;
         /**
          * Criar recorrência e primeira competência aplicável
-         * @description Perfis: USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Idempotência obrigatória. Participantes fixos; início no mês atual ou futuro. Vencimento já passado exige próximo mês. Dias inexistentes usam o último dia do mês. Origem avulsa exige início após seu mês e após o mês atual. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         * @description Perfis: USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Idempotência obrigatória. Participantes fixos; início no mês atual ou futuro. Vencimento já passado exige próximo mês. Dias inexistentes usam o último dia do mês. Origem avulsa exige início após seu mês e após o mês atual. fim é opcional, inclusivo pelo vencimento civil (1900 a 2199); deve incluir o primeiro vencimento. Ausente ou null mantém repetição sem prazo. Não gera despesa nem pendência de revisão depois do limite. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
          */
         post: operations["frontV1_post__api_recorrencias"];
         delete?: never;
@@ -970,7 +1218,7 @@ export type paths = {
         head?: never;
         /**
          * Editar ou desativar recorrência
-         * @description Perfis: USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Configurações valem a partir do próximo mês, sem reescrever despesas ou versões anteriores. ativa=false não exclui histórico. Reativação exige participantes ativos. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         * @description Perfis: USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Configurações valem a partir do próximo mês, sem reescrever despesas ou versões anteriores. fim altera imediatamente o limite para competências ainda não geradas; null remove o limite, omitir mantém o existente. A data não pode anteceder o início. Despesas já geradas permanecem independentes. ativa=false não exclui histórico. Reativação exige participantes ativos e ativa=true; mudar fim não reativa automaticamente uma recorrência encerrada. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
          */
         patch: operations["frontV1_patch__api_recorrencias_id"];
         trace?: never;
@@ -1153,8 +1401,8 @@ export type paths = {
         get: operations["frontV1_get__api_tarefas"];
         put?: never;
         /**
-         * Criar tarefa para membro ativo
-         * @description Perfis: USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         * Criar tarefa disponível ou atribuída
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Qualquer morador ativo cria tarefa disponível (responsavelId ausente/null) ou para si. ADMIN/MASTER podem atribuir a outro morador ativo. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
          */
         post: operations["frontV1_post__api_tarefas"];
         delete?: never;
@@ -1170,17 +1418,81 @@ export type paths = {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Consultar tarefa
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         */
+        get: operations["frontV1_get__api_tarefas_id"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
         /**
-         * Editar ou concluir tarefa
-         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. ADMIN e MASTER gerenciam. Morador só pode enviar status=CONCLUIDA para uma tarefa atribuída a seu vínculo ativo. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         * Editar, concluir ou reabrir tarefa
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. ADMIN/MASTER gerenciam. Criador edita título, descrição e prazo enquanto disponível. Responsável ativo conclui/reabre; só administrador troca responsável. Conclusão exige responsável. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
          */
         patch: operations["frontV1_patch__api_tarefas_id"];
+        trace?: never;
+    };
+    "/api/front/v1/tarefas/{id}/assumir": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Assumir tarefa disponível
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Associa ao vínculo ativo do próprio solicitante. Concorrente de outro morador recebe 409 TASK_ALREADY_ASSIGNED; repetição pelo mesmo responsável não duplica evento. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         */
+        post: operations["frontV1_post__api_tarefas_id_assumir"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/front/v1/tarefas/{id}/liberar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Liberar tarefa aberta
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Responsável ativo ou administrador; não libera tarefa concluída. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         */
+        post: operations["frontV1_post__api_tarefas_id_liberar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/front/v1/usuarios/{id}/foto": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Consultar foto autenticada
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Somente o proprietário ou morador ativo da mesma casa atual, com contas habilitadas. Sem privilégio global MASTER. Ausência e acesso indevido retornam 404. Cache-Control: no-store; token somente no header. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         */
+        get: operations["frontV1_get__api_usuarios_id_foto"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/health": {
@@ -1410,7 +1722,7 @@ export type paths = {
         put?: never;
         /**
          * Criar recorrência e primeira competência aplicável
-         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Idempotência obrigatória. Participantes fixos; início no mês atual ou futuro. Vencimento já passado exige próximo mês. Dias inexistentes usam o último dia do mês. Origem avulsa exige início após seu mês e após o mês atual.
+         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Idempotência obrigatória. Participantes fixos; início no mês atual ou futuro. Vencimento já passado exige próximo mês. Dias inexistentes usam o último dia do mês. Origem avulsa exige início após seu mês e após o mês atual. fim é opcional, inclusivo pelo vencimento civil (1900 a 2199); deve incluir o primeiro vencimento. Ausente ou null mantém repetição sem prazo. Não gera despesa nem pendência de revisão depois do limite.
          */
         post: operations["post__api_master_republicas_republicaId_recorrencias"];
         delete?: never;
@@ -1438,7 +1750,7 @@ export type paths = {
         head?: never;
         /**
          * Editar ou desativar recorrência
-         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Configurações valem a partir do próximo mês, sem reescrever despesas ou versões anteriores. ativa=false não exclui histórico. Reativação exige participantes ativos.
+         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Configurações valem a partir do próximo mês, sem reescrever despesas ou versões anteriores. fim altera imediatamente o limite para competências ainda não geradas; null remove o limite, omitir mantém o existente. A data não pode anteceder o início. Despesas já geradas permanecem independentes. ativa=false não exclui histórico. Reativação exige participantes ativos e ativa=true; mudar fim não reativa automaticamente uma recorrência encerrada.
          */
         patch: operations["patch__api_master_republicas_republicaId_recorrencias_id"];
         trace?: never;
@@ -1497,8 +1809,8 @@ export type paths = {
         get: operations["get__api_master_republicas_republicaId_tarefas"];
         put?: never;
         /**
-         * Criar tarefa para membro ativo
-         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios.
+         * Criar tarefa disponível ou atribuída
+         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Qualquer morador ativo cria tarefa disponível (responsavelId ausente/null) ou para si. ADMIN/MASTER podem atribuir a outro morador ativo.
          */
         post: operations["post__api_master_republicas_republicaId_tarefas"];
         delete?: never;
@@ -1514,17 +1826,61 @@ export type paths = {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Consultar tarefa
+         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios.
+         */
+        get: operations["get__api_master_republicas_republicaId_tarefas_id"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
         /**
-         * Editar ou concluir tarefa
-         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. ADMIN e MASTER gerenciam. Morador só pode enviar status=CONCLUIDA para uma tarefa atribuída a seu vínculo ativo.
+         * Editar, concluir ou reabrir tarefa
+         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. ADMIN/MASTER gerenciam. Criador edita título, descrição e prazo enquanto disponível. Responsável ativo conclui/reabre; só administrador troca responsável. Conclusão exige responsável.
          */
         patch: operations["patch__api_master_republicas_republicaId_tarefas_id"];
+        trace?: never;
+    };
+    "/api/master/republicas/{republicaId}/tarefas/{id}/assumir": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Assumir tarefa disponível
+         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Associa ao vínculo ativo do próprio solicitante. Concorrente de outro morador recebe 409 TASK_ALREADY_ASSIGNED; repetição pelo mesmo responsável não duplica evento.
+         */
+        post: operations["post__api_master_republicas_republicaId_tarefas_id_assumir"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/master/republicas/{republicaId}/tarefas/{id}/liberar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Liberar tarefa aberta
+         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Responsável ativo ou administrador; não libera tarefa concluída.
+         */
+        post: operations["post__api_master_republicas_republicaId_tarefas_id_liberar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/master/republicas/{republicaId}/transferir-admin": {
@@ -1675,6 +2031,30 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/me/foto": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Adicionar ou substituir a própria foto
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. JPEG, PNG ou WebP estático até 5 MiB e 25 megapixels. Recorte em pixels na imagem orientada: x, y, largura, altura; quadrado. Servidor valida e gera WebP 512×512, até 512 KiB, sem metadados. Original descartado. Revalida sessão na transação; dois uploads em andamento no máximo por instância.
+         */
+        post: operations["post__api_me_foto"];
+        /**
+         * Remover a própria foto
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Idempotente: ausência de foto também retorna 204. Não altera o histórico financeiro.
+         */
+        delete: operations["delete__api_me_foto"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/membros": {
         parameters: {
             query?: never;
@@ -1713,6 +2093,106 @@ export type paths = {
          * @description Perfis: USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Não apaga o histórico. O administrador atual precisa transferir sua responsabilidade antes.
          */
         patch: operations["patch__api_membros_id"];
+        trace?: never;
+    };
+    "/api/notificacoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar notificações da república atual
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Resposta paginada: dados e paginacao. Página além do resultado retorna dados vazio. Parâmetros inválidos ou desconhecidos retornam 400.
+         */
+        get: operations["get__api_notificacoes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notificacoes/{id}/lida": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Marcar aviso próprio como lido
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios.
+         */
+        patch: operations["patch__api_notificacoes_id_lida"];
+        trace?: never;
+    };
+    "/api/notificacoes/eventos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Receber atualizações por SSE
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Use fetch com Authorization Bearer; nunca envie JWT na URL. Eventos conectado/atualizar pedem reconciliação por HTTP. sessao-encerrada/contexto-encerrado encerram o contexto; indisponivel permite reconexão. Heartbeat e autorização em até 15 segundos.
+         */
+        get: operations["get__api_notificacoes_eventos"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notificacoes/lidas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Marcar a categoria ou todas como lidas
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios.
+         */
+        patch: operations["patch__api_notificacoes_lidas"];
+        trace?: never;
+    };
+    "/api/notificacoes/nao-lidas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Contar avisos ativos não lidos
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios.
+         */
+        get: operations["get__api_notificacoes_nao_lidas"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/openapi.json": {
@@ -1810,7 +2290,7 @@ export type paths = {
         put?: never;
         /**
          * Criar recorrência e primeira competência aplicável
-         * @description Perfis: USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Idempotência obrigatória. Participantes fixos; início no mês atual ou futuro. Vencimento já passado exige próximo mês. Dias inexistentes usam o último dia do mês. Origem avulsa exige início após seu mês e após o mês atual.
+         * @description Perfis: USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Idempotência obrigatória. Participantes fixos; início no mês atual ou futuro. Vencimento já passado exige próximo mês. Dias inexistentes usam o último dia do mês. Origem avulsa exige início após seu mês e após o mês atual. fim é opcional, inclusivo pelo vencimento civil (1900 a 2199); deve incluir o primeiro vencimento. Ausente ou null mantém repetição sem prazo. Não gera despesa nem pendência de revisão depois do limite.
          */
         post: operations["post__api_recorrencias"];
         delete?: never;
@@ -1838,7 +2318,7 @@ export type paths = {
         head?: never;
         /**
          * Editar ou desativar recorrência
-         * @description Perfis: USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Configurações valem a partir do próximo mês, sem reescrever despesas ou versões anteriores. ativa=false não exclui histórico. Reativação exige participantes ativos.
+         * @description Perfis: USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Configurações valem a partir do próximo mês, sem reescrever despesas ou versões anteriores. fim altera imediatamente o limite para competências ainda não geradas; null remove o limite, omitir mantém o existente. A data não pode anteceder o início. Despesas já geradas permanecem independentes. ativa=false não exclui histórico. Reativação exige participantes ativos e ativa=true; mudar fim não reativa automaticamente uma recorrência encerrada.
          */
         patch: operations["patch__api_recorrencias_id"];
         trace?: never;
@@ -2021,8 +2501,8 @@ export type paths = {
         get: operations["get__api_tarefas"];
         put?: never;
         /**
-         * Criar tarefa para membro ativo
-         * @description Perfis: USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios.
+         * Criar tarefa disponível ou atribuída
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Qualquer morador ativo cria tarefa disponível (responsavelId ausente/null) ou para si. ADMIN/MASTER podem atribuir a outro morador ativo.
          */
         post: operations["post__api_tarefas"];
         delete?: never;
@@ -2038,17 +2518,81 @@ export type paths = {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Consultar tarefa
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios.
+         */
+        get: operations["get__api_tarefas_id"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
         /**
-         * Editar ou concluir tarefa
-         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. ADMIN e MASTER gerenciam. Morador só pode enviar status=CONCLUIDA para uma tarefa atribuída a seu vínculo ativo.
+         * Editar, concluir ou reabrir tarefa
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. ADMIN/MASTER gerenciam. Criador edita título, descrição e prazo enquanto disponível. Responsável ativo conclui/reabre; só administrador troca responsável. Conclusão exige responsável.
          */
         patch: operations["patch__api_tarefas_id"];
+        trace?: never;
+    };
+    "/api/tarefas/{id}/assumir": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Assumir tarefa disponível
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Associa ao vínculo ativo do próprio solicitante. Concorrente de outro morador recebe 409 TASK_ALREADY_ASSIGNED; repetição pelo mesmo responsável não duplica evento.
+         */
+        post: operations["post__api_tarefas_id_assumir"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tarefas/{id}/liberar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Liberar tarefa aberta
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Responsável ativo ou administrador; não libera tarefa concluída.
+         */
+        post: operations["post__api_tarefas_id_liberar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/usuarios/{id}/foto": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Consultar foto autenticada
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Somente o proprietário ou morador ativo da mesma casa atual, com contas habilitadas. Sem privilégio global MASTER. Ausência e acesso indevido retornam 404. Cache-Control: no-store; token somente no header.
+         */
+        get: operations["get__api_usuarios_id_foto"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
 };
@@ -2056,6 +2600,11 @@ export type webhooks = Record<string, never>;
 export type components = {
     schemas: {
         Cadastro: {
+            /**
+             * @default criar
+             * @enum {unknown}
+             */
+            acaoRepublica: "criar" | "entrar";
             /** Format: email */
             email: string;
             nome: string;
@@ -2073,6 +2622,12 @@ export type components = {
             estado: "GERADA" | "PENDENTE_REVISAO" | "BLOQUEADA" | "REVISADA";
             motivo: string | null;
             revisadaEm: string | null;
+        };
+        ConfirmacaoEmail: {
+            /** @enum {unknown} */
+            acaoRepublica: "criar" | "entrar" | null;
+            token: string;
+            usuario: components["schemas"]["Usuario"];
         };
         CriarDespesa: {
             categoria: string;
@@ -2092,6 +2647,7 @@ export type components = {
             /** Format: uuid */
             despesaOrigemId?: string;
             diaVencimento: number;
+            fim?: string | null;
             /** @example 2026-11 */
             inicio: string;
             membroIds: string[];
@@ -2106,8 +2662,7 @@ export type components = {
         CriarTarefa: {
             descricao?: string;
             prazo?: string | null;
-            /** Format: uuid */
-            responsavelId: string;
+            responsavelId?: string | null;
             titulo: string;
         };
         DesafioGoogle: {
@@ -2216,6 +2771,7 @@ export type components = {
             ativa?: boolean;
             categoria?: string;
             diaVencimento?: number;
+            fim?: string | null;
             membroIds?: string[];
             titulo?: string;
             /** @description Valor positivo em reais. Envie string com ponto decimal, sem separador de milhares. */
@@ -2228,17 +2784,26 @@ export type components = {
         EditarTarefa: {
             descricao?: string;
             prazo?: string | null;
-            /** Format: uuid */
-            responsavelId?: string;
+            responsavelId?: string | null;
             /** @enum {unknown} */
             status?: "ABERTA" | "CONCLUIDA";
             titulo?: string;
+        };
+        EmailPendente: {
+            /** @constant */
+            confirmacaoPendente: true;
+            message: string;
         };
         Error: {
             error: {
                 code: string;
                 message: string;
             };
+        };
+        FotoPerfil: {
+            /** Format: date-time */
+            atualizadaEm: string;
+            versao: string;
         };
         Login: {
             /** Format: email */
@@ -2273,6 +2838,7 @@ export type components = {
             usuario: {
                 /** Format: email */
                 email: string;
+                foto?: components["schemas"]["FotoPerfil"] | null;
                 /** Format: uuid */
                 id: string;
                 nome: string;
@@ -2281,6 +2847,9 @@ export type components = {
             usuarioId: string;
         };
         MetodosAutenticacao: {
+            email: {
+                habilitado: boolean;
+            };
             google: {
                 clientId: string | null;
                 habilitado: boolean;
@@ -2292,6 +2861,8 @@ export type components = {
             criadoEm: string;
             /** Format: email */
             email: string;
+            emailConfirmadoEm?: string | null;
+            foto?: components["schemas"]["FotoPerfil"] | null;
             /** Format: uuid */
             id: string;
             membro: {
@@ -2309,6 +2880,28 @@ export type components = {
             nome: string;
             /** @enum {unknown} */
             tipoUsuario: "USUARIO_NORMAL" | "USUARIO_ADMIN" | "USUARIO_MASTER";
+        };
+        Notificacao: {
+            atorNome: string | null;
+            /** @enum {unknown} */
+            categoria: "TAREFAS" | "DESPESAS" | "GERAIS";
+            /** Format: date-time */
+            criadoEm: string;
+            despesaId: string | null;
+            /** Format: uuid */
+            id: string;
+            lidaEm: string | null;
+            tarefaId: string | null;
+            /** @enum {unknown} */
+            tipo: "TAREFA_CRIADA" | "TAREFA_ASSUMIDA" | "TAREFA_REATRIBUIDA" | "TAREFA_CONCLUIDA" | "TAREFA_LIBERADA" | "TAREFA_REABERTA" | "DESPESA_PROXIMA" | "DESPESA_VENCE_HOJE" | "MEMBRO_ENTROU" | "MEMBRO_SAIU";
+            titulo: string;
+            vencimento: string | null;
+        };
+        NotificacoesNaoLidas: {
+            despesas: number;
+            gerais?: number;
+            tarefas: number;
+            total: number;
         };
         Pagamento: {
             comprovanteUrl: string | null;
@@ -2431,6 +3024,7 @@ export type components = {
                 vigencia: string;
             }[];
             despesaOrigemId: string | null;
+            fim: string | null;
             /** Format: uuid */
             id: string;
             /** @example 2026-11 */
@@ -2483,14 +3077,15 @@ export type components = {
         Tarefa: {
             /** Format: date-time */
             criadaEm: string;
+            criadorId?: string | null;
             descricao: string | null;
             /** Format: uuid */
             id: string;
             prazo: string | null;
             /** Format: uuid */
             republicaId: string;
-            /** Format: uuid */
-            responsavelId: string;
+            responsavelAtivo?: boolean | null;
+            responsavelId: string | null;
             /** @enum {unknown} */
             status: "ABERTA" | "CONCLUIDA";
             titulo: string;
@@ -2501,6 +3096,7 @@ export type components = {
             criadoEm: string;
             /** Format: email */
             email: string;
+            foto?: components["schemas"]["FotoPerfil"] | null;
             /** Format: uuid */
             id: string;
             nome: string;
@@ -2529,6 +3125,448 @@ export type components = {
 };
 export type $defs = Record<string, never>;
 export interface operations {
+    post__api_auth_email_confirmar: {
+        parameters: {
+            query?: never;
+            header: {
+                Origin: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "id": "de000000-0000-4000-8000-000900000003",
+                 *       "token": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                 *     }
+                 */
+                "application/json": {
+                    /** Format: uuid */
+                    id: string;
+                    token: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Operação concluída. */
+            200: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "token": "JWT_RECEBIDO_DA_API",
+                     *       "usuario": {
+                     *         "id": "de000000-0000-4000-8000-000100000004",
+                     *         "nome": "Ana Moradora",
+                     *         "email": "ana@demo.rephouse.test",
+                     *         "tipoUsuario": "USUARIO_NORMAL",
+                     *         "ativo": true,
+                     *         "criadoEm": "2026-10-16T12:00:00.000Z"
+                     *       },
+                     *       "acaoRepublica": "criar"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ConfirmacaoEmail"];
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Link ou origem não autorizado. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "EMAIL_LINK_INVALID",
+                     *         "message": "Link ou origem não autorizado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Link ou origem não autorizado. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "EMAIL_ORIGIN_FORBIDDEN",
+                     *         "message": "Link ou origem não autorizado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Aguarde antes de tentar novamente. */
+            429: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "TOO_MANY_REQUESTS",
+                     *         "message": "Aguarde antes de tentar novamente."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Envio de e-mail indisponível ou não configurado. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "EMAIL_DISABLED",
+                     *         "message": "O envio de e-mails ainda não foi configurado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    post__api_auth_email_solicitar: {
+        parameters: {
+            query?: never;
+            header: {
+                Origin: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "email": "ana@demo.rephouse.test",
+                 *       "finalidade": "login"
+                 *     }
+                 */
+                "application/json": {
+                    /** Format: email */
+                    email: string;
+                    /**
+                     * @default login
+                     * @enum {unknown}
+                     */
+                    finalidade?: "login" | "cadastro";
+                };
+            };
+        };
+        responses: {
+            /** @description Operação concluída. */
+            202: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "confirmacaoPendente": true,
+                     *       "message": "Confira seu e-mail."
+                     *     }
+                     */
+                    "application/json": components["schemas"]["EmailPendente"];
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Link ou origem não autorizado. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "EMAIL_LINK_INVALID",
+                     *         "message": "Link ou origem não autorizado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Link ou origem não autorizado. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "EMAIL_ORIGIN_FORBIDDEN",
+                     *         "message": "Link ou origem não autorizado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Aguarde antes de tentar novamente. */
+            429: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "TOO_MANY_REQUESTS",
+                     *         "message": "Aguarde antes de tentar novamente."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Envio de e-mail indisponível ou não configurado. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "EMAIL_DISABLED",
+                     *         "message": "O envio de e-mails ainda não foi configurado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     post__api_auth_google: {
         parameters: {
             query?: never;
@@ -3351,6 +4389,9 @@ export interface operations {
                      *       "google": {
                      *         "habilitado": false,
                      *         "clientId": null
+                     *       },
+                     *       "email": {
+                     *         "habilitado": false
                      *       }
                      *     }
                      */
@@ -3476,7 +4517,9 @@ export interface operations {
     post__api_auth_register: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                Origin: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -3494,7 +4537,7 @@ export interface operations {
         };
         responses: {
             /** @description Operação concluída. */
-            201: {
+            202: {
                 headers: {
                     /** @description UUID gerado pelo servidor para correlação com os logs. */
                     "X-Request-Id"?: string;
@@ -3503,18 +4546,11 @@ export interface operations {
                 content: {
                     /**
                      * @example {
-                     *       "token": "JWT_RECEBIDO_DA_API",
-                     *       "usuario": {
-                     *         "id": "de000000-0000-4000-8000-000100000004",
-                     *         "nome": "Ana Moradora",
-                     *         "email": "ana@demo.rephouse.test",
-                     *         "tipoUsuario": "USUARIO_NORMAL",
-                     *         "ativo": true,
-                     *         "criadoEm": "2026-10-16T12:00:00.000Z"
-                     *       }
+                     *       "confirmacaoPendente": true,
+                     *       "message": "Confira seu e-mail."
                      *     }
                      */
-                    "application/json": components["schemas"]["Sessao"];
+                    "application/json": components["schemas"]["EmailPendente"];
                 };
             };
             /** @description Os dados enviados são inválidos. */
@@ -3530,6 +4566,44 @@ export interface operations {
                      *       "error": {
                      *         "code": "VALIDATION_ERROR",
                      *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Link ou origem não autorizado. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "EMAIL_LINK_INVALID",
+                     *         "message": "Link ou origem não autorizado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Link ou origem não autorizado. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "EMAIL_ORIGIN_FORBIDDEN",
+                     *         "message": "Link ou origem não autorizado."
                      *       }
                      *     }
                      */
@@ -3625,6 +4699,25 @@ export interface operations {
                      *       "error": {
                      *         "code": "INTERNAL_SERVER_ERROR",
                      *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Envio de e-mail indisponível ou não configurado. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "EMAIL_DISABLED",
+                     *         "message": "O envio de e-mails ainda não foi configurado."
                      *       }
                      *     }
                      */
@@ -4073,7 +5166,10 @@ export interface operations {
     post__api_despesas: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID público por criação. Mesma chave, usuário, operação e dados retornam a resposta original (201); dados ou república diferentes retornam 409 IDEMPOTENCY_CONFLICT. Nova chave permite criação intencional igual. Sem header não há proteção contra reenvios; header inválido retorna 400. Sessão e permissão são revalidadas em todo reenvio. */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -4755,6 +5851,448 @@ export interface operations {
                      *       "error": {
                      *         "code": "RETRY_LATER",
                      *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    frontV1_post__api_auth_email_confirmar: {
+        parameters: {
+            query?: never;
+            header: {
+                Origin: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "id": "de000000-0000-4000-8000-000900000003",
+                 *       "token": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                 *     }
+                 */
+                "application/json": {
+                    /** Format: uuid */
+                    id: string;
+                    token: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Operação concluída. */
+            200: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "token": "JWT_RECEBIDO_DA_API",
+                     *       "usuario": {
+                     *         "id": "de000000-0000-4000-8000-000100000004",
+                     *         "nome": "Ana Moradora",
+                     *         "email": "ana@demo.rephouse.test",
+                     *         "tipoUsuario": "USUARIO_NORMAL",
+                     *         "ativo": true,
+                     *         "criadoEm": "2026-10-16T12:00:00.000Z"
+                     *       },
+                     *       "acaoRepublica": "criar"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ConfirmacaoEmail"];
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Link ou origem não autorizado. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "EMAIL_LINK_INVALID",
+                     *         "message": "Link ou origem não autorizado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Link ou origem não autorizado. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "EMAIL_ORIGIN_FORBIDDEN",
+                     *         "message": "Link ou origem não autorizado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Aguarde antes de tentar novamente. */
+            429: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "TOO_MANY_REQUESTS",
+                     *         "message": "Aguarde antes de tentar novamente."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Envio de e-mail indisponível ou não configurado. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "EMAIL_DISABLED",
+                     *         "message": "O envio de e-mails ainda não foi configurado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    frontV1_post__api_auth_email_solicitar: {
+        parameters: {
+            query?: never;
+            header: {
+                Origin: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "email": "ana@demo.rephouse.test",
+                 *       "finalidade": "login"
+                 *     }
+                 */
+                "application/json": {
+                    /** Format: email */
+                    email: string;
+                    /**
+                     * @default login
+                     * @enum {unknown}
+                     */
+                    finalidade?: "login" | "cadastro";
+                };
+            };
+        };
+        responses: {
+            /** @description Operação concluída. */
+            202: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "confirmacaoPendente": true,
+                     *       "message": "Confira seu e-mail."
+                     *     }
+                     */
+                    "application/json": components["schemas"]["EmailPendente"];
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Link ou origem não autorizado. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "EMAIL_LINK_INVALID",
+                     *         "message": "Link ou origem não autorizado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Link ou origem não autorizado. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "EMAIL_ORIGIN_FORBIDDEN",
+                     *         "message": "Link ou origem não autorizado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Aguarde antes de tentar novamente. */
+            429: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "TOO_MANY_REQUESTS",
+                     *         "message": "Aguarde antes de tentar novamente."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Envio de e-mail indisponível ou não configurado. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "EMAIL_DISABLED",
+                     *         "message": "O envio de e-mails ainda não foi configurado."
                      *       }
                      *     }
                      */
@@ -5585,6 +7123,9 @@ export interface operations {
                      *       "google": {
                      *         "habilitado": false,
                      *         "clientId": null
+                     *       },
+                     *       "email": {
+                     *         "habilitado": false
                      *       }
                      *     }
                      */
@@ -5710,7 +7251,9 @@ export interface operations {
     frontV1_post__api_auth_register: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                Origin: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -5728,7 +7271,7 @@ export interface operations {
         };
         responses: {
             /** @description Operação concluída. */
-            201: {
+            202: {
                 headers: {
                     /** @description UUID gerado pelo servidor para correlação com os logs. */
                     "X-Request-Id"?: string;
@@ -5737,18 +7280,11 @@ export interface operations {
                 content: {
                     /**
                      * @example {
-                     *       "token": "JWT_RECEBIDO_DA_API",
-                     *       "usuario": {
-                     *         "id": "de000000-0000-4000-8000-000100000004",
-                     *         "nome": "Ana Moradora",
-                     *         "email": "ana@demo.rephouse.test",
-                     *         "tipoUsuario": "USUARIO_NORMAL",
-                     *         "ativo": true,
-                     *         "criadoEm": "2026-10-16T12:00:00.000Z"
-                     *       }
+                     *       "confirmacaoPendente": true,
+                     *       "message": "Confira seu e-mail."
                      *     }
                      */
-                    "application/json": components["schemas"]["Sessao"];
+                    "application/json": components["schemas"]["EmailPendente"];
                 };
             };
             /** @description Os dados enviados são inválidos. */
@@ -5764,6 +7300,44 @@ export interface operations {
                      *       "error": {
                      *         "code": "VALIDATION_ERROR",
                      *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Link ou origem não autorizado. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "EMAIL_LINK_INVALID",
+                     *         "message": "Link ou origem não autorizado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Link ou origem não autorizado. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "EMAIL_ORIGIN_FORBIDDEN",
+                     *         "message": "Link ou origem não autorizado."
                      *       }
                      *     }
                      */
@@ -5859,6 +7433,25 @@ export interface operations {
                      *       "error": {
                      *         "code": "INTERNAL_SERVER_ERROR",
                      *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Envio de e-mail indisponível ou não configurado. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "EMAIL_DISABLED",
+                     *         "message": "O envio de e-mails ainda não foi configurado."
                      *       }
                      *     }
                      */
@@ -6289,7 +7882,10 @@ export interface operations {
     frontV1_post__api_despesas: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID público por criação. Mesma chave, usuário, operação e dados retornam a resposta original (201); dados ou república diferentes retornam 409 IDEMPOTENCY_CONFLICT. Nova chave permite criação intencional igual. Sem header não há proteção contra reenvios; header inválido retorna 400. Sessão e permissão são revalidadas em todo reenvio. */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -8371,7 +9967,10 @@ export interface operations {
     frontV1_post__api_master_republicas_republicaId_despesas: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID público por criação. Mesma chave, usuário, operação e dados retornam a resposta original (201); dados ou república diferentes retornam 409 IDEMPOTENCY_CONFLICT. Nova chave permite criação intencional igual. Sem header não há proteção contra reenvios; header inválido retorna 400. Sessão e permissão são revalidadas em todo reenvio. */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 republicaId: string;
             };
@@ -9484,6 +11083,7 @@ export interface operations {
                      *         "republicaId": "de000000-0000-4000-8000-000200000001",
                      *         "despesaOrigemId": null,
                      *         "inicio": "2026-11",
+                     *         "fim": null,
                      *         "proximaCompetencia": "2026-12",
                      *         "ativa": true,
                      *         "pausaMotivo": null,
@@ -9703,6 +11303,7 @@ export interface operations {
                      *       "republicaId": "de000000-0000-4000-8000-000200000001",
                      *       "despesaOrigemId": null,
                      *       "inicio": "2026-11",
+                     *       "fim": null,
                      *       "proximaCompetencia": "2026-12",
                      *       "ativa": true,
                      *       "pausaMotivo": null,
@@ -9904,6 +11505,7 @@ export interface operations {
                      *       "republicaId": "de000000-0000-4000-8000-000200000001",
                      *       "despesaOrigemId": null,
                      *       "inicio": "2026-11",
+                     *       "fim": null,
                      *       "proximaCompetencia": "2026-12",
                      *       "ativa": true,
                      *       "pausaMotivo": null,
@@ -10114,6 +11716,7 @@ export interface operations {
                      *       "republicaId": "de000000-0000-4000-8000-000200000001",
                      *       "despesaOrigemId": null,
                      *       "inicio": "2026-11",
+                     *       "fim": null,
                      *       "proximaCompetencia": "2026-12",
                      *       "ativa": false,
                      *       "pausaMotivo": null,
@@ -10851,7 +12454,10 @@ export interface operations {
     frontV1_post__api_master_republicas_republicaId_tarefas: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID público por criação. Mesma chave, usuário, operação e dados retornam a resposta original (201); dados ou república diferentes retornam 409 IDEMPOTENCY_CONFLICT. Nova chave permite criação intencional igual. Sem header não há proteção contra reenvios; header inválido retorna 400. Sessão e permissão são revalidadas em todo reenvio. */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 republicaId: string;
             };
@@ -10872,6 +12478,195 @@ export interface operations {
         responses: {
             /** @description Operação concluída. */
             201: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "de000000-0000-4000-8000-000700000001",
+                     *       "republicaId": "de000000-0000-4000-8000-000200000001",
+                     *       "responsavelId": "de000000-0000-4000-8000-000300000002",
+                     *       "titulo": "Limpar cozinha",
+                     *       "descricao": null,
+                     *       "prazo": "2026-10-26T00:00:00.000Z",
+                     *       "status": "ABERTA",
+                     *       "criadaEm": "2026-10-16T12:00:00.000Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Tarefa"];
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    frontV1_get__api_master_republicas_republicaId_tarefas_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                republicaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operação concluída. */
+            200: {
                 headers: {
                     /** @description UUID gerado pelo servidor para correlação com os logs. */
                     "X-Request-Id"?: string;
@@ -11085,6 +12880,394 @@ export interface operations {
                      *       "descricao": null,
                      *       "prazo": "2026-10-26T00:00:00.000Z",
                      *       "status": "CONCLUIDA",
+                     *       "criadaEm": "2026-10-16T12:00:00.000Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Tarefa"];
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    frontV1_post__api_master_republicas_republicaId_tarefas_id_assumir: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                republicaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /** @example {} */
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Operação concluída. */
+            200: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "de000000-0000-4000-8000-000700000001",
+                     *       "republicaId": "de000000-0000-4000-8000-000200000001",
+                     *       "responsavelId": "de000000-0000-4000-8000-000300000002",
+                     *       "titulo": "Limpar cozinha",
+                     *       "descricao": null,
+                     *       "prazo": "2026-10-26T00:00:00.000Z",
+                     *       "status": "ABERTA",
+                     *       "criadaEm": "2026-10-16T12:00:00.000Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Tarefa"];
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    frontV1_post__api_master_republicas_republicaId_tarefas_id_liberar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                republicaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /** @example {} */
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Operação concluída. */
+            200: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "de000000-0000-4000-8000-000700000001",
+                     *       "republicaId": "de000000-0000-4000-8000-000200000001",
+                     *       "responsavelId": null,
+                     *       "titulo": "Limpar cozinha",
+                     *       "descricao": null,
+                     *       "prazo": "2026-10-26T00:00:00.000Z",
+                     *       "status": "ABERTA",
                      *       "criadaEm": "2026-10-16T12:00:00.000Z"
                      *     }
                      */
@@ -13016,6 +15199,367 @@ export interface operations {
             };
         };
     };
+    frontV1_post__api_me_foto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    imagem: Blob;
+                    /** @description JSON {x,y,largura,altura} com inteiros na orientação visual da foto. */
+                    recorte: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Operação concluída. */
+            200: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "versao": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                     *       "atualizadaEm": "2026-10-16T12:00:00.000Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["FotoPerfil"];
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Foto maior que 5 MiB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "LIMIT_FILE_SIZE",
+                     *         "message": "A foto deve ter no máximo 5 MiB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    frontV1_delete__api_me_foto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operação concluída, sem corpo de resposta. */
+            204: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     frontV1_get__api_membros: {
         parameters: {
             query?: {
@@ -13250,6 +15794,926 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["Membro"];
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    frontV1_get__api_notificacoes: {
+        parameters: {
+            query?: {
+                categoria?: "TODAS" | "TAREFAS" | "DESPESAS" | "GERAIS";
+                limite?: number;
+                pagina?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operação concluída. */
+            200: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "dados": [],
+                     *       "paginacao": {
+                     *         "pagina": 1,
+                     *         "limite": 20,
+                     *         "totalItens": 0,
+                     *         "totalPaginas": 0
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        dados: components["schemas"]["Notificacao"][];
+                        paginacao: {
+                            limite: number;
+                            pagina: number;
+                            totalItens: number;
+                            totalPaginas: number;
+                        };
+                    };
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    frontV1_patch__api_notificacoes_id_lida: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /** @example {} */
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Operação concluída, sem corpo de resposta. */
+            204: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    frontV1_get__api_notificacoes_eventos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Fluxo autenticado, sem transação de longa duração. */
+            200: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example event: conectado
+                     *     data: {}
+                     */
+                    "text/event-stream": string;
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    frontV1_patch__api_notificacoes_lidas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "categoria": "TODAS"
+                 *     }
+                 */
+                "application/json": {
+                    /** @enum {unknown} */
+                    categoria: "TODAS" | "TAREFAS" | "DESPESAS" | "GERAIS";
+                };
+            };
+        };
+        responses: {
+            /** @description Operação concluída, sem corpo de resposta. */
+            204: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    frontV1_get__api_notificacoes_nao_lidas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operação concluída. */
+            200: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "tarefas": 0,
+                     *       "despesas": 0,
+                     *       "gerais": 0,
+                     *       "total": 0
+                     *     }
+                     */
+                    "application/json": components["schemas"]["NotificacoesNaoLidas"];
                 };
             };
             /** @description Os dados enviados são inválidos. */
@@ -13846,6 +17310,7 @@ export interface operations {
                      *         "republicaId": "de000000-0000-4000-8000-000200000001",
                      *         "despesaOrigemId": null,
                      *         "inicio": "2026-11",
+                     *         "fim": null,
                      *         "proximaCompetencia": "2026-12",
                      *         "ativa": true,
                      *         "pausaMotivo": null,
@@ -14063,6 +17528,7 @@ export interface operations {
                      *       "republicaId": "de000000-0000-4000-8000-000200000001",
                      *       "despesaOrigemId": null,
                      *       "inicio": "2026-11",
+                     *       "fim": null,
                      *       "proximaCompetencia": "2026-12",
                      *       "ativa": true,
                      *       "pausaMotivo": null,
@@ -14263,6 +17729,7 @@ export interface operations {
                      *       "republicaId": "de000000-0000-4000-8000-000200000001",
                      *       "despesaOrigemId": null,
                      *       "inicio": "2026-11",
+                     *       "fim": null,
                      *       "proximaCompetencia": "2026-12",
                      *       "ativa": true,
                      *       "pausaMotivo": null,
@@ -14472,6 +17939,7 @@ export interface operations {
                      *       "republicaId": "de000000-0000-4000-8000-000200000001",
                      *       "despesaOrigemId": null,
                      *       "inicio": "2026-11",
+                     *       "fim": null,
                      *       "proximaCompetencia": "2026-12",
                      *       "ativa": false,
                      *       "pausaMotivo": null,
@@ -16530,7 +19998,10 @@ export interface operations {
     frontV1_post__api_tarefas: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID público por criação. Mesma chave, usuário, operação e dados retornam a resposta original (201); dados ou república diferentes retornam 409 IDEMPOTENCY_CONFLICT. Nova chave permite criação intencional igual. Sem header não há proteção contra reenvios; header inválido retorna 400. Sessão e permissão são revalidadas em todo reenvio. */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -16549,6 +20020,194 @@ export interface operations {
         responses: {
             /** @description Operação concluída. */
             201: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "de000000-0000-4000-8000-000700000001",
+                     *       "republicaId": "de000000-0000-4000-8000-000200000001",
+                     *       "responsavelId": "de000000-0000-4000-8000-000300000002",
+                     *       "titulo": "Limpar cozinha",
+                     *       "descricao": null,
+                     *       "prazo": "2026-10-26T00:00:00.000Z",
+                     *       "status": "ABERTA",
+                     *       "criadaEm": "2026-10-16T12:00:00.000Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Tarefa"];
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    frontV1_get__api_tarefas_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operação concluída. */
+            200: {
                 headers: {
                     /** @description UUID gerado pelo servidor para correlação com os logs. */
                     "X-Request-Id"?: string;
@@ -16765,6 +20424,568 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["Tarefa"];
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    frontV1_post__api_tarefas_id_assumir: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /** @example {} */
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Operação concluída. */
+            200: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "de000000-0000-4000-8000-000700000001",
+                     *       "republicaId": "de000000-0000-4000-8000-000200000001",
+                     *       "responsavelId": "de000000-0000-4000-8000-000300000002",
+                     *       "titulo": "Limpar cozinha",
+                     *       "descricao": null,
+                     *       "prazo": "2026-10-26T00:00:00.000Z",
+                     *       "status": "ABERTA",
+                     *       "criadaEm": "2026-10-16T12:00:00.000Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Tarefa"];
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    frontV1_post__api_tarefas_id_liberar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /** @example {} */
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Operação concluída. */
+            200: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "de000000-0000-4000-8000-000700000001",
+                     *       "republicaId": "de000000-0000-4000-8000-000200000001",
+                     *       "responsavelId": null,
+                     *       "titulo": "Limpar cozinha",
+                     *       "descricao": null,
+                     *       "prazo": "2026-10-26T00:00:00.000Z",
+                     *       "status": "ABERTA",
+                     *       "criadaEm": "2026-10-16T12:00:00.000Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Tarefa"];
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    frontV1_get__api_usuarios_id_foto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Foto WebP normalizada. */
+            200: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/webp": Blob;
                 };
             };
             /** @description Os dados enviados são inválidos. */
@@ -18475,7 +22696,10 @@ export interface operations {
     post__api_master_republicas_republicaId_despesas: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID público por criação. Mesma chave, usuário, operação e dados retornam a resposta original (201); dados ou república diferentes retornam 409 IDEMPOTENCY_CONFLICT. Nova chave permite criação intencional igual. Sem header não há proteção contra reenvios; header inválido retorna 400. Sessão e permissão são revalidadas em todo reenvio. */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 republicaId: string;
             };
@@ -19610,6 +23834,7 @@ export interface operations {
                      *           "republicaId": "de000000-0000-4000-8000-000200000001",
                      *           "despesaOrigemId": null,
                      *           "inicio": "2026-11",
+                     *           "fim": null,
                      *           "proximaCompetencia": "2026-12",
                      *           "ativa": true,
                      *           "pausaMotivo": null,
@@ -19844,6 +24069,7 @@ export interface operations {
                      *       "republicaId": "de000000-0000-4000-8000-000200000001",
                      *       "despesaOrigemId": null,
                      *       "inicio": "2026-11",
+                     *       "fim": null,
                      *       "proximaCompetencia": "2026-12",
                      *       "ativa": true,
                      *       "pausaMotivo": null,
@@ -20045,6 +24271,7 @@ export interface operations {
                      *       "republicaId": "de000000-0000-4000-8000-000200000001",
                      *       "despesaOrigemId": null,
                      *       "inicio": "2026-11",
+                     *       "fim": null,
                      *       "proximaCompetencia": "2026-12",
                      *       "ativa": true,
                      *       "pausaMotivo": null,
@@ -20255,6 +24482,7 @@ export interface operations {
                      *       "republicaId": "de000000-0000-4000-8000-000200000001",
                      *       "despesaOrigemId": null,
                      *       "inicio": "2026-11",
+                     *       "fim": null,
                      *       "proximaCompetencia": "2026-12",
                      *       "ativa": false,
                      *       "pausaMotivo": null,
@@ -21030,7 +25258,10 @@ export interface operations {
     post__api_master_republicas_republicaId_tarefas: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID público por criação. Mesma chave, usuário, operação e dados retornam a resposta original (201); dados ou república diferentes retornam 409 IDEMPOTENCY_CONFLICT. Nova chave permite criação intencional igual. Sem header não há proteção contra reenvios; header inválido retorna 400. Sessão e permissão são revalidadas em todo reenvio. */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 republicaId: string;
             };
@@ -21051,6 +25282,195 @@ export interface operations {
         responses: {
             /** @description Operação concluída. */
             201: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "de000000-0000-4000-8000-000700000001",
+                     *       "republicaId": "de000000-0000-4000-8000-000200000001",
+                     *       "responsavelId": "de000000-0000-4000-8000-000300000002",
+                     *       "titulo": "Limpar cozinha",
+                     *       "descricao": null,
+                     *       "prazo": "2026-10-26T00:00:00.000Z",
+                     *       "status": "ABERTA",
+                     *       "criadaEm": "2026-10-16T12:00:00.000Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Tarefa"];
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    get__api_master_republicas_republicaId_tarefas_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                republicaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operação concluída. */
+            200: {
                 headers: {
                     /** @description UUID gerado pelo servidor para correlação com os logs. */
                     "X-Request-Id"?: string;
@@ -21264,6 +25684,394 @@ export interface operations {
                      *       "descricao": null,
                      *       "prazo": "2026-10-26T00:00:00.000Z",
                      *       "status": "CONCLUIDA",
+                     *       "criadaEm": "2026-10-16T12:00:00.000Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Tarefa"];
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    post__api_master_republicas_republicaId_tarefas_id_assumir: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                republicaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /** @example {} */
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Operação concluída. */
+            200: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "de000000-0000-4000-8000-000700000001",
+                     *       "republicaId": "de000000-0000-4000-8000-000200000001",
+                     *       "responsavelId": "de000000-0000-4000-8000-000300000002",
+                     *       "titulo": "Limpar cozinha",
+                     *       "descricao": null,
+                     *       "prazo": "2026-10-26T00:00:00.000Z",
+                     *       "status": "ABERTA",
+                     *       "criadaEm": "2026-10-16T12:00:00.000Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Tarefa"];
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    post__api_master_republicas_republicaId_tarefas_id_liberar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                republicaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /** @example {} */
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Operação concluída. */
+            200: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "de000000-0000-4000-8000-000700000001",
+                     *       "republicaId": "de000000-0000-4000-8000-000200000001",
+                     *       "responsavelId": null,
+                     *       "titulo": "Limpar cozinha",
+                     *       "descricao": null,
+                     *       "prazo": "2026-10-26T00:00:00.000Z",
+                     *       "status": "ABERTA",
                      *       "criadaEm": "2026-10-16T12:00:00.000Z"
                      *     }
                      */
@@ -23232,6 +28040,367 @@ export interface operations {
             };
         };
     };
+    post__api_me_foto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    imagem: Blob;
+                    /** @description JSON {x,y,largura,altura} com inteiros na orientação visual da foto. */
+                    recorte: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Operação concluída. */
+            200: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "versao": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                     *       "atualizadaEm": "2026-10-16T12:00:00.000Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["FotoPerfil"];
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Foto maior que 5 MiB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "LIMIT_FILE_SIZE",
+                     *         "message": "A foto deve ter no máximo 5 MiB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    delete__api_me_foto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operação concluída, sem corpo de resposta. */
+            204: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     get__api_membros: {
         parameters: {
             query?: {
@@ -23640,6 +28809,926 @@ export interface operations {
             };
         };
     };
+    get__api_notificacoes: {
+        parameters: {
+            query?: {
+                categoria?: "TODAS" | "TAREFAS" | "DESPESAS" | "GERAIS";
+                limite?: number;
+                pagina?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operação concluída. */
+            200: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "dados": [],
+                     *       "paginacao": {
+                     *         "pagina": 1,
+                     *         "limite": 20,
+                     *         "totalItens": 0,
+                     *         "totalPaginas": 0
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        dados: components["schemas"]["Notificacao"][];
+                        paginacao: {
+                            limite: number;
+                            pagina: number;
+                            totalItens: number;
+                            totalPaginas: number;
+                        };
+                    };
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    patch__api_notificacoes_id_lida: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /** @example {} */
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Operação concluída, sem corpo de resposta. */
+            204: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    get__api_notificacoes_eventos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Fluxo autenticado, sem transação de longa duração. */
+            200: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example event: conectado
+                     *     data: {}
+                     */
+                    "text/event-stream": string;
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    patch__api_notificacoes_lidas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "categoria": "TODAS"
+                 *     }
+                 */
+                "application/json": {
+                    /** @enum {unknown} */
+                    categoria: "TODAS" | "TAREFAS" | "DESPESAS" | "GERAIS";
+                };
+            };
+        };
+        responses: {
+            /** @description Operação concluída, sem corpo de resposta. */
+            204: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    get__api_notificacoes_nao_lidas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operação concluída. */
+            200: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "tarefas": 0,
+                     *       "despesas": 0,
+                     *       "gerais": 0,
+                     *       "total": 0
+                     *     }
+                     */
+                    "application/json": components["schemas"]["NotificacoesNaoLidas"];
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     get__api_openapi_json: {
         parameters: {
             query?: never;
@@ -23662,7 +29751,7 @@ export interface operations {
                      *       "openapi": "3.1.0",
                      *       "info": {
                      *         "title": "RepHouse API",
-                     *         "version": "2.2.0"
+                     *         "version": "4.2.0"
                      *       },
                      *       "paths": {},
                      *       "components": {}
@@ -24356,6 +30445,7 @@ export interface operations {
                      *           "republicaId": "de000000-0000-4000-8000-000200000001",
                      *           "despesaOrigemId": null,
                      *           "inicio": "2026-11",
+                     *           "fim": null,
                      *           "proximaCompetencia": "2026-12",
                      *           "ativa": true,
                      *           "pausaMotivo": null,
@@ -24588,6 +30678,7 @@ export interface operations {
                      *       "republicaId": "de000000-0000-4000-8000-000200000001",
                      *       "despesaOrigemId": null,
                      *       "inicio": "2026-11",
+                     *       "fim": null,
                      *       "proximaCompetencia": "2026-12",
                      *       "ativa": true,
                      *       "pausaMotivo": null,
@@ -24788,6 +30879,7 @@ export interface operations {
                      *       "republicaId": "de000000-0000-4000-8000-000200000001",
                      *       "despesaOrigemId": null,
                      *       "inicio": "2026-11",
+                     *       "fim": null,
                      *       "proximaCompetencia": "2026-12",
                      *       "ativa": true,
                      *       "pausaMotivo": null,
@@ -24997,6 +31089,7 @@ export interface operations {
                      *       "republicaId": "de000000-0000-4000-8000-000200000001",
                      *       "despesaOrigemId": null,
                      *       "inicio": "2026-11",
+                     *       "fim": null,
                      *       "proximaCompetencia": "2026-12",
                      *       "ativa": false,
                      *       "pausaMotivo": null,
@@ -27093,7 +33186,10 @@ export interface operations {
     post__api_tarefas: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID público por criação. Mesma chave, usuário, operação e dados retornam a resposta original (201); dados ou república diferentes retornam 409 IDEMPOTENCY_CONFLICT. Nova chave permite criação intencional igual. Sem header não há proteção contra reenvios; header inválido retorna 400. Sessão e permissão são revalidadas em todo reenvio. */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -27112,6 +33208,194 @@ export interface operations {
         responses: {
             /** @description Operação concluída. */
             201: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "de000000-0000-4000-8000-000700000001",
+                     *       "republicaId": "de000000-0000-4000-8000-000200000001",
+                     *       "responsavelId": "de000000-0000-4000-8000-000300000002",
+                     *       "titulo": "Limpar cozinha",
+                     *       "descricao": null,
+                     *       "prazo": "2026-10-26T00:00:00.000Z",
+                     *       "status": "ABERTA",
+                     *       "criadaEm": "2026-10-16T12:00:00.000Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Tarefa"];
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    get__api_tarefas_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operação concluída. */
+            200: {
                 headers: {
                     /** @description UUID gerado pelo servidor para correlação com os logs. */
                     "X-Request-Id"?: string;
@@ -27328,6 +33612,568 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["Tarefa"];
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    post__api_tarefas_id_assumir: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /** @example {} */
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Operação concluída. */
+            200: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "de000000-0000-4000-8000-000700000001",
+                     *       "republicaId": "de000000-0000-4000-8000-000200000001",
+                     *       "responsavelId": "de000000-0000-4000-8000-000300000002",
+                     *       "titulo": "Limpar cozinha",
+                     *       "descricao": null,
+                     *       "prazo": "2026-10-26T00:00:00.000Z",
+                     *       "status": "ABERTA",
+                     *       "criadaEm": "2026-10-16T12:00:00.000Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Tarefa"];
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    post__api_tarefas_id_liberar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /** @example {} */
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Operação concluída. */
+            200: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "de000000-0000-4000-8000-000700000001",
+                     *       "republicaId": "de000000-0000-4000-8000-000200000001",
+                     *       "responsavelId": null,
+                     *       "titulo": "Limpar cozinha",
+                     *       "descricao": null,
+                     *       "prazo": "2026-10-26T00:00:00.000Z",
+                     *       "status": "ABERTA",
+                     *       "criadaEm": "2026-10-16T12:00:00.000Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Tarefa"];
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Sessão inválida ou encerrada. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "UNAUTHENTICATED",
+                     *         "message": "Sessão inválida ou encerrada."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A operação exige o administrador da república. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "FORBIDDEN",
+                     *         "message": "A operação exige o administrador da república."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflito temporário. Tente novamente com a mesma chave de pagamento. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "RETRY_LATER",
+                     *         "message": "Conflito temporário. Tente novamente com a mesma chave de pagamento."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    get__api_usuarios_id_foto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Foto WebP normalizada. */
+            200: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/webp": Blob;
                 };
             };
             /** @description Os dados enviados são inválidos. */

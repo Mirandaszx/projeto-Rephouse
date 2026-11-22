@@ -1,15 +1,17 @@
+import ErrorNotice from '../interno/ErrorNotice'
+import type { Feedback } from '../interno/feedback'
 import { useRef, useState } from 'react'
 import { apiRequest } from '../api'
 import { GlisseButton } from '../rebuild/GlisseButton'
 import ActionDialog from './ActionDialog'
 import type { House, Member } from './types'
-import { errorMessage } from './types'
+import { errorFeedback } from './types'
 import { SectionHeading } from '../interno/WorkspaceUI'
 
 type Props = { house: House; members: Member[]; token: string; canManage: boolean; onChanged: () => void }
 export default function HouseSettings({ house, members, token, canManage, onChanged }: Props) {
   const [action, setAction] = useState<'transfer' | 'leave' | 'swap' | null>(null)
-  const [error, setError] = useState('')
+  const [error, setError] = useState<Feedback>('')
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
   const lock = useRef(false)
@@ -21,13 +23,13 @@ export default function HouseSettings({ house, members, token, canManage, onChan
         const data = new FormData(event.currentTarget)
         lock.current = true; setBusy(true); setError(''); setNotice('')
         void apiRequest('PATCH', '/republicas/atual', token, { nome: String(data.get('nome')).trim(), endereco: String(data.get('endereco')).trim() || null })
-          .then(() => { setNotice('República atualizada.'); onChanged() }).catch(failure => setError(errorMessage(failure))).finally(() => { lock.current = false; setBusy(false) })
+          .then(() => { setNotice('República atualizada.'); onChanged() }).catch(failure => setError(errorFeedback(failure))).finally(() => { lock.current = false; setBusy(false) })
       }}>
         <label>Nome da república<input name="nome" required maxLength={120} defaultValue={house.nome} disabled={busy} /></label>
         <label>Endereço opcional<input name="endereco" maxLength={255} defaultValue={house.endereco ?? ''} disabled={busy} /></label>
         <GlisseButton type="submit" disabled={busy}>{busy ? 'Salvando…' : 'Salvar república'}</GlisseButton>
       </form> : <><p>{house.nome}</p><p>{house.endereco || 'Endereço não informado.'}</p><p className="rep-management-note">Somente a administração pode editar os dados.</p></>}
-      {notice && <p role="status">{notice}</p>}{error && <p className="rep-action-error" role="alert">{error}</p>}
+      {notice && <p role="status">{notice}</p>}{error && <ErrorNotice error={error} />}
     </section>
     {canManage && <section className="rep-management-card workspace-settings-action"><SectionHeading title="Transferir administração" /><p>O novo administrador assume a gestão. Sua conta passa a ser morador e seu histórico permanece na casa.</p>
       <GlisseButton variant="secondary" disabled={busy || !candidates.length} onClick={() => setAction('transfer')}>Transferir administração</GlisseButton>

@@ -5,13 +5,15 @@ import type { Actor } from '../context.js'
 import { civilDate } from '../../configuracao/time-zone.js'
 
 export const uuid = z.uuid()
-export const money = z.string().regex(/^\d{1,10}(\.\d{1,2})?$/).refine(value => new Prisma.Decimal(value).greaterThan(0))
+// A conversão só recebe valores cujo formato já passou na primeira etapa.
+export const money = z.string().regex(/^\d{1,10}(\.\d{1,2})?$/)
+  .pipe(z.string().refine(value => new Prisma.Decimal(value).greaterThan(0)))
 export const dateOnly = z.iso.date().transform(value => new Date(`${value}T00:00:00.000Z`))
 export const name = z.string().trim().min(1).max(120)
 export const email = z.string().trim().toLowerCase().max(254).pipe(z.email())
 export const password = z.string().min(8).max(128)
 
-function jsonValue(value: unknown): unknown {
+export function jsonValue(value: unknown): unknown {
   if (value instanceof Prisma.Decimal) return value.toFixed(2)
   if (value instanceof Date) return value.toISOString()
   if (Array.isArray(value)) return value.map(jsonValue)

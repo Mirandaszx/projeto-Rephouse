@@ -4,6 +4,9 @@ import { prepare } from './auxiliares/modernizacao-fixture'
 import type { components } from '../../integracao/api'
 import { contrast } from './auxiliares/contraste'
 
+// Instancia HTTP isolada por arquivo; os controles reais permanecem habilitados.
+test.use({ extraHTTPHeaders: { 'x-interface-test-run': process.env.REPHOUSE_INTERFACE_TEST_RUN ?? '', 'x-interface-suite': 'refinamentos-financeiros.spec.ts' } })
+
 type Schemas = components['schemas']
 const api = 'http://127.0.0.1:3405/api'
 const shots = '../.devops-local/interface/imagens/impeccable-polimento'
@@ -54,6 +57,7 @@ test('prévia de R$ 100 entre três moradores coincide com o rateio persistido',
   const payment = page.getByRole('dialog', { name: 'Registrar pagamento', exact: true })
   await expect(payment).toContainText('O RepHouse não transfere dinheiro.')
   await payment.getByRole('button', { name: 'Cancelar', exact: true }).click()
+  await page.getByRole('link', { name: 'Despesas', exact: true }).first().click()
   await page.getByRole('button', { name: '＋ Nova despesa', exact: true }).click()
   await expect(dialog.getByLabel('Valor total da despesa (R$)', { exact: true })).toHaveValue('')
   await expect(dialog.getByRole('region', { name: 'Conferência do rateio' })).toContainText('Informe um valor válido')
@@ -82,14 +86,17 @@ test('pendências mantêm título legível e não repetem a mesma conta nos rece
   }
 })
 
-test('setas tornam os cinco filtros acessíveis no celular', async ({ page }) => {
+test('cinco filtros continuam acessíveis no celular sem barra ou botões laterais', async ({ page }) => {
   await prepare(page)
   await page.setViewportSize({ width: 320, height: 844 })
   await page.goto('/republica/despesas')
   await expect(page.getByLabel('Mês do vencimento', { exact: true })).toBeVisible()
-  await expect(page.getByText('Deslize ou use as setas para ver todos os filtros.', { exact: true })).toBeVisible()
+  await expect(page.getByText('Deslize ou use as setas para ver todos os filtros.', { exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /Mostrar (mais filtros|filtros anteriores)/ })).toHaveCount(0)
   const scroller = page.locator('.finance-filters')
-  await page.getByRole('button', { name: 'Mostrar mais filtros', exact: true }).click()
+  expect(await scroller.evaluate(element => getComputedStyle(element).scrollbarWidth)).toBe('none')
+  await page.getByRole('radio', { name: 'Todas', exact: true }).focus()
+  for (let index = 0; index < 4; index++) await page.keyboard.press('ArrowRight')
   await expect.poll(() => scroller.evaluate(element => element.scrollLeft)).toBeGreaterThan(0)
   await page.getByRole('radio', { name: 'Pagas', exact: true }).click()
   await expect(page.getByRole('radio', { name: 'Pagas', exact: true })).toBeChecked()

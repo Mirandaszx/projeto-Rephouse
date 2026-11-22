@@ -1,6 +1,6 @@
 {
   "name": "projeto-rephouse",
-  "version": "2.2.0",
+  "version": "4.2.0",
   "description": "Sistema web simples para gestão e organização de repúblicas e residências compartilhadas.",
   "main": "dist/server.js",
   "directories": {
@@ -21,8 +21,8 @@
     "api:exportar": "tsx codigo/comandos/exportar-openapi.ts",
     "auth:secret": "tsx codigo/comandos/generate-secret.ts",
     "master:provision": "tsx codigo/comandos/provision-master.ts",
-    "test": "tsx --test --test-reporter=tap --test-concurrency=1 testes/rateio.test.ts testes/http.test.ts testes/integracao-http.test.ts testes/operacao-http.test.ts testes/backup.test.ts testes/robustez.test.ts testes/frontend-compat.test.ts testes/financeiro-evolucao.test.ts",
-    "test:db": "tsx ferramentas/integracao/conferir-destino.ts && tsx --test --test-reporter=tap --test-concurrency=1 testes/database.test.ts testes/acid.test.ts testes/migration.test.ts testes/comprovantes.test.ts testes/jornadas-integracao.test.ts testes/google.test.ts testes/frontend-compat-db.test.ts testes/financeiro-evolucao-db.test.ts testes/financeiro-migracao.test.ts testes/financeiro-reinicio.test.ts testes/request-identidade.test.ts testes/request-idempotencia.test.ts testes/request-financeiro.test.ts testes/request-recorrencias.test.ts testes/request-google.test.ts testes/permissoes-db.test.ts testes/schema-hardening.test.ts",
+    "test": "tsx --test --test-reporter=tap --test-concurrency=1 testes/rateio.test.ts testes/http.test.ts testes/integracao-http.test.ts testes/operacao-http.test.ts testes/backup.test.ts testes/robustez.test.ts testes/frontend-compat.test.ts testes/financeiro-evolucao.test.ts testes/email-adapter.test.ts",
+    "test:db": "tsx ferramentas/integracao/conferir-destino.ts && tsx --test --test-reporter=tap --test-concurrency=1 testes/database.test.ts testes/acid.test.ts testes/migration.test.ts testes/comprovantes.test.ts testes/jornadas-integracao.test.ts testes/google.test.ts testes/frontend-compat-db.test.ts testes/financeiro-evolucao-db.test.ts testes/financeiro-migracao.test.ts testes/financeiro-reinicio.test.ts testes/request-identidade.test.ts testes/request-idempotencia.test.ts testes/request-financeiro.test.ts testes/request-recorrencias.test.ts testes/request-google.test.ts testes/permissoes-db.test.ts testes/schema-hardening.test.ts testes/request-correcao-bugs.test.ts testes/request-email.test.ts testes/request-notificacoes.test.ts testes/request-notificacoes-gerais.test.ts testes/notificacoes-migracao.test.ts testes/request-perfil.test.ts",
     "test:integracao": "tsx ferramentas/integracao/conferir-destino.ts && tsx --test testes/jornadas-integracao.test.ts",
     "test:completo": "tsx ferramentas/integracao/testar-completo.ts",
     "financeiro:demo": "tsx ferramentas/integracao/demo-financeiro.ts",
@@ -38,7 +38,9 @@
     "api:tipos": "npm run api:exportar && tsx ferramentas/contrato/gerar.ts",
     "api:tipos:verificar": "tsx ferramentas/contrato/gerar.ts --verificar",
     "db:permissoes": "tsx codigo/comandos/configurar-permissoes.ts",
-    "test:permissoes": "tsx ferramentas/integracao/conferir-destino.ts && tsx --test --test-reporter=tap testes/permissoes-db.test.ts"
+    "test:permissoes": "tsx ferramentas/integracao/conferir-destino.ts && tsx --test --test-reporter=tap testes/permissoes-db.test.ts",
+    "test:email": "tsx ferramentas/integracao/conferir-destino.ts && tsx --test --test-reporter=tap --test-concurrency=1 testes/request-email.test.ts",
+    "test:notificacoes": "tsx ferramentas/integracao/conferir-destino.ts && tsx --test --test-reporter=tap --test-concurrency=1 testes/request-notificacoes.test.ts testes/request-notificacoes-gerais.test.ts"
   },
   "repository": {
     "type": "git",
@@ -68,6 +70,7 @@
     "jose": "6.2.12",
     "multer": "2.4.0",
     "pg": "8.23.1",
+    "sharp": "0.35.5",
     "zod": "4.6.7"
   },
   "devDependencies": {

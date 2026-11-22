@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { contextoCasa } from './auxiliares/request-spec.js'
 
-// Expectativas aprovadas: NÃO marcar como TODO/skip e NÃO implementar a funcionalidade para torná-las verdes.
+// Especificação aprovada e preservada na correção 2.2.1: não ignorar nem enfraquecer os cenários.
 for (const kind of ['despesas', 'tarefas'] as const) {
   describe(`Criação de ${kind}: identidade da operação`, () => {
     const input = (memberId: string) => kind === 'despesas'

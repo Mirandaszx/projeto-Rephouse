@@ -1,17 +1,19 @@
+import ErrorNotice from '../interno/ErrorNotice'
+import type { Feedback } from '../interno/feedback'
 import { useEffect, useRef, useState } from 'react'
 import { apiRequest, brl, request } from '../api'
 import { GlisseButton } from '../rebuild/GlisseButton'
 import ActionDialog from './ActionDialog'
 import Payments from './Payments'
 import type { PersonalShare, Schemas } from './types'
-import { balance, civilDate, errorMessage } from './types'
+import { balance, civilDate, errorFeedback } from './types'
 import { Badge, EmptyState, SectionHeading } from '../interno/WorkspaceUI'
 import { financialState } from '../interno/presentation'
 import './financial.css'
 
 export default function PersonalFinance({ token, currentHouseId }: { token: string; currentHouseId?: string }) {
   const [items, setItems] = useState<PersonalShare[] | null>(null)
-  const [error, setError] = useState('')
+  const [error, setError] = useState<Feedback>('')
   const [revision, setRevision] = useState(0)
   const [month, setMonth] = useState('')
   const [situation, setSituation] = useState('TODAS')
@@ -26,7 +28,7 @@ export default function PersonalFinance({ token, currentHouseId }: { token: stri
     if (month) query.set('competencia', month)
     if (situation !== 'TODAS') query.set('situacao', situation)
     const suffix = query.size ? '?' + query.toString() : ''
-    Promise.all([request<PersonalShare[]>('/me/financeiro' + suffix, token), request<Schemas['ResumoIndividual']>('/me/financeiro/resumo' + suffix, token)]).then(([data, totals]) => { if (active) { setItems(data); setSummary(totals); setLoadedFilter(filterKey); setError('') } }).catch(failure => { if (active) setError(errorMessage(failure)) })
+    Promise.all([request<PersonalShare[]>('/me/financeiro' + suffix, token), request<Schemas['ResumoIndividual']>('/me/financeiro/resumo' + suffix, token)]).then(([data, totals]) => { if (active) { setItems(data); setSummary(totals); setLoadedFilter(filterKey); setError('') } }).catch(failure => { if (active) setError(errorFeedback(failure)) })
     return () => { active = false }
   }, [token, revision, month, situation, filterKey])
   const visibleItems = loadedFilter === filterKey ? items : null
@@ -43,7 +45,7 @@ export default function PersonalFinance({ token, currentHouseId }: { token: stri
     <p>{month ? `Contas com vencimento em ${month.split('-').reverse().join('/')}.` : 'Contas de todos os meses.'} Os pagamentos dessas contas contam mesmo quando feitos em outro mês.</p>
     {summary && loadedFilter === filterKey && <section className="workspace-finance-summary" aria-label="Resumo do seu financeiro"><div><span>{month ? 'Sua parte nas contas do mês' : 'Sua parte nas contas'}</span><strong>{brl.format(Number(summary.totalDevido))}</strong></div><div><span>Pago dessas contas</span><strong>{brl.format(Number(summary.totalPago))}</strong></div><div><span>{month ? 'Saldo dessas contas' : 'Seu saldo em aberto'}</span><strong>{brl.format(Number(summary.saldoPendente))}</strong></div></section>}
     <section className="rep-management-card workspace-finance-history"><SectionHeading title="Seu histórico financeiro" description="Suas partes, pagamentos e comprovantes de cada república." />
-      {error && <><p role="alert" className="rep-action-error">{error}</p><GlisseButton variant="secondary" onClick={() => setRevision(value => value + 1)}>Tentar carregar financeiro</GlisseButton></>}
+      {error && <><ErrorNotice error={error} /><GlisseButton variant="secondary" onClick={() => setRevision(value => value + 1)}>Tentar carregar financeiro</GlisseButton></>}
       {!visibleItems && !error && <p role="status">Carregando seu financeiro…</p>}
       {visibleItems?.length === 0 && <EmptyState title="Nenhuma despesa no seu histórico." />}
       {Array.from(houses, ([id, group]) => <section className="workspace-house-history" key={id} aria-label={`Histórico de ${group.name}`}><div className="workspace-house-history-heading"><h3>{group.name}</h3><Badge tone={id === currentHouseId ? 'success' : 'neutral'}>{id === currentHouseId ? 'República atual' : 'Vínculo anterior'}</Badge></div><ul className="rep-management-list">{group.items.map(share => {

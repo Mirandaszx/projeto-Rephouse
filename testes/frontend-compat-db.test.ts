@@ -9,21 +9,26 @@ import { validarResposta } from './auxiliares/contrato.js'
 import { FRONT_PREFIX } from '../codigo/modulos/integracao/frontend-compat.js'
 import type { components } from '../integracao/api.js'
 import type { Page } from '../codigo/compartilhado/http/pagination.js'
+import { testMailbox } from './auxiliares/email.js'
 
 type Schemas = components['schemas']
 
 test('frontend PR #2: integração de ambos os contratos com PostgreSQL real', { timeout: 90000 }, async t => {
   const password = 'Senha-compatibilidade-local-2026!'
   const environment = await abrirAmbienteIntegracao(process.env.TEST_DATABASE_URL, password)
-  const http = createApp({ database: environment.db, jwtSecret: 'segredo-exclusivo-dos-testes-de-compatibilidade', log: () => {}, corsOrigins: ['http://localhost:5182'] }).listen(0, '127.0.0.1')
+  const mailbox = testMailbox('http://localhost:5182')
+  const http = createApp({ database: environment.db, jwtSecret: 'segredo-exclusivo-dos-testes-de-compatibilidade', email: mailbox.options, log: () => {}, corsOrigins: ['http://localhost:5182'] }).listen(0, '127.0.0.1')
+  let cookie = ''
   try {
     await once(http, 'listening')
     const address = http.address(); assert.ok(address && typeof address !== 'string')
     const base = `http://127.0.0.1:${address.port}`
     async function request<T = unknown>(path: string, token?: string, method = 'GET', body?: unknown, status = 200): Promise<T> {
       const response = await fetch(base + path, { method, headers: {
+        Origin: 'http://localhost:5182', Cookie: cookie,
         ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}),
       }, body: body ? JSON.stringify(body) : undefined })
+      cookie = response.headers.get('set-cookie')?.split(';')[0] ?? cookie
       assert.equal(response.status, status, `${method} ${path}: ${await response.clone().text()}`)
       assert.match(response.headers.get('X-Request-Id') ?? '', /^[a-f0-9-]{36}$/)
       assert.equal(response.headers.get('Cache-Control'), 'no-store')
@@ -43,7 +48,8 @@ test('frontend PR #2: integração de ambos os contratos com PostgreSQL real', {
     const memberId = me.membro.id
     let taskId = ''
     await t.test('cadastro, perfil e contexto usam as mesmas contas nos dois namespaces', async () => {
-      const registered = await request<Schemas['Sessao']>(`${FRONT_PREFIX}/auth/register`, undefined, 'POST', { nome: 'Conta teste', email: 'nova@compatibilidade.test', senha: password }, 201)
+      await request(`${FRONT_PREFIX}/auth/register`, undefined, 'POST', { nome: 'Conta teste', email: 'nova@compatibilidade.test', senha: password }, 202)
+      const registered = await request<Schemas['Sessao']>(`${FRONT_PREFIX}/auth/email/confirmar`, undefined, 'POST', mailbox.proof('nova@compatibilidade.test'))
       assert.equal((await request<Schemas['MinhaConta']>('/api/me', registered.token)).id, registered.usuario.id)
       await request('/api/me', registered.token, 'PATCH', { nome: 'Nome atualizado' })
       assert.equal((await request<Schemas['MinhaConta']>(`${FRONT_PREFIX}/me`, registered.token)).nome, 'Nome atualizado')
@@ -114,8 +120,8 @@ test('frontend PR #2: integração de ambos os contratos com PostgreSQL real', {
       await request(`${FRONT_PREFIX}/me`, member, 'GET', undefined, 401)
     })
     await t.test('alternar namespaces não contorna o limitador de autenticação', async () => {
-      // 4 logins e 1 cadastro acima já consumiram cinco das vinte tentativas.
-      for (let index = 0; index < 15; index++) {
+      // 4 logins, 1 solicitação de cadastro e sua confirmação já consumiram seis das vinte tentativas.
+      for (let index = 0; index < 14; index++) {
         await request(`${index % 2 ? '/api' : FRONT_PREFIX}/auth/login`, undefined, 'POST', { email: 'ausente@compatibilidade.test', senha: password }, 401)
       }
       for (const prefix of ['/api', FRONT_PREFIX]) await request(`${prefix}/auth/login`, undefined, 'POST', { email: emailIntegracao('ana'), senha: password }, 429)

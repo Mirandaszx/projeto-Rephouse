@@ -3,6 +3,7 @@ import { createHealthRouter } from './modulos/saude/health.routes.js'
 import { errorHandler } from './compartilhado/http/error-handler.js'
 import { notFoundHandler } from './compartilhado/http/not-found.js'
 import multer from 'multer'
+import { createPhotoRouter } from './modulos/perfil/foto.routes.js'
 import cors from 'cors'
 import helmet from 'helmet'
 import { createUploadLimit } from './compartilhado/http/upload-limit.js'
@@ -29,8 +30,11 @@ import { requestLog, type LogSink } from './compartilhado/http/request-log.js'
 import { isReady } from './modulos/saude/readiness.js'
 import type { GoogleOptions } from './modulos/autenticacao/google.service.js'
 import { createFrontendCompatibilityRouter, FRONT_PREFIX } from './modulos/integracao/frontend-compat.js'
+import type { EmailOptions } from './infraestrutura/email/resend.js'
+import { createNotificationsRouter } from './modulos/notificacoes/notificacoes.routes.js'
+import type { NotificationsSignal } from './modulos/notificacoes/notificacoes.stream.js'
 
-interface AppOptions { database?: PrismaClient; jwtSecret?: string; corsOrigins?: string[]; log?: LogSink; readiness?: () => Promise<unknown>; google?: GoogleOptions }
+interface AppOptions { database?: PrismaClient; jwtSecret?: string; corsOrigins?: string[]; log?: LogSink; readiness?: () => Promise<unknown>; google?: GoogleOptions; email?: EmailOptions; notificationsSignal?: NotificationsSignal }
 
 // Monta HTTP sem abrir porta ou conexão: reutilizável nos testes.
 export function createApp(options: AppOptions = {}): Express {
@@ -57,7 +61,9 @@ export function createApp(options: AppOptions = {}): Express {
   if (options.database) {
     if (!options.jwtSecret || options.jwtSecret.length < 32) throw new Error('JWT_SECRET precisa ter ao menos 32 caracteres.')
     const db = options.database
-    const auth = createAuthController(createAuthService(db, options.jwtSecret, options.google), options.corsOrigins, options.google)
+    const authService = createAuthService(db, options.jwtSecret, options.google, options.email)
+    const auth = createAuthController(authService, options.corsOrigins,
+      { clientId: options.google?.clientId ?? '', ...options.google, secureCookies: options.email?.secureCookies ?? options.google?.secureCookies })
     const republicas = createRepublicasService(db)
     const rc = createRepublicasController(republicas)
     const financeiro = createFinanceiroService(db)
@@ -69,6 +75,10 @@ export function createApp(options: AppOptions = {}): Express {
     const authRouter = createAuthRouter(auth)
     const api = express.Router()
     api.use(auth.authenticate)
+    api.use(createPhotoRouter(db, auth.activeSession))
+    const notifications = createNotificationsRouter(db, token => authService.verifyToken(token), options.notificationsSignal)
+    api.use('/notificacoes', notifications.router)
+    app.locals.closeNotifications = notifications.close
     api.get('/me', auth.me).patch('/me', auth.edit).delete('/me', auth.deleteAccount)
     api.get('/me/financeiro/resumo', fc.personalSummary)
     api.get('/me/financeiro', fc.personal).get('/me/financeiro/:id', fc.personalDetail)

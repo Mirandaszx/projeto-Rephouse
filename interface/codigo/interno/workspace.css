@@ -1,3 +1,4 @@
+@font-face { font-family: "RepHouse Inter"; src: url(/fonts/InterVariable.woff2) format("woff2"); font-weight: 100 900; font-display: swap; }
 /* A identidade interna fica no contêiner: home e autenticação conservam seus tokens. */
 :is(.republica, .rh-admin).rep-internal {
   --app-canvas: #f7f5ef;
@@ -15,6 +16,9 @@
   --workspace-rail-muted: #cfdfd4;
   --workspace-lime: #d2ec9c;
   --workspace-radius: 14px;
+  --workspace-error-bg: #fff1ec;
+  --workspace-error-text: #8b3129;
+  --workspace-error-border: #c57e6b;
   --rep-paper: var(--app-canvas);
   --rep-ink: var(--app-text);
   --rep-muted: var(--app-muted);
@@ -46,15 +50,25 @@
   --app-focus: #d2ec9c;
   --workspace-rail: #173d33;
   --rep-mint: #2b3830;
+  --workspace-error-bg: #452a25;
+  --workspace-error-text: #ffd4c3;
+  --workspace-error-border: #b8735d;
 }
+.workspace-error{min-width:0;max-width:100%;overflow-wrap:anywhere}
+.workspace-error>.rep-action-error{margin-block:0}
+.workspace-error-support{margin-top:8px;font-size:14px;color:var(--app-muted);line-height:1.5}
+.workspace-error-support summary{cursor:pointer;min-height:44px;display:flex;align-items:center;text-decoration:underline;text-underline-offset:4px;width:fit-content}
+.workspace-error-support code{display:block;overflow-wrap:anywhere;margin-block:8px;color:var(--app-text)}
+.workspace-error-support button{min-height:44px;padding:8px 12px;background:var(--app-surface);color:var(--app-text);border:1px solid var(--app-control-border);border-radius:10px;font-size:14px}
+.workspace-error-support p{font-size:14px!important;line-height:1.5;margin-block:8px!important;color:var(--app-muted)}
 .republica.rep-internal { grid-template-columns: 248px minmax(0, 1fr); }
 .republica.rep-internal.rep-account-shell { display: block; }
 .rep-internal :is(h1, h2, h3, h4, p) { overflow-wrap: anywhere; }
 .rep-internal :is(h1, h2, h3, h4) { color: inherit; }
 .rep-internal :is(button, a, input, textarea, select) { touch-action: manipulation; }
 .rep-internal :focus-visible { outline: 3px solid var(--app-focus); outline-offset: 3px; }
-.rep-internal .workspace-brand { gap: 10px; font-size: 23px; font-weight: 750; letter-spacing: -.045em; white-space: nowrap; }
-.rep-internal .workspace-brand > span:first-child { width: 34px; height: 34px; border-radius: 10px; color: #205448; background: var(--workspace-lime); }
+.rep-internal .workspace-brand { display: flex; align-items: center; gap: 10px; font-size: 23px; font-weight: 750; letter-spacing: -.045em; white-space: nowrap; text-decoration: none; }
+.rep-internal .workspace-brand > span:first-child { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 10px; color: #205448; background: var(--workspace-lime); }
 .rep-internal .workspace-brand .workspace-brand-dot { display: inline; width: auto; height: auto; background: none; color: var(--app-accent); margin-left: -10px; }
 .rep-internal a.workspace-brand > span.workspace-brand-dot { color: var(--app-accent); }
 .republica.rep-internal aside.rep-sidebar { padding: 28px 20px 20px; gap: 24px; background: var(--workspace-rail); color: var(--workspace-rail-text); border: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #709c89 transparent; }
@@ -88,7 +102,10 @@
 .rep-internal .workspace-heading h1 { margin: 8px 0 12px; font: 600 36px/1.16 "RepHouse Inter", Inter, system-ui, sans-serif; letter-spacing: -.05em; }
 .rep-internal .workspace-heading p { font-size: 16px; line-height: 1.6; color: var(--app-muted); font-weight: 400; margin: 0; }
 .rep-internal .workspace-heading p.workspace-eyebrow { font-size: 14px; font-weight: 500; }
-.rep-internal .workspace-heading-actions { flex: none; }
+.rep-internal .workspace-heading-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; flex: none; }
+.rep-internal .appearance-control[data-compact=true] { border-color: var(--app-control-border); }
+.rep-internal .workspace-profile-link { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; flex: none; border: 1px solid var(--app-control-border); border-radius: 50%; background: var(--app-surface); color: var(--app-text); text-decoration: none; }
+@media (hover: hover) { .rep-internal .workspace-profile-link:hover { background: var(--app-raised); } }
 .rep-internal .workspace-section-heading { display: flex; justify-content: space-between; align-items: start; gap: 16px; margin-bottom: 24px; }
 .rep-internal .workspace-section-heading h2 { font-size: 20px; line-height: 1.4; letter-spacing: -.035em; font-weight: 600; margin: 0; }
 .rep-internal .workspace-section-heading p { color: var(--app-muted); font-size: 14px; margin: 6px 0 0; }

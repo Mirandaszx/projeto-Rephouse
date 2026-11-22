@@ -1,10 +1,12 @@
+import ErrorNotice from '../interno/ErrorNotice'
+import type { Feedback } from '../interno/feedback'
 import { useEffect, useRef, useState } from 'react'
 import { apiRequest, brl, request } from '../api'
 import { GlisseButton } from '../rebuild/GlisseButton'
 import ActionDialog from './ActionDialog'
 import Payments from './Payments'
 import type { ExpenseDetail, Member, Schemas } from './types'
-import { balance, civilDate, errorMessage } from './types'
+import { balance, civilDate, errorFeedback } from './types'
 import { RecurrenceFields } from './RecurringExpenses'
 import { brasilDay, financialState } from '../interno/presentation'
 import MemberPicker from '../rebuild/MemberPicker'
@@ -12,14 +14,14 @@ import MemberPicker from '../rebuild/MemberPicker'
 type Props = { id: string; token: string; members: Member[]; memberId?: string; canManage: boolean; onChanged: () => void; onClose: () => void }
 export default function ExpenseDetails({ id, token, members, memberId, canManage, onChanged, onClose }: Props) {
   const [expense, setExpense] = useState<ExpenseDetail | null>(null)
-  const [error, setError] = useState('')
+  const [error, setError] = useState<Feedback>('')
   const [editing, setEditing] = useState(false)
   const [total, setTotal] = useState('')
   const [attempt, setAttempt] = useState(0)
   const recurringKey = useRef(crypto.randomUUID())
   useEffect(() => {
     let active = true
-    request<ExpenseDetail>(`/despesas/${id}`, token).then(value => { if (active) setExpense(value) }).catch(failure => { if (active) setError(errorMessage(failure)) })
+    request<ExpenseDetail>(`/despesas/${id}`, token).then(value => { if (active) setExpense(value) }).catch(failure => { if (active) setError(errorFeedback(failure)) })
     return () => { active = false }
   }, [id, token, attempt])
   const locked = expense?.rateios.some(share => Number(share.valorPago) > 0 || Boolean(share.pagamentos?.length)) ?? false
@@ -36,12 +38,12 @@ export default function ExpenseDetails({ id, token, members, memberId, canManage
     const saved = await apiRequest<ExpenseDetail>('PATCH', `/despesas/${id}`, token, input)
     if (data.get('repetir') === 'on') {
       await request('/recorrencias', token, { titulo: saved.titulo, categoria: saved.categoria, valorTotal: saved.valorTotal,
-        diaVencimento: Number(saved.vencimento.slice(8,10)), inicio: String(data.get('inicio')), despesaOrigemId: id,
+        diaVencimento: Number(saved.vencimento.slice(8,10)), inicio: String(data.get('inicio')), ...(data.get('fim') ? { fim: String(data.get('fim')) } : {}), despesaOrigemId: id,
         membroIds: saved.rateios.map(share => share.membroId) }, { 'Idempotency-Key': recurringKey.current })
     }
     onChanged()
   }}>
-    {error ? <div><p role="alert" className="rep-action-error">{error}</p><GlisseButton variant="secondary" onClick={() => { setError(''); setAttempt(value => value + 1) }}>Tentar carregar despesa</GlisseButton></div> : !expense ? <p role="status">Carregando despesa…</p> : editing ? <>
+    {error ? <div><ErrorNotice error={error} /><GlisseButton variant="secondary" onClick={() => { setError(''); setAttempt(value => value + 1) }}>Tentar carregar despesa</GlisseButton></div> : !expense ? <p role="status">Carregando despesa…</p> : editing ? <>
       <label>Descrição<input name="titulo" required maxLength={160} defaultValue={expense.titulo} /></label>
       <label>Categoria<input name="categoria" required maxLength={80} defaultValue={expense.categoria} /></label>
       <label>Vencimento<input type="date" name="vencimento" required defaultValue={expense.vencimento.slice(0, 10)} /></label>

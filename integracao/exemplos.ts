@@ -27,6 +27,22 @@ export async function login(baseUrl:string,input:Login):Promise<Sessao>{
   const response=await fetch(`${baseUrl}/api/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)})
   await conferir(response);return await response.json() as Sessao
 }
+
+// Mesmo domínio da interface, por proxy /api. O navegador envia Origin.
+// Node/Insomnia precisam de Origin explícito e do cookie retornado na solicitação.
+export async function solicitarCadastro(baseUrl:string,input:components['schemas']['Cadastro']):Promise<components['schemas']['EmailPendente']>{
+  const response=await fetch(`${baseUrl}/api/auth/register`,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)})
+  await conferir(response);return await response.json() as components['schemas']['EmailPendente']
+}
+export async function solicitarLinkEmail(baseUrl:string,email:string,finalidade:'login'|'cadastro'='login'):Promise<components['schemas']['EmailPendente']>{
+  const response=await fetch(`${baseUrl}/api/auth/email/solicitar`,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,finalidade})})
+  await conferir(response);return await response.json() as components['schemas']['EmailPendente']
+}
+export async function confirmarLinkEmail(baseUrl:string,proof:{id:string;token:string}):Promise<components['schemas']['ConfirmacaoEmail']>{
+  // Somente após a ação explícita. Nunca registrar ou persistir o segredo.
+  const response=await fetch(`${baseUrl}/api/auth/email/confirmar`,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(proof)})
+  await conferir(response);return await response.json() as components['schemas']['ConfirmacaoEmail']
+}
 export async function listarDespesas(baseUrl:string,token:string,pagina=1,limite=20):Promise<Despesas>{
   const query=new URLSearchParams({pagina:String(pagina),limite:String(limite)})
   const response=await fetch(`${baseUrl}/api/despesas?${query}`,{headers:{Authorization:`Bearer ${token}`}})

@@ -2,6 +2,9 @@ import { test, expect } from '@playwright/test'
 import { mkdir } from 'node:fs/promises'
 import { contrast } from './auxiliares/contraste'
 
+// Instancia HTTP isolada por arquivo; os controles reais permanecem habilitados.
+test.use({ extraHTTPHeaders: { 'x-interface-test-run': process.env.REPHOUSE_INTERFACE_TEST_RUN ?? '', 'x-interface-suite': 'tema.spec.ts' } })
+
 test('aparência segue o sistema, respeita escolha manual e sincroniza entre páginas e abas', async ({ page, context }) => {
   await page.emulateMedia({ colorScheme: 'dark' })
   await page.goto('/login')

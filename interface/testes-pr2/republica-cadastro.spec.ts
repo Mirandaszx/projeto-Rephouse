@@ -2,6 +2,10 @@ import { test, expect, type APIRequestContext, type Page } from '@playwright/tes
 import { randomUUID } from 'node:crypto'
 import { mkdir } from 'node:fs/promises'
 import type { components } from '../../integracao/api.js'
+import { confirmInBrowser, registerByApi } from './auxiliares/email-harness'
+
+// Instancia HTTP isolada por arquivo; os controles reais permanecem habilitados.
+test.use({ extraHTTPHeaders: { 'x-interface-test-run': process.env.REPHOUSE_INTERFACE_TEST_RUN ?? '', 'x-interface-suite': 'republica-cadastro.spec.ts' } })
 
 type Schemas = components['schemas']
 const api = 'http://127.0.0.1:3405/api'
@@ -15,6 +19,7 @@ async function signup(page: Page, action: 'criar' | 'entrar') {
   await page.getByLabel('Senha', { exact: true }).fill(password)
   await page.getByRole('radio', { name: action === 'criar' ? 'Quero criar uma república' : 'Já tenho um código', exact: true }).check()
   await page.getByRole('button', { name: 'Criar minha conta', exact: true }).click()
+  await confirmInBrowser(page, email)
   await expect(page).toHaveURL(new RegExp(`/republica\\?acao=${action}$`))
   return email
 }
@@ -29,11 +34,9 @@ async function account(page: Page, request: APIRequestContext) {
 }
 
 async function invite(request: APIRequestContext) {
-  const signup = await request.post(api + '/auth/register', { data: {
+  const session = await registerByApi(request, {
     nome: 'Responsável da casa', email: `convite-${randomUUID()}@integracao.rephouse.test`, senha: password,
-  } })
-  expect(signup.status()).toBe(201)
-  const session = await signup.json() as Schemas['Sessao']
+  })
   const response = await request.post(api + '/republicas', { headers: { Authorization: `Bearer ${session.token}` }, data: { nome: 'Casa do convite' } })
   expect(response.status()).toBe(201)
   return await response.json() as Schemas['Republica']
@@ -99,19 +102,20 @@ test('código inválido permite corrigir sem cadastrar outra conta e a escolha p
   expect(registrations).toBe(1)
 })
 
-test('cadastro bloqueia a escolha e não envia a preferência à API nem duplica solicitações', async ({ page }) => {
+test('cadastro bloqueia a escolha, conserva a preferência até confirmar e não duplica solicitações', async ({ page }) => {
   let release = () => {}, submissions = 0
   const gate = new Promise<void>(resolve => { release = resolve })
   await page.route('**/api/auth/register', async route => {
     submissions++
-    expect(Object.keys(route.request().postDataJSON() as object).sort()).toEqual(['email', 'nome', 'senha'])
+    expect(Object.keys(route.request().postDataJSON() as object).sort()).toEqual(['acaoRepublica', 'email', 'nome', 'senha'])
     await gate
     await route.continue()
   })
   try {
+    const email = `unico-${randomUUID()}@integracao.rephouse.test`
     await page.goto('/cadastro')
     await page.getByLabel('Nome', { exact: true }).fill('Cadastro único')
-    await page.getByLabel('E-mail', { exact: true }).fill(`unico-${randomUUID()}@integracao.rephouse.test`)
+    await page.getByLabel('E-mail', { exact: true }).fill(email)
     await page.getByLabel('Senha', { exact: true }).fill(password)
     await page.getByRole('radio', { name: 'Já tenho um código', exact: true }).check()
     await page.getByRole('button', { name: 'Criar minha conta', exact: true }).click()
@@ -121,6 +125,7 @@ test('cadastro bloqueia a escolha e não envia a preferência à API nem duplica
     await page.locator('.auth-form').evaluate(form => (form as HTMLFormElement).requestSubmit())
     expect(submissions).toBe(1)
     release()
+    await confirmInBrowser(page, email)
     await expect(page).toHaveURL(/\/republica\?acao=entrar$/)
     await expect(page.getByLabel('Código de entrada', { exact: true })).toBeVisible()
     expect(submissions).toBe(1)

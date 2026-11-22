@@ -36,6 +36,6 @@ export class RepublicasRepository {
   contar(tx:Prisma.TransactionClient,republicaId:string,inativos:boolean){return tx.membroRepublica.count({where:{republicaId,...(inativos?{}:{ativo:true})}})}
   listar(tx: Prisma.TransactionClient, republicaId: string, inativos: boolean,page:PageInput) {
     return tx.membroRepublica.findMany({ ...pageArgs(page),where: { republicaId, ...(inativos ? {} : { ativo: true }) },
-      include: { usuario: { select: { id: true, nome: true, email: true } } }, orderBy: [{ entrouEm: 'asc' },{id:'asc'}] })
+      include: { usuario: { select: { id: true, nome: true, email: true, ativo: true, excluidoEm: true, foto: { select: { hashSha256: true, atualizadaEm: true } } } } }, orderBy: [{ entrouEm: 'asc' },{id:'asc'}] })
   }
 }

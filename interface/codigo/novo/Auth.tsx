@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { ApiError, request } from '../api'
 import { GlisseButton } from '../rebuild/GlisseButton'
@@ -9,6 +9,7 @@ import AuthHouse from './AuthHouse'
 import AppearanceControl from '../aparencia/AppearanceControl'
 import AuthFeedback, { type AuthFailure } from './AuthFeedback'
 import './auth.css'
+import type { components } from '../../../integracao/api'
 
 function AuthBrand({ mobile = false }: { mobile?: boolean }) {
   return <a className={`auth-brand${mobile ? ' auth-brand-mobile' : ''}`} href="/" aria-label="RepHouse, página inicial">
@@ -17,17 +18,63 @@ function AuthBrand({ mobile = false }: { mobile?: boolean }) {
   </a>
 }
 
-export default function Auth({ register }: { register: boolean }) {
+export default function Auth({ register, confirm = false }: { register: boolean; confirm?: boolean }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<AuthFailure | null>(null)
   const dismissError = useCallback(() => setError(null), [])
   const [houseAction, setHouseAction] = useState<'criar' | 'entrar'>('criar')
   const submitting = useRef(false)
   const reduced = useReducedMotion()
+  const [magic, setMagic] = useState(false)
+  const [emailEnabled, setEmailEnabled] = useState<boolean | null>(null)
+  const [pending, setPending] = useState<{ email: string; finalidade: 'cadastro' | 'login' } | null>(null)
+  const [cooldown, setCooldown] = useState(0)
+  const [proof] = useState(() => {
+    if (!confirm) return null
+    const params = new URLSearchParams(window.location.hash.slice(1))
+    const id = params.get('id'), token = params.get('token')
+    return id && token && /^[A-Za-z0-9_-]{43}$/.test(token) && /^[a-f0-9-]{36}$/i.test(id) ? { id, token } : null
+  })
+  const feedbackHeading = useRef<HTMLHeadingElement>(null)
+  useEffect(() => {
+    if (confirm) window.history.replaceState(null, '', '/confirmar-email')
+    const controller = new AbortController()
+    void request<components['schemas']['MetodosAutenticacao']>('/auth/metodos', undefined, undefined, undefined, controller.signal)
+      .then(methods => setEmailEnabled(methods.email?.habilitado === true))
+      .catch(() => { if (!controller.signal.aborted) setEmailEnabled(false) })
+    return () => controller.abort()
+  }, [confirm])
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const timer = window.setTimeout(() => setCooldown(value => Math.max(0, value - 1)), 1000)
+    return () => window.clearTimeout(timer)
+  }, [cooldown])
+  useEffect(() => { if (pending) feedbackHeading.current?.focus() }, [pending])
+
+  function showFailure(failure: unknown) {
+    const message = failure instanceof ApiError ? failure.userMessage : 'Não foi possível conectar. Verifique sua conexão e tente novamente.'
+    setError({ id: crypto.randomUUID(), message: failure instanceof ApiError && failure.code === 'INVALID_CREDENTIALS'
+      ? message + ' Confira os dados e tente novamente.' : message, requestId: failure instanceof ApiError ? failure.requestId : undefined })
+  }
+  function enter(result: components['schemas']['Sessao'] & { acaoRepublica?: 'criar' | 'entrar' | null }) {
+    sessionStorage.setItem('rephouse-token', result.token)
+    window.location.assign(result.acaoRepublica ? `/republica?acao=${result.acaoRepublica}` : '/republica')
+  }
+  async function resend() {
+    if (!pending || submitting.current || cooldown > 0) return
+    submitting.current = true; setBusy(true); setError(null)
+    try {
+      await request('/auth/email/solicitar', undefined, pending)
+      setCooldown(60)
+    } catch (failure) { showFailure(failure) }
+    finally { submitting.current = false; setBusy(false) }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (submitting.current) return
+    if (register && emailEnabled !== true) return
+    if (confirm && !proof) return
     const fields = new FormData(event.currentTarget)
     // A escolha da casa orienta a próxima tela; não faz parte do contrato de cadastro.
     const input = { email: fields.get('email'), senha: fields.get('senha'), ...(register ? { nome: fields.get('nome') } : {}) }
@@ -35,16 +82,16 @@ export default function Auth({ register }: { register: boolean }) {
     setBusy(true)
     setError(null)
     try {
-      const { token } = await request<{ token: string }>(register ? '/auth/register' : '/auth/login', undefined, input)
-      sessionStorage.setItem('rephouse-token', token)
-      window.location.assign(register ? `/republica?acao=${houseAction}` : '/republica')
+      if (confirm) {
+        enter(await request<components['schemas']['ConfirmacaoEmail']>('/auth/email/confirmar', undefined, proof!))
+      } else if (register || magic) {
+        await request<components['schemas']['EmailPendente']>(register ? '/auth/register' : '/auth/email/solicitar', undefined,
+          register ? { ...input, acaoRepublica: houseAction } : { email: input.email, finalidade: 'login' })
+        setPending({ email: String(input.email), finalidade: register ? 'cadastro' : 'login' }); setCooldown(60)
+      } else enter(await request<components['schemas']['Sessao']>('/auth/login', undefined, input))
     } catch (failure) {
-      const message = failure instanceof ApiError ? failure.userMessage : 'Não foi possível conectar. Verifique sua conexão e tente novamente.'
-      setError({ id: crypto.randomUUID(), message: failure instanceof ApiError && failure.code === 'INVALID_CREDENTIALS'
-        ? message + ' Confira os dados e tente novamente.' : message, requestId: failure instanceof ApiError ? failure.requestId : undefined })
-      submitting.current = false
-      setBusy(false)
-    }
+      showFailure(failure)
+    } finally { submitting.current = false; setBusy(false) }
   }
 
   return <main className="auth-page" data-mode={register ? 'register' : 'login'}>
@@ -63,14 +110,26 @@ export default function Auth({ register }: { register: boolean }) {
       <AuthBrand mobile />
       <motion.div className="auth-content" initial={reduced ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? 0 : 0.18, ease: 'easeOut' }}>
         <header className="auth-heading">
-          <h1 id="auth-title">{register ? 'Sinta-se em casa.' : 'Bem-vindo de volta.'}</h1>
-          <p>{register ? 'Já faz parte?' : 'Ainda não faz parte?'}{' '}<a href={register ? '/login' : '/cadastro'}>{register ? 'Entrar' : 'Criar conta'}</a></p>
+          <h1 id="auth-title" ref={feedbackHeading} tabIndex={-1}>{pending ? 'Confira seu e-mail.' : confirm ? 'Confirme seu acesso.' : magic ? 'Entre pelo seu e-mail.' : register ? 'Sinta-se em casa.' : 'Bem-vindo de volta.'}</h1>
+          {!pending && !confirm && <p>{register ? 'Já faz parte?' : 'Ainda não faz parte?'}{' '}<a href={register ? '/login' : '/cadastro'}>{register ? 'Entrar' : 'Criar conta'}</a></p>}
         </header>
+        {pending ? <div className="auth-email-note">
+          <p role="status">Se o endereço estiver elegível, enviaremos um link para <strong>{pending.email}</strong>.</p>
+          <p>Confira também a pasta de spam. O link vale por 10 minutos. Abra no mesmo navegador em que fez a solicitação.</p>
+          <p>{pending.finalidade === 'cadastro' ? 'Sua conta será criada somente depois da confirmação.' : 'O link permite entrar na sua conta sem digitar a senha.'}</p>
+          {error && <AuthFeedback key={error.id} failure={error} onDismiss={dismissError} />}
+          <GlisseButton className="auth-submit" tint="#d2ec9c" disabled={busy || cooldown > 0} onClick={() => void resend()}>{busy ? 'Enviando…' : cooldown > 0 ? `Reenviar em ${cooldown}s` : 'Reenviar link'}</GlisseButton>
+          <a className="auth-email-back" href={pending.finalidade === 'cadastro' ? '/cadastro' : '/login'}>Usar outro e-mail</a>
+        </div> : <>
         <form className="auth-form" onSubmit={submit} aria-busy={busy}>
+          {confirm ? <div className="auth-email-note">
+            <p>{proof ? 'Ao confirmar, você entrará na conta associada a este link.' : 'O link está incompleto ou já foi removido desta página. Solicite outro para continuar.'}</p>
+            <p>O link funciona uma única vez, durante 10 minutos e no navegador da solicitação.</p>
+          </div> : <>
           <fieldset disabled={busy} className="auth-fields">
             {register && <LabelInput labelPlacement="outside" containerClassName="auth-field" label="Nome" name="nome" placeholder="Como você se chama?" autoComplete="name" required maxLength={120} />}
             <LabelInput labelPlacement="outside" containerClassName="auth-field" label="E-mail" name="email" type="email" placeholder="voce@exemplo.com" autoComplete="email" autoCapitalize="none" spellCheck={false} required maxLength={254} />
-            <LabelInput labelPlacement="outside" containerClassName="auth-field" label="Senha" name="senha" type="password" placeholder={register ? 'Pelo menos 8 caracteres' : 'Sua senha'} autoComplete={register ? 'new-password' : 'current-password'} minLength={register ? 8 : undefined} maxLength={128} required />
+            {!magic && <LabelInput labelPlacement="outside" containerClassName="auth-field" label="Senha" name="senha" type="password" placeholder={register ? 'Pelo menos 8 caracteres' : 'Sua senha'} autoComplete={register ? 'new-password' : 'current-password'} minLength={register ? 8 : undefined} maxLength={128} required />}
           </fieldset>
           {register && <fieldset className="auth-house-choice" disabled={busy} aria-describedby="auth-house-help">
             <legend>Sua república</legend>
@@ -80,12 +139,18 @@ export default function Auth({ register }: { register: boolean }) {
             </div>
             <p id="auth-house-help">{houseAction === 'criar' ? 'Depois do cadastro, dê um nome à sua república e receba um código para convidar moradores.' : 'Depois do cadastro, informe o código compartilhado por alguém da sua república.'}</p>
           </fieldset>}
+          </>}
           {error && <AuthFeedback key={error.id} failure={error} onDismiss={dismissError} />}
-          <GlisseButton className="auth-submit" tint="#d2ec9c" type="submit" disabled={busy} aria-busy={busy}>
+          {register && emailEnabled === false && <p className="auth-email-note" role="status">O cadastro está temporariamente indisponível. Contas existentes podem entrar com senha.</p>}
+          {register && emailEnabled === null && <p className="auth-email-note" role="status">Verificando disponibilidade do cadastro…</p>}
+          <GlisseButton className="auth-submit" tint="#d2ec9c" type="submit" disabled={busy || (confirm && !proof) || (register && emailEnabled !== true)} aria-busy={busy}>
             {busy && <LoaderCircle className="auth-spinner" size={18} aria-hidden="true" />}
-            {busy ? 'Aguarde…' : register ? 'Criar minha conta' : 'Entrar na minha conta'}
+            {busy ? 'Aguarde…' : confirm ? 'Confirmar e entrar' : magic ? 'Enviar link de acesso' : register ? 'Criar minha conta' : 'Entrar na minha conta'}
           </GlisseButton>
         </form>
+        {confirm ? <a className="auth-email-back" href="/login">Voltar ao login</a>
+          : !register && emailEnabled && <button type="button" className="auth-email-back" disabled={busy} onClick={() => { setMagic(value => !value); setError(null) }}>{magic ? 'Usar minha senha' : 'Entrar por link no e-mail'}</button>}
+        </>}
         <p className="auth-reassurance"><span aria-hidden="true" />Uma casa organizada começa com você.</p>
       </motion.div>
       <p className="auth-panel-footer">RepHouse · Feito para compartilhar a casa, não a complicação.</p>

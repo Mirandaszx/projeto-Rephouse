@@ -20,14 +20,23 @@ describe('Proteção do ambiente de testes', () => {
 })
 
 describe('Cadastro, sessão e perfil pelas rotas reais', () => {
-  it('quando dois cadastros usam o mesmo e-mail, então cria uma conta e rejeita o duplicado', async () => {
+  it('quando dois cadastros usam o mesmo e-mail, então mantém uma solicitação e só cria conta após confirmar', async () => {
     const c = await abrirRequestSpec()
     try {
       const email = `${randomUUID()}@request.rephouse.test`, input = { nome: 'Concorrência', email, senha: password }
-      const results = await Promise.all([c.request<Session>('POST', '/api/auth/register', undefined, input), c.request<Session>('POST', '/api/auth/register', undefined, input)])
-      assert.deepEqual(results.map(result => result.status).sort(), [201, 409])
+      const results = await Promise.all([c.request('POST', '/api/auth/register', undefined, input), c.request('POST', '/api/auth/register', undefined, input)])
+      assert.deepEqual(results.map(result => result.status), [202, 202])
+      assert.equal(await c.db.usuario.count({ where: { email } }), 0)
+      assert.equal(c.mailbox.messages.filter(message => message.to === email).length, 1)
+      // As requisições têm cookies diferentes: utilizar o cookie da mensagem realmente enviada.
+      const pending = await c.db.linkEmail.findFirstOrThrow({ where: { email } })
+      const cookies = results.map(result => result.headers.get('set-cookie')!.split(';')[0]!)
+      const { createHash } = await import('node:crypto')
+      const cookie = cookies.find(value => createHash('sha256').update(value.split('=')[1]!).digest('hex') === pending.cookieHash)!
+      const response = await c.request<Session>('POST', '/api/auth/email/confirmar', undefined, c.mailbox.proof(email), undefined, { Cookie: cookie })
+      assert.equal(response.status, 200)
+      const created = response.body
       assert.equal(await c.db.usuario.count({ where: { email } }), 1)
-      const created = results.find(result => result.status === 201)!.body
       assert.equal(created.usuario.tipoUsuario, 'USUARIO_NORMAL')
       assert.equal((await c.request<Schemas['MinhaConta']>('GET', '/api/me', created.token)).body.membro, null)
     } finally { await c.close() }

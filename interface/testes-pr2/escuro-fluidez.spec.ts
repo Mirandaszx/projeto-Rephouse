@@ -6,6 +6,9 @@ import { contrast } from './auxiliares/contraste'
 
 const shots = fileURLToPath(new URL('../../.devops-local/interface/imagens/escuro-fluidez', import.meta.url))
 
+// Instancia HTTP isolada por arquivo; os controles reais permanecem habilitados.
+test.use({ extraHTTPHeaders: { 'x-interface-test-run': process.env.REPHOUSE_INTERFACE_TEST_RUN ?? '', 'x-interface-suite': 'escuro-fluidez.spec.ts' } })
+
 test('tema escuro mantém painéis acabados e estados vazios sem casinhas repetidas', async ({ page }) => {
   const fixture: Fixture = { empty: true }
   await prepare(page, fixture)
@@ -17,7 +20,8 @@ test('tema escuro mantém painéis acabados e estados vazios sem casinhas repeti
     await expect(page.getByRole('heading', { name: 'Comece pela primeira despesa.', exact: true })).toBeVisible()
     await expect(page.locator('.rep-metric')).toHaveCount(4)
     await expect(page.locator('.rep-overview-panel')).toHaveCount(2)
-    await expect(page.getByRole('button', { name: '＋ Nova despesa', exact: true })).toBeVisible()
+    await expect(page.locator('.workspace-heading-actions').getByRole('link', { name: 'Meu perfil', exact: true })).toBeVisible()
+    await expect(page.locator('.workspace-heading-actions').getByRole('button', { name: '＋ Nova despesa', exact: true })).toHaveCount(0)
     await expect(page.locator('.workspace-empty svg')).toHaveCount(0)
     for (const target of await page.locator('.rep-overview-panel :is(h2, h3, p, a)').all()) {
       expect(await contrast(target)).toBeGreaterThanOrEqual(4.5)

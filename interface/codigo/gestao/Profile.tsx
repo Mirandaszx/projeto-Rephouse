@@ -1,31 +1,43 @@
+import ErrorNotice from '../interno/ErrorNotice'
+import type { Feedback } from '../interno/feedback'
 import { useRef, useState } from 'react'
 import { apiRequest, endSession } from '../api'
 import { GlisseButton } from '../rebuild/GlisseButton'
 import ActionDialog from './ActionDialog'
 import type { Account } from './types'
-import { errorMessage } from './types'
-import { PersonMark, SectionHeading } from '../interno/WorkspaceUI'
+import { errorFeedback } from './types'
+import { SectionHeading } from '../interno/WorkspaceUI'
+import ProfilePhoto from '../perfil/ProfilePhoto'
 
 export default function Profile({ account, token, onChanged }: { account: Account; token: string; onChanged: () => void }) {
   const [deleting, setDeleting] = useState(false)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState<Feedback>('')
   const [notice, setNotice] = useState('')
   const lock = useRef(false)
   return <div className="rep-management">
-    <section className="rep-management-card workspace-profile-card" aria-labelledby="profile-title"><SectionHeading id="profile-title" title="Seus dados" description="Seu nome aparece para as pessoas da sua república."><PersonMark name={account.nome} /></SectionHeading>
-      <div className="workspace-readonly"><span>E-mail da conta</span><p>{account.email}</p></div>
+    <ProfilePhoto account={account} token={token} onChanged={onChanged} />
+    <section className="rep-management-card workspace-profile-card" aria-labelledby="profile-title"><SectionHeading id="profile-title" title="Seus dados" description="Seu nome aparece para as pessoas da sua república." />
       <form className="rep-management-form" aria-busy={busy} onSubmit={event => {
         event.preventDefault()
         if (lock.current) return
         const nome = String(new FormData(event.currentTarget).get('nome') ?? '').trim()
         lock.current = true; setBusy(true); setError(''); setNotice('')
-        void apiRequest('PATCH', '/me', token, { nome }).then(() => { setNotice('Nome atualizado.'); onChanged() }).catch(failure => setError(errorMessage(failure))).finally(() => { lock.current = false; setBusy(false) })
+        void apiRequest('PATCH', '/me', token, { nome }).then(() => { setNotice('Nome atualizado.'); onChanged() }).catch(failure => setError(errorFeedback(failure))).finally(() => { lock.current = false; setBusy(false) })
       }}>
         <label>Nome<input name="nome" autoComplete="name" maxLength={120} required defaultValue={account.nome} disabled={busy} /></label>
         <GlisseButton type="submit" disabled={busy}>{busy ? 'Salvando…' : 'Salvar nome'}</GlisseButton>
       </form>
-      {notice && <p role="status">{notice}</p>}{error && <p className="rep-action-error" role="alert">{error}</p>}
+      {notice && <p role="status">{notice}</p>}{error && <ErrorNotice error={error} />}
+    </section>
+    <section className="rep-management-card" aria-labelledby="account-details-title"><SectionHeading id="account-details-title" title="Sua conta e sua casa" />
+      <dl className="profile-account-details">
+        <div><dt>E-mail da conta</dt><dd>{account.email}</dd></div>
+        <div><dt>Confirmação por e-mail</dt><dd>{account.emailConfirmadoEm === undefined ? 'Informação de confirmação indisponível' : account.emailConfirmadoEm ? 'Confirmado por link' : 'Confirmação por e-mail não registrada'}</dd></div>
+        <div><dt>Cadastro no RepHouse</dt><dd>{new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'long' }).format(new Date(account.criadoEm))}</dd></div>
+        <div><dt>República atual</dt><dd>{account.membro?.republica.nome ?? 'Sem vínculo ativo com uma república'}</dd></div>
+        <div><dt>Sua função</dt><dd>{account.tipoUsuario === 'USUARIO_MASTER' ? 'MASTER' : account.membro ? account.membro.republica.adminId === account.id ? 'Administrador da república' : 'Morador' : 'Sem função em uma república'}</dd></div>
+      </dl>
     </section>
     <section className="rep-management-card rep-danger-zone"><SectionHeading title="Excluir minha conta" />
       <p>A exclusão encerra seu acesso e seus vínculos. O histórico financeiro permanece preservado. Quite as dívidas de todas as repúblicas e transfira a administração antes de continuar.</p>

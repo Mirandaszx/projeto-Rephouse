@@ -11,6 +11,10 @@ export function financialState(due: string, remaining: number, paid: number, tod
   }
   if (remaining <= 0) return { label: 'Paga', tone: 'success' as const }
   if (due.slice(0, 10) < today) return { label: 'Vencida', tone: 'danger' as const }
+  if (due.slice(0, 10) === today) return { label: 'Vence hoje', tone: 'warning' as const }
+  const upcoming = new Date(`${today}T12:00:00Z`)
+  upcoming.setUTCDate(upcoming.getUTCDate() + 7)
+  if (due.slice(0, 10) <= upcoming.toISOString().slice(0, 10)) return { label: 'Vence em breve', tone: 'warning' as const }
   if (paid > 0) return { label: 'Parcial', tone: 'warning' as const }
   return { label: 'Pendente', tone: 'warning' as const }
 }

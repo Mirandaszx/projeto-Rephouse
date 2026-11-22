@@ -1,3 +1,6 @@
+import ErrorNotice from '../interno/ErrorNotice'
+import { errorFeedback } from '../interno/feedback'
+import type { Feedback } from '../interno/feedback'
 import { useEffect, useState } from 'react'
 import type { ComponentProps } from 'react'
 import { TabBar } from 'glisse'
@@ -116,7 +119,7 @@ export default function Admin({ token, onLogout }: { token: string; onLogout: ()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [attempt, setAttempt] = useState(0)
   const [action, setAction] = useState<{ row: RecordRow; people: boolean } | null>(null)
-  const [error, setError] = useState('')
+  const [error, setError] = useState<Feedback>('')
   const [data, setData] = useState<{ summary: Summary; houses: House[]; users: User[] }>()
 
   useEffect(() => {
@@ -128,7 +131,7 @@ export default function Admin({ token, onLogout }: { token: string; onLogout: ()
     ]).then(([summary, houses, users]) => {
       if (current) setData({ summary, houses, users })
     }).catch((failure: Error) => {
-      if (current) setError(failure.message)
+      if (current) setError(errorFeedback(failure))
     })
     return () => { current = false }
   }, [token, attempt])
@@ -154,11 +157,11 @@ export default function Admin({ token, onLogout }: { token: string; onLogout: ()
       <header className="rh-admin-bar">
         {/* SiteHeader composition from Dashboard 01: trigger, separator, title, trailing actions. */}
         <div className="rh-admin-header-path"><GlisseButton variant="secondary" className="rh-admin-sidebar-trigger" aria-label={sidebarCollapsed ? 'Expandir navegação' : 'Recolher navegação'} aria-expanded={!sidebarCollapsed} onClick={() => setSidebarCollapsed(value => !value)}><PanelLeft size={17} /></GlisseButton><span className="rh-admin-header-separator" aria-hidden="true" /><span>Administração</span><ChevronRight size={13} aria-hidden="true" /><strong>{title}</strong></div>
-        <div className="rh-admin-actions"><a href="/republica/perfil">Meu perfil</a><AppearanceControl compact /><GlisseButton variant="secondary" onClick={onLogout} icon={<LogOut size={16} aria-hidden="true" />}>Sair</GlisseButton></div>
+        <div className="rh-admin-actions"><a href="/republica/perfil">Meu perfil</a><AppearanceControl compact manualOnly /><GlisseButton variant="secondary" onClick={onLogout} icon={<LogOut size={16} aria-hidden="true" />}>Sair</GlisseButton></div>
       </header>
       <main className="rh-admin-main" id="conteudo-master" tabIndex={-1}>
         <PageHeading title={tab === 'resumo' ? 'Visão da plataforma' : title ?? 'Administração'} context="Administração master" description={tab === 'resumo' ? 'Acompanhe a operação das repúblicas em um só lugar.' : people ? 'Consulte as contas e o status de acesso.' : 'Consulte as casas cadastradas na plataforma.'} />
-        <div ref={content} className="workspace-results">{error ? <section className="rh-admin-state"><p role="alert">{error}</p><GlisseButton onClick={() => { setError(''); setAttempt(value => value + 1) }}>Tentar novamente</GlisseButton></section> : !data ? <section className="rh-admin-state" aria-busy="true"><p role="status">Carregando administração…</p></section> : <>
+        <div ref={content} className="workspace-results">{error ? <section className="rh-admin-state"><ErrorNotice error={error} /><GlisseButton onClick={() => { setError(''); setAttempt(value => value + 1) }}>Tentar novamente</GlisseButton></section> : !data ? <section className="rh-admin-state" aria-busy="true"><p role="status">Carregando administração…</p></section> : <>
           {tab === 'resumo' && summary && <SectionCards summary={summary} houses={data.houses} users={data.users} />}
           {tab === 'resumo' && Boolean(summary?.historicoIlustrativo?.length) && <FinanceChart points={summary?.historicoIlustrativo} />}
           <div className={tab === 'resumo' ? 'rh-admin-overview' : ''}>

@@ -1,3 +1,4 @@
+import { clearProfilePhotos } from './perfil/photo-cache'
 export const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 
 export async function request<T>(
@@ -5,8 +6,9 @@ export async function request<T>(
   token?: string,
   body?: Record<string, unknown> | FormData,
   extraHeaders?: Record<string, string>,
+  signal?: AbortSignal,
 ): Promise<T> {
-  return apiRequest<T>(body ? 'POST' : 'GET', path, token, body, extraHeaders)
+  return apiRequest<T>(body ? 'POST' : 'GET', path, token, body, extraHeaders, signal)
 }
 
 export class ApiError extends Error {
@@ -28,14 +30,16 @@ export class ApiError extends Error {
 }
 
 export function endSession() {
+  clearProfilePhotos()
   sessionStorage.removeItem('rephouse-token')
   window.location.replace('/login')
 }
 
-export async function apiRequest<T>(method: 'GET' | 'POST' | 'PATCH' | 'DELETE', path: string, token?: string, body?: Record<string, unknown> | FormData, extraHeaders?: Record<string, string>): Promise<T> {
+export async function apiRequest<T>(method: 'GET' | 'POST' | 'PATCH' | 'DELETE', path: string, token?: string, body?: Record<string, unknown> | FormData, extraHeaders?: Record<string, string>, signal?: AbortSignal): Promise<T> {
   const multipart = body instanceof FormData
   const response = await fetch('/api' + path, {
     method,
+    signal,
     headers: {
       ...(token ? { Authorization: 'Bearer ' + token } : {}),
       ...(body && !multipart ? { 'Content-Type': 'application/json' } : {}),

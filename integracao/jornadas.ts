@@ -17,8 +17,8 @@ export async function listarMoradores(baseUrl:string,token:string,pagina=1,limit
   return await response.json() as Moradores
 }
 
-export async function criarTarefa(baseUrl:string,token:string,input:components['schemas']['CriarTarefa']):Promise<components['schemas']['Tarefa']>{
-  const response=await fetch(`${baseUrl}/api/tarefas`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify(input)})
+export async function criarTarefa(baseUrl:string,token:string,input:components['schemas']['CriarTarefa'],chave?:string):Promise<components['schemas']['Tarefa']>{
+  const response=await fetch(`${baseUrl}/api/tarefas`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json',...(chave?{'Idempotency-Key':chave}:{})},body:JSON.stringify(input)})
   await conferir(response)
   return await response.json() as components['schemas']['Tarefa']
 }

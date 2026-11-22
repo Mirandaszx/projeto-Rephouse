@@ -5,12 +5,124 @@ import { randomUUID } from 'node:crypto'
 import { setTimeout as delay } from 'node:timers/promises'
 import { contextoCasa, multipart, type Expense, type Page, type Schemas } from './auxiliares/request-spec.js'
 import { iniciarApiCompilada, httpProcesso, aguardar } from './auxiliares/processo-api.js'
+import { createRecorrenciasService, processRecurringBatch } from '../codigo/modulos/financeiro/recorrencias.service.js'
+import { abrirSchemaAuditoria, registros } from './auxiliares/schema.js'
+import { readFile } from 'node:fs/promises'
 
 // Datas esperadas calculadas aqui, sem chamar as funções de calendário da aplicação.
 const today = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Sao_Paulo' }).format(new Date())
 function month(offset = 0) { const date = new Date(today().slice(0, 7) + '-01T00:00:00Z'); date.setUTCMonth(date.getUTCMonth() + offset); return date.toISOString().slice(0, 7) }
 const config = (ids: string[], inicio = month()) => ({ titulo: 'Conta mensal HTTP', categoria: 'Casa', valorTotal: '100.00', diaVencimento: 31, inicio, membroIds: ids })
 type Occurrence = { competencia: string; estado: string; despesaId: string | null; motivo: string | null }
+
+describe('Data limite da recorrência', () => {
+  it('quando informa o término por HTTP, então persiste o limite, mantém idempotência e aceita os adaptadores', async () => {
+    const c = await contextoCasa()
+    try {
+      const start = month(1), fim = `${month(3)}-15`, key = randomUUID()
+      const input = { ...config([c.anaMember.id], start), fim }
+      const [a, b] = await Promise.all([1, 2].map(() => c.request<Schemas['Recorrencia']>('POST', '/api/recorrencias', c.admin.token, input, key)))
+      assert.equal(a!.status, 201); assert.equal(b!.status, 201); assert.equal(a!.body.id, b!.body.id); assert.equal(a!.body.fim, fim)
+      assert.equal((await c.request('POST', '/api/recorrencias', c.admin.token, { ...input, fim: `${month(3)}-20` }, key)).status, 409)
+      assert.equal(await c.db.recorrenciaDespesa.count(), 1); assert.equal(await c.db.despesa.count(), 0)
+      assert.equal((await c.db.recorrenciaDespesa.findUniqueOrThrow({ where: { id: a!.body.id } })).fim!.toISOString().slice(0, 10), fim)
+      const front = await c.request<Schemas['Recorrencia']>('POST', '/api/front/v1/recorrencias', c.admin.token, input, randomUUID())
+      assert.equal(front.status, 201); assert.equal(front.body.fim, fim)
+      const master = await c.request<Schemas['Recorrencia']>('POST', `/api/master/republicas/${c.house.id}/recorrencias`, c.master.token, input, randomUUID())
+      assert.equal(master.status, 201); assert.equal(master.body.fim, fim)
+      assert.equal((await c.request('PATCH', `/api/recorrencias/${a!.body.id}`, c.ana.token, { fim: null })).status, 403)
+      assert.equal((await c.request('PATCH', `/api/recorrencias/${a!.body.id}`, c.other.token, { fim: null })).status, 404)
+      const unlimitedKey = randomUUID(), unlimited = config([c.anaMember.id], start)
+      const original = await c.request<Schemas['Recorrencia']>('POST', '/api/recorrencias', c.admin.token, unlimited, unlimitedKey)
+      const replay = await c.request<Schemas['Recorrencia']>('POST', '/api/recorrencias', c.admin.token, { ...unlimited, fim: null }, unlimitedKey)
+      assert.equal(original.status, 201); assert.equal(original.body.fim, null); assert.equal(replay.status, 201); assert.equal(replay.body.id, original.body.id)
+    } finally { await c.close() }
+  })
+  it('quando a data é inválida ou exclui o primeiro vencimento, então responde 400 sem gravar', async () => {
+    const c = await contextoCasa()
+    try {
+      const input = config([c.anaMember.id], month(1))
+      for (const fim of ['', '2028-02-30', '2026-13-01', '31/12/2030', '2200-01-01', `${month(1)}-01`, `${month()}-28`]) {
+        const result = await c.request('POST', '/api/recorrencias', c.admin.token, { ...input, fim }, randomUUID())
+        assert.equal(result.status, 400, fim); assert.ok(['VALIDATION_ERROR', 'INVALID_END'].includes(result.body.error.code))
+      }
+      assert.equal(await c.db.recorrenciaDespesa.count(), 0); assert.equal(await c.db.despesa.count(), 0); assert.equal(await c.db.competenciaRecorrencia.count(), 0)
+    } finally { await c.close() }
+  })
+  it('quando altera ou remove somente o término, então mantém configurações, despesas e pagamentos anteriores', async () => {
+    const c = await contextoCasa()
+    try {
+      const created = await c.request<Schemas['Recorrencia']>('POST', '/api/recorrencias', c.admin.token, config([c.anaMember.id]), randomUUID())
+      const id = created.body.id, before = await c.db.despesa.findMany({ include: { rateios: true } })
+      const bill = before[0]!, share = bill.rateios[0]!
+      assert.equal((await c.request('POST', '/api/pagamentos', c.ana.token, multipart(share.id), randomUUID())).status, 201)
+      const paid = await c.db.despesa.findMany({ include: { rateios: { include: { pagamentos: { include: { comprovante: true } } } } } })
+      const path = `/api/recorrencias/${id}`, fim = `${month(2)}-15`
+      const edited = await c.request<Schemas['Recorrencia']>('PATCH', path, c.admin.token, { fim })
+      assert.equal(edited.status, 200); assert.equal(edited.body.fim, fim); assert.equal(edited.body.configuracoes.length, 1)
+      assert.equal((await c.request<Schemas['Recorrencia']>('PATCH', path, c.admin.token, { titulo: 'Novo título' })).body.fim, fim)
+      assert.equal((await c.request('PATCH', path, c.admin.token, { fim: `${month(-1)}-01` })).status, 400)
+      const cleared = await c.request<Schemas['Recorrencia']>('PATCH', path, c.admin.token, { fim: null })
+      assert.equal(cleared.status, 200); assert.equal(cleared.body.fim, null)
+      assert.deepEqual(await c.db.despesa.findMany({ include: { rateios: { include: { pagamentos: { include: { comprovante: true } } } } } }), paid)
+    } finally { await c.close() }
+  })
+  it('quando o vencimento coincide com o término, então inclui a última conta e não gera depois, inclusive em fevereiro e dezembro', async () => {
+    const c = await contextoCasa()
+    try {
+      const service = createRecorrenciasService(c.db, () => '2028-01-01'), actor = { id: c.admin.usuario.id, versaoToken: 0 }
+      for (const [inicio, fim] of [['2028-02', '2028-02-29'], ['2029-02', '2029-02-28'], ['2028-12', '2028-12-31']] as const) {
+        const recurring = await service.create(actor, { ...config([c.anaMember.id], inicio), fim }, randomUUID())
+        await processRecurringBatch(c.db, `${inicio}-01`)
+        const occurrences = await c.db.competenciaRecorrencia.findMany({ where: { recorrenciaId: recurring.id }, include: { despesa: true } })
+        assert.equal(occurrences.length, 1); assert.equal(occurrences[0]!.despesa!.vencimento.toISOString().slice(0, 10), fim)
+        const later = new Date(`${inicio}-01T00:00:00Z`); later.setUTCMonth(later.getUTCMonth() + 1)
+        await Promise.all([processRecurringBatch(c.db, later.toISOString().slice(0, 10)), processRecurringBatch(c.db, later.toISOString().slice(0, 10))])
+        assert.equal(await c.db.competenciaRecorrencia.count({ where: { recorrenciaId: recurring.id } }), 1)
+        assert.equal((await c.db.recorrenciaDespesa.findUniqueOrThrow({ where: { id: recurring.id } })).ativa, false)
+      }
+    } finally { await c.close() }
+  })
+  it('quando retorna após o término, então revisa só meses elegíveis e não gera cobranças posteriores', async () => {
+    const c = await contextoCasa()
+    const processes: Awaited<ReturnType<typeof iniciarApiCompilada>>[] = []
+    try {
+      const recurring = await prepararGeracao(c, [c.anaMember.id], month(-1))
+      await c.db.recorrenciaDespesa.update({ where: { id: recurring.id }, data: { fim: new Date(`${month()}-15T00:00:00Z`) } })
+      let api = await iniciarApiCompilada(c.schema); processes.push(api)
+      const path = `/api/recorrencias/${recurring.id}/competencias`
+      const past = await aguardar(() => httpProcesso<Page<Occurrence>>(api.base, 'GET', path, c.admin.token), response => response.body.dados.length === 1)
+      assert.equal(past.body.dados[0]!.estado, 'PENDENTE_REVISAO')
+      await api.stop(); processes.length = 0
+      api = await iniciarApiCompilada(c.schema); processes.push(api)
+      await aguardar(() => httpProcesso<Schemas['Recorrencia']>(api.base, 'GET', `/api/recorrencias/${recurring.id}`, c.admin.token), response => !response.body.ativa)
+      assert.equal(await c.db.despesa.count(), 0); assert.equal(await c.db.competenciaRecorrencia.count(), 1)
+      assert.equal((await httpProcesso<Page<Occurrence>>(api.base, 'GET', path, c.admin.token)).body.dados.length, 1)
+    } finally { try { await Promise.all(processes.map(api => api.stop())) } finally { await c.close() } }
+  })
+  it('quando migra e reverte uma base anterior, então preserva todos os registros e impede descartar limites em uso', async () => {
+    const c = await abrirSchemaAuditoria()
+    const down = await readFile('prisma/migracoes/202611220001_recorrencia_data_fim/down.sql', 'utf8')
+    const up = await readFile('prisma/migracoes/202611220001_recorrencia_data_fim/migration.sql', 'utf8')
+    try {
+      await c.db.query(down)
+      const before = await registros(c.db)
+      await c.db.query(up)
+      const projected = (await c.db.query("SELECT to_jsonb(t)-'fim' linha FROM recorrencias_despesa t ORDER BY to_jsonb(t)::text")).rows
+      assert.deepEqual(projected, before.recorrencias_despesa)
+      const after = await registros(c.db)
+      for (const table of Object.keys(before).filter(table => table !== 'recorrencias_despesa')) assert.deepEqual(after[table], before[table], table)
+      assert.equal((await c.db.query('SELECT fim FROM recorrencias_despesa')).rows[0].fim, null)
+      for (const invalid of ['2029-12-31', 'infinity', '2200-01-01']) {
+        await assert.rejects(c.db.query('UPDATE recorrencias_despesa SET fim=$1 WHERE id=$2', [invalid, c.ids.recorrencia]), (error: unknown) => !!error && typeof error === 'object' && 'code' in error && error.code === '23514')
+      }
+      await c.db.query("UPDATE recorrencias_despesa SET fim='2030-02-28' WHERE id=$1", [c.ids.recorrencia])
+      const limited = await registros(c.db)
+      await assert.rejects(c.db.query(down)); await c.db.query('ROLLBACK')
+      assert.deepEqual(await registros(c.db), limited)
+    } finally { await c.close() }
+  })
+})
 
 describe('Recorrências configuradas por HTTP', () => {
   it('quando a criação atual é simultânea ou repetida, então existe uma recorrência e uma despesa com centavos exatos', async () => {

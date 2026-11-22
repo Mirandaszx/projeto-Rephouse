@@ -5,8 +5,11 @@ type Schemas = components['schemas']
 type Session = { token: string; id: string }
 const api = 'http://127.0.0.1:3405/api'
 let accounts: Record<string, Session>, house: Schemas['Republica'], expense: Schemas['Despesa'], recurring: Schemas['Recorrencia']
-let reference: string
+let reference: string, endDate: string
 const headers = (who = 'financeiro-admin') => ({ Authorization: `Bearer ${accounts[who].token}` })
+// Instancia HTTP isolada por arquivo; os controles reais permanecem habilitados.
+test.use({ extraHTTPHeaders: { 'x-interface-test-run': process.env.REPHOUSE_INTERFACE_TEST_RUN ?? '', 'x-interface-suite': 'financeiro-evolucao.spec.ts' } })
+
 test.describe.configure({ mode: 'serial' })
 test.beforeAll(async ({ request }) => {
   accounts = JSON.parse(await readFile('../.devops-local/interface/gestao-contas.json','utf8'))
@@ -33,6 +36,9 @@ test('primeira despesa recorrente pelo formulário usa a competência e impede e
   await dialog.getByLabel('Vencimento',{exact:true}).fill(end.toISOString().slice(0,10))
   await dialog.getByRole('checkbox',{name:'Repetir mensalmente',exact:true}).check()
   await expect(dialog.getByLabel('Primeiro mês de vencimento',{exact:true})).toHaveValue(current)
+  const last = new Date(`${current}-01T00:00:00Z`); last.setUTCMonth(last.getUTCMonth() + 3); last.setUTCDate(15)
+  endDate = last.toISOString().slice(0, 10)
+  await dialog.getByLabel('Repetir até (opcional)', { exact: true }).fill(endDate)
   let release!:()=>void,posts=0
   const gate=new Promise<void>(resolve=>{release=resolve})
   await page.route('**/api/recorrencias',async route=>{if(route.request().method()==='POST'){posts++;await gate}await route.continue()})
@@ -45,6 +51,7 @@ test('primeira despesa recorrente pelo formulário usa a competência e impede e
   const expenses=await (await request.get(api+'/despesas',{headers:headers()})).json() as {dados:Schemas['Despesa'][]}
   expense=expenses.dados[0];expect(expense.valorTotal).toBe('120.00');expect(expense.recorrencia).not.toBeNull()
   recurring=await (await request.get(api+`/recorrencias/${expense.recorrencia!.id}`,{headers:headers()})).json()
+  expect(recurring.fim).toBe(endDate)
   expect(expense.rateios.map(item=>item.valorDevido)).toEqual(['60.00','60.00'])
 })
 test('pagamento parcial aparece no resumo mensal e filtros da própria parcela',async({page,request})=>{
@@ -71,17 +78,45 @@ test('pagamento parcial aparece no resumo mensal e filtros da própria parcela',
   await page.getByRole('combobox',{name:'Situação das suas parcelas',exact:true}).selectOption('PAGAS')
   await expect(page.getByText('Nenhuma despesa no seu histórico.',{exact:true})).toBeVisible()
 })
+
+test('data opcional de término tem rótulo, ajuda e foco e cabe no celular nos dois temas', async ({ page }) => {
+  test.setTimeout(90000)
+  const folder = '../.devops-local/interface/imagens/recorrencia-fim-2026-11-21'
+  await mkdir(folder, { recursive: true })
+  for (const colorScheme of ['light', 'dark'] as const) for (const width of [320, 390, 1440]) {
+    await page.setViewportSize({ width, height: 900 }); await page.emulateMedia({ colorScheme, reducedMotion: 'reduce' })
+    await enter(page, '/republica/despesas')
+    await page.getByRole('button', { name: '＋ Nova despesa', exact: true }).click()
+    const dialog = page.getByRole('dialog', { name: 'Nova despesa' })
+    await expect(dialog.getByLabel('Repetir até (opcional)', { exact: true })).toHaveCount(0)
+    await dialog.getByRole('checkbox', { name: 'Repetir mensalmente', exact: true }).check()
+    const end = dialog.getByLabel('Repetir até (opcional)', { exact: true })
+    await expect(end).toHaveValue(''); await expect(end).not.toHaveAttribute('required')
+    await expect(end).toHaveAccessibleDescription(/Deixe em branco para repetir sem prazo/)
+    await end.fill(endDate); await end.focus(); await expect(end).toBeFocused()
+    await end.press('Tab')
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true)
+    expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true)
+    await end.scrollIntoViewIfNeeded()
+    await page.screenshot({ path: `${folder}/termino-${colorScheme}-${width}.png`, fullPage: true })
+    await page.keyboard.press('Escape'); await expect(dialog).not.toBeVisible()
+    await expect(page.getByRole('button', { name: '＋ Nova despesa', exact: true })).toBeFocused()
+  }
+})
 test('edição da recorrência vale no futuro e desativação preserva a conta parcial',async({page,request})=>{
   await enter(page,'/republica/despesas')
   await page.locator('summary').filter({hasText:'Contas recorrentes'}).click()
   await page.getByRole('button',{name:'Editar recorrência',exact:true}).click()
   const dialog=page.getByRole('dialog',{name:'Editar recorrência mensal'})
+  await expect(dialog.getByLabel('Repetir até (opcional)', { exact: true })).toHaveValue(endDate)
+  await dialog.getByLabel('Repetir até (opcional)', { exact: true }).fill('')
   await dialog.getByLabel('Valor total (R$)',{exact:true}).fill('180.00')
   await dialog.getByLabel('Dia de vencimento',{exact:true}).fill('31')
   await dialog.getByRole('button',{name:'Salvar recorrência',exact:true}).click()
   await expect(dialog).not.toBeVisible()
   const saved=await (await request.get(api+`/recorrencias/${recurring.id}`,{headers:headers()})).json() as Schemas['Recorrencia']
   expect(saved.configuracoes[0].valorTotal).toBe('180.00')
+  expect(saved.fim).toBeNull()
   expect((await (await request.get(api+`/despesas/${expense.id}`,{headers:headers()})).json() as Schemas['Despesa']).valorTotal).toBe('120.00')
   await page.getByRole('button',{name:'Ver meses',exact:true}).click()
   await expect(page.getByRole('region',{name:'Meses da recorrência'})).toContainText('Conta gerada')
@@ -118,7 +153,9 @@ test('falha no resumo permite nova tentativa e mudança de mês não exibe totai
   })
   await enter(page,'/republica/financeiro')
   await expect(page.getByRole('alert')).toContainText('Banco temporariamente indisponível.')
-  await expect(page.getByRole('alert')).toContainText('12345678-1234-4234-8234-123456789abc')
+  await expect(page.getByRole('alert')).not.toContainText('12345678-1234-4234-8234-123456789abc')
+  await page.getByText('Detalhes para suporte', {exact:true}).click()
+  await expect(page.locator('.workspace-error-support code')).toHaveText('12345678-1234-4234-8234-123456789abc')
   unavailable=false
   await page.getByRole('button',{name:'Tentar carregar financeiro',exact:true}).click()
   await expect(page.getByRole('region',{name:'Resumo do seu financeiro'})).toContainText('35,00')

@@ -10,8 +10,8 @@ import { monthDate, nextMonth, dueDate } from './dominio/competencia.js'
 import { recurringInclude, recurringPublic, RecorrenciasRepository } from './recorrencias.repository.js'
 import { FinanceiroRepository } from './financeiro.repository.js'
 
-export interface RecurringInput { titulo: string; categoria: string; valorTotal: string; diaVencimento: number; inicio: string; membroIds: string[]; despesaOrigemId?: string }
-export type RecurringEdit = Partial<Pick<RecurringInput, 'titulo' | 'categoria' | 'valorTotal' | 'diaVencimento' | 'membroIds'>> & { ativa?: boolean }
+export interface RecurringInput { titulo: string; categoria: string; valorTotal: string; diaVencimento: number; inicio: string; fim?: string | null; membroIds: string[]; despesaOrigemId?: string }
+export type RecurringEdit = Partial<Pick<RecurringInput, 'titulo' | 'categoria' | 'valorTotal' | 'diaVencimento' | 'membroIds' | 'fim'>> & { ativa?: boolean }
 const repository = new RecorrenciasRepository()
 const financial = new FinanceiroRepository()
 const occurrenceKey = (id: string, competencia: Date) => ({ recorrenciaId_competencia: { recorrenciaId: id, competencia } })
@@ -31,10 +31,17 @@ export async function materializeRecurring(tx: Prisma.TransactionClient, id: str
   const competencia = recurring.proximaCompetencia
   const month = competencia.toISOString().slice(0, 7)
   const config = recurring.configuracoes.find(item => item.vigencia <= competencia)
+  // O limite considera o vencimento ajustado ao último dia válido do mês,
+  // inclusive nos meses não gerados durante uma interrupção da API.
+  if (recurring.fim && (competencia > recurring.fim || (config && dueDate(month, config.diaVencimento) > recurring.fim))) {
+    await tx.recorrenciaDespesa.update({ where: { id }, data: { ativa: false } })
+    return true
+  }
   const existing = await tx.competenciaRecorrencia.findUnique({ where: occurrenceKey(id, competencia) })
   if (!existing) {
     const snapshot = config ? { titulo: config.titulo, categoria: config.categoria, valorTotal: config.valorTotal.toFixed(2),
-      diaVencimento: config.diaVencimento, membroIds: config.participantes.map(item => item.membroId) } : undefined
+      diaVencimento: config.diaVencimento, membroIds: config.participantes.map(item => item.membroId),
+      fim: recurring.fim?.toISOString().slice(0, 10) ?? null } : undefined
     if (month < current) {
       await tx.competenciaRecorrencia.create({ data: { recorrenciaId: id, competencia, configuracaoId: config?.id,
         estado: 'PENDENTE_REVISAO', motivo: 'PERIODO_NAO_GERADO', snapshot } })
@@ -79,7 +86,8 @@ export function createRecorrenciasService(db: PrismaClient, clock: () => string 
     detail: (actor: Actor, id: string, scope?: string) => withActor(db, actor, async (tx, user) => recurringPublic((await authorized(tx, user, id, scope)).recurring)),
     async create(actor: Actor, input: RecurringInput, key: string, scope?: string) {
       const hash = createHash('sha256').update(JSON.stringify({ titulo: input.titulo, categoria: input.categoria, valorTotal: new Prisma.Decimal(input.valorTotal).toFixed(2),
-        diaVencimento: input.diaVencimento, inicio: input.inicio, membroIds: [...input.membroIds].sort(), despesaOrigemId: input.despesaOrigemId ?? null, actor: actor.id, scope: scope ?? null })).digest('hex')
+        diaVencimento: input.diaVencimento, inicio: input.inicio, membroIds: [...input.membroIds].sort(), despesaOrigemId: input.despesaOrigemId ?? null, actor: actor.id, scope: scope ?? null,
+        ...(input.fim != null ? { fim: input.fim } : {}) })).digest('hex')
       const operation = () => withActor(db, actor, async (tx, user) => {
         const house = await republicContext(tx, user, scope)
         requireAdmin(user, house)
@@ -90,6 +98,9 @@ export function createRecorrenciasService(db: PrismaClient, clock: () => string 
         }
         const today = clock(), current = today.slice(0, 7)
         if (input.inicio < current) throw new AppError(400, 'INVALID_START', 'Escolha o mês atual ou um mês futuro.')
+        if (input.fim && input.fim < dueDate(input.inicio, input.diaVencimento).toISOString().slice(0, 10)) {
+          throw new AppError(400, 'INVALID_END', 'A data de término deve incluir o primeiro vencimento da recorrência.')
+        }
         if (input.despesaOrigemId) {
           const origin = await tx.despesa.findFirst({ where: { id: input.despesaOrigemId, republicaId: house.id }, include: { competenciaRecorrente: true, recorrenciaOriginada: true } })
           if (!origin) throw new AppError(404, 'NOT_FOUND', 'Despesa não encontrada.')
@@ -99,7 +110,8 @@ export function createRecorrenciasService(db: PrismaClient, clock: () => string 
         if (input.inicio === current && dueDate(current, input.diaVencimento).toISOString().slice(0, 10) < today) throw new AppError(400, 'INVALID_START', 'Este vencimento já passou. Comece no próximo mês.')
         await selection(tx, house.id, input.membroIds, input.valorTotal)
         const recurring = await tx.recorrenciaDespesa.create({ data: { republicaId: house.id, criadaPorId: user.id,
-          despesaOrigemId: input.despesaOrigemId, inicio: monthDate(input.inicio), proximaCompetencia: monthDate(input.inicio),
+          despesaOrigemId: input.despesaOrigemId, inicio: monthDate(input.inicio), fim: input.fim ? new Date(`${input.fim}T00:00:00Z`) : null,
+          proximaCompetencia: monthDate(input.inicio),
           chaveIdempotencia: key, hashRequisicao: hash, configuracoes: { create: { titulo: input.titulo, categoria: input.categoria,
             valorTotal: input.valorTotal, diaVencimento: input.diaVencimento, vigencia: monthDate(input.inicio),
             participantes: { create: input.membroIds.map(membroId => ({ membroId })) } } } } })
@@ -116,7 +128,10 @@ export function createRecorrenciasService(db: PrismaClient, clock: () => string 
       requireAdmin(user, house)
       const recurring = (await repository.lock(tx, id))!
       const latest = recurring.configuracoes[0]!
-      const { ativa, ...changes } = input
+      const { ativa, fim, ...changes } = input
+      if (fim && fim < recurring.inicio.toISOString().slice(0, 10)) {
+        throw new AppError(400, 'INVALID_END', 'A data de término não pode ser anterior ao início da recorrência.')
+      }
       if (Object.keys(changes).length || ativa === true) {
         const ids = changes.membroIds ?? latest.participantes.map(person => person.membroId)
         const value = changes.valorTotal ?? latest.valorTotal.toFixed(2)
@@ -127,6 +142,7 @@ export function createRecorrenciasService(db: PrismaClient, clock: () => string 
           diaVencimento: changes.diaVencimento ?? latest.diaVencimento, participantes: { create: ids.map(membroId => ({ membroId })) } } })
       }
       await tx.recorrenciaDespesa.update({ where: { id }, data: { ...(ativa !== undefined ? { ativa } : {}),
+        ...(fim !== undefined ? { fim: fim ? new Date(`${fim}T00:00:00Z`) : null } : {}),
         ...(ativa === true ? { pausaMotivo: null } : {}) } })
       return recurringPublic((await repository.lock(tx, id))!)
     }),

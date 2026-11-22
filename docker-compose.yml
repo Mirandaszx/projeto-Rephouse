@@ -27,6 +27,9 @@ services:
       NODE_ENV: development
       JWT_SECRET: ${JWT_SECRET:-}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      APP_PUBLIC_URL: ${APP_PUBLIC_URL:-}
       APP_TIME_ZONE: ${APP_TIME_ZONE:-America/Sao_Paulo}
       PORT: 3000
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
@@ -70,6 +73,7 @@ services:
     working_dir: /app
     environment:
       API_PROXY_TARGET: http://api:3000
+      REPHOUSE_VITE_POLLING: ${REPHOUSE_VITE_POLLING:-true}
     command: sh -c "npm ci && npm run dev -- --host 0.0.0.0"
     restart: unless-stopped
     ports:

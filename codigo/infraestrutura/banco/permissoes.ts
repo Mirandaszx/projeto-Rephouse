@@ -58,6 +58,21 @@ export async function provisionRuntimeRole(client: pg.Client, options: RuntimeRo
     await client.query(`GRANT CONNECT ON DATABASE ${databaseId} TO ${role}`)
     await client.query(`GRANT USAGE ON SCHEMA ${schema} TO ${role}`)
     for(const[table,privileges]of Object.entries(runtimeTablePrivileges))await client.query(`GRANT ${privileges.join(',')} ON TABLE ${schema}.${identifier(table)} TO ${role}`)
+    // Compatibilidade com schemas anteriores usados nos testes de migração.
+    // Depois da nova migration, a API só lê e insere o histórico de criações.
+    if ((await client.query('SELECT 1 FROM pg_tables WHERE schemaname=$1 AND tablename=$2', [options.schema, 'operacoes_criacao'])).rowCount) {
+      await client.query(`GRANT SELECT,INSERT ON TABLE ${schema}.operacoes_criacao TO ${role}`)
+    }
+    // Tabelas novas são opcionais somente para conferir snapshots históricos nos testes.
+    if ((await client.query('SELECT 1 FROM pg_tables WHERE schemaname=$1 AND tablename=$2', [options.schema, 'fotos_perfil'])).rowCount) {
+      await client.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON TABLE ${schema}.fotos_perfil TO ${role}`)
+    }
+    for (const table of ['links_email', 'limites_envio_email', 'emails_verificados', 'eventos_notificacao', 'notificacoes']) {
+      if ((await client.query('SELECT 1 FROM pg_tables WHERE schemaname=$1 AND tablename=$2', [options.schema, table])).rowCount) {
+        await client.query(`GRANT SELECT,INSERT${['emails_verificados','eventos_notificacao','notificacoes'].includes(table) ? '' : ',UPDATE'} ON TABLE ${schema}.${identifier(table)} TO ${role}`)
+        if (table === 'notificacoes') await client.query(`GRANT UPDATE(lida_em) ON TABLE ${schema}.notificacoes TO ${role}`)
+      }
+    }
     const sequence=(await client.query<{name:string}>(`SELECT pg_get_serial_sequence($1,'versao') name`,[`${options.schema}.configuracoes_recorrencia`])).rows[0]?.name
     if(!sequence)throw new Error('Sequência de configuração não encontrada.')
     const sequenceId=sequence.split('.').map(part=>identifier(part.replaceAll('"',''))).join('.')

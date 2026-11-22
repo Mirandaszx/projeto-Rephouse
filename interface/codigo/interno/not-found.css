@@ -1,0 +1,11 @@
+.republica.workspace-not-found{display:flex;flex-direction:column;min-height:100dvh;padding:24px clamp(16px,5vw,72px);gap:clamp(48px,12vh,120px)}
+.workspace-not-found>header{display:flex;align-items:center;justify-content:space-between;gap:20px}
+.workspace-not-found>section{width:100%;max-width:640px;margin-inline:auto}
+.workspace-not-found h1{font-size:36px;line-height:1.2;letter-spacing:-.035em;margin:0 0 20px}
+.workspace-not-found p{font-size:16px;color:var(--app-muted);line-height:1.6;margin:0 0 28px}
+.workspace-not-found section>div{display:flex;align-items:center;flex-wrap:wrap;gap:20px}
+.workspace-not-found section a{min-height:44px;display:inline-flex;align-items:center}
+.workspace-not-found .workspace-return{padding:10px 16px;border-radius:999px;background:var(--app-accent);color:#fff;font-size:14px;font-weight:550}
+:root[data-theme='dark'] .workspace-not-found .workspace-return{color:#193732}
+.workspace-not-found section>div>a:not(.workspace-return){text-decoration:underline;text-underline-offset:4px}
+@media(max-width:719px){.workspace-not-found h1{font-size:28px}}

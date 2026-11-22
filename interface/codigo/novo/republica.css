@@ -123,7 +123,6 @@
   .republica button { transition: none; }
   .rep-primary:active, .rep-secondary:active { transform: none; }
 }
-@font-face { font-family: "RepHouse Inter"; src: url(/fonts/InterVariable.woff2) format("woff2"); font-weight: 100 900; font-display: swap; }
 .rep-intro h1, .rep-auth h1 { font-family: inherit; font-weight: 700; }
 .republica h2, .rep-brand, .republica .rep-primary { font-family: inherit; font-weight: 700; }
 .rep-copy { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
