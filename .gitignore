@@ -10,3 +10,15 @@ codigo/gerado/
 *.tsbuildinfo
 interface/dist/
 /armazenamento/
+
+# Ferramentas de IA instaladas e configuracoes locais
+/.agents/skills/
+/.claude/
+/.mcp.json
+/skills-lock.json
+
+# Logs e relatorios gerados
+*.log
+coverage/
+playwright-report/
+test-results/
