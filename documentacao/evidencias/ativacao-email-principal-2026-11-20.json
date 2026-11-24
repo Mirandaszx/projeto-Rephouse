@@ -1,0 +1,122 @@
+{
+  "dataLocal": "2026-11-20",
+  "fuso": "America/Fortaleza",
+  "ambiente": "principal local",
+  "autorizado": true,
+  "iniciadoEm": "2026-11-21T01:44:41.456Z",
+  "envioReal": false,
+  "volumesAntes": [
+    "projeto-rephouse_postgres_data"
+  ],
+  "migrationsAntes": 20,
+  "pendentesAntes": [
+    "202611200002_autenticacao_email"
+  ],
+  "versaoAnterior": "2.2.1",
+  "backup": {
+    "diretorio": "copias-seguranca/2026-11-21T01-44-43-582Z-antes-3-0-0-073236c1",
+    "formato": 2,
+    "catalogoConferido": true,
+    "hashConfere": true,
+    "restauracaoExecutada": false
+  },
+  "dadosPreservados": true,
+  "tabelasAnterioresComparadas": 15,
+  "migrationsDepois": 21,
+  "pendentesDepois": [],
+  "permissoes": [
+    {
+      "table_name": "emails_verificados",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "emails_verificados",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "limites_envio_email",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "limites_envio_email",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "limites_envio_email",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "links_email",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "links_email",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "links_email",
+      "privilege_type": "UPDATE"
+    }
+  ],
+  "roleLimitada": {
+    "rolsuper": false,
+    "rolcreatedb": false,
+    "rolcreaterole": false,
+    "rolreplication": false,
+    "rolbypassrls": false
+  },
+  "versaoServida": "3.0.0",
+  "emailHabilitado": true,
+  "http": [
+    {
+      "path": "/api/health",
+      "status": 200
+    },
+    {
+      "path": "/api/ready",
+      "status": 200
+    },
+    {
+      "path": "/login",
+      "status": 200
+    },
+    {
+      "path": "/confirmar-email",
+      "status": 200
+    },
+    {
+      "path": "/api/me",
+      "status": 401
+    }
+  ],
+  "volumesPreservados": true,
+  "acid": {
+    "fsync": "on",
+    "synchronous_commit": "on",
+    "full_page_writes": "on"
+  },
+  "aprovado": true,
+  "concluidoEm": "2026-11-21T01:45:26.336Z",
+  "verificacaoContaLimitada": {
+    "leituraNovasTabelas": true,
+    "contagens": {
+      "links_email": 0,
+      "limites_envio_email": 0,
+      "emails_verificados": 0
+    },
+    "cors": {
+      "status": 204,
+      "origin": "http://localhost:5173",
+      "credenciaisEntreOrigensHabilitadas": false,
+      "fluxo": "mesma origem via proxy"
+    },
+    "requestIdPresente": true
+  },
+  "limitacoes": [
+    "Entrega e confirmacao de e-mail real ainda nao validadas.",
+    "Backup conferido por hash e catalogo, sem novo ensaio de restauracao.",
+    "Regressao anterior preservada: backend 301 aprovados; frontend completo 82/83 com falha anterior de animacao, complemento de autenticacao 13/13. Nao foram executados testes destrutivos no principal."
+  ],
+  "semSeedResetOuContasDeTeste": true,
+  "semCommitPushOuPublicacao": true
+}

@@ -1,0 +1,169 @@
+{
+  "dataLocal": "2026-11-21",
+  "registradoEm": "2026-11-22T00:45:54.826Z",
+  "ambiente": "local, PostgreSQL dedicado",
+  "funcionalidade": "Data opcional de término das recorrências mensais",
+  "bancoPrincipalAlterado": true,
+  "ativacaoPrincipal": {
+    "estado": "ATIVADA",
+    "migrations": 25,
+    "pendentes": [],
+    "evidencia": "documentacao/evidencias/ativacao-recorrencia-fim-principal-2026-11-21.json"
+  },
+  "migration": "202611220001_recorrencia_data_fim",
+  "backend": {
+    "comando": "npm run test:completo",
+    "relatorio": ".devops-local/testes-criticos/2026-11-22T00-28-58.368Z.json",
+    "totais": {
+      "testes": 327,
+      "aprovados": 327,
+      "falhas": 0,
+      "ignorados": 0,
+      "cancelados": 0
+    },
+    "codigoSaida": 0,
+    "schemaTemporarioRemovido": true,
+    "contratoAntes": [
+      {
+        "file": "documentacao/openapi.json",
+        "sha256": "66221d90f90881f964e73c465c9e85351373fef4a58378901babd877eac660b2"
+      },
+      {
+        "file": "integracao/api.d.ts",
+        "sha256": "581316cfb9ea22e9993c384b940357633a00b02e4acdb2db926dda7ff1989753"
+      }
+    ],
+    "contratoDepois": [
+      {
+        "file": "documentacao/openapi.json",
+        "sha256": "66221d90f90881f964e73c465c9e85351373fef4a58378901babd877eac660b2"
+      },
+      {
+        "file": "integracao/api.d.ts",
+        "sha256": "581316cfb9ea22e9993c384b940357633a00b02e4acdb2db926dda7ff1989753"
+      }
+    ],
+    "tentativaAnterior": {
+      "log": ".devops-local/recorrencia-fim-backend-completo.log",
+      "motivo": "Preparação da base histórica do teste de permissões ainda não incluía a nova coluna. Preparação corrigida, expectativas e proteções preservadas."
+    }
+  },
+  "frontend": {
+    "buildTipagemLint": {
+      "aprovados": true,
+      "avisosFastRefreshPreexistentes": 6,
+      "log": ".devops-local/recorrencia-fim-interface-final-checks.log"
+    },
+    "completa": {
+      "comando": "npm --prefix interface run verificar",
+      "relatorio": ".devops-local/recorrencia-fim-frontend-completo.json",
+      "totais": {
+        "total": 91,
+        "aprovados": 86,
+        "falhas": 2,
+        "ignorados": 3
+      },
+      "observacao": "A primeira execução incluiu seletor incorreto do novo teste, corrigido para o nome acessível real do botão. Três casos seguintes da jornada serial não executaram nesta tentativa; todos executaram na repetição integral do arquivo."
+    },
+    "financeiroFinal": {
+      "comando": "npm --prefix interface run test:e2e -- financeiro-evolucao.spec.ts",
+      "relatorio": ".devops-local/recorrencia-fim-browser-final.json",
+      "totais": {
+        "total": 6,
+        "aprovados": 6,
+        "falhas": 0,
+        "ignorados": 0
+      },
+      "casos": [
+        {
+          "arquivo": "financeiro-evolucao.spec.ts",
+          "linha": 27,
+          "titulo": "financeiro-evolucao.spec.ts > primeira despesa recorrente pelo formulário usa a competência e impede envio duplicado",
+          "estado": "passed"
+        },
+        {
+          "arquivo": "financeiro-evolucao.spec.ts",
+          "linha": 57,
+          "titulo": "financeiro-evolucao.spec.ts > pagamento parcial aparece no resumo mensal e filtros da própria parcela",
+          "estado": "passed"
+        },
+        {
+          "arquivo": "financeiro-evolucao.spec.ts",
+          "linha": 82,
+          "titulo": "financeiro-evolucao.spec.ts > data opcional de término tem rótulo, ajuda e foco e cabe no celular nos dois temas",
+          "estado": "passed"
+        },
+        {
+          "arquivo": "financeiro-evolucao.spec.ts",
+          "linha": 106,
+          "titulo": "financeiro-evolucao.spec.ts > edição da recorrência vale no futuro e desativação preserva a conta parcial",
+          "estado": "passed"
+        },
+        {
+          "arquivo": "financeiro-evolucao.spec.ts",
+          "linha": 128,
+          "titulo": "financeiro-evolucao.spec.ts > novos controles e resumo cabem nos temas e larguras sem cortes",
+          "estado": "passed"
+        },
+        {
+          "arquivo": "financeiro-evolucao.spec.ts",
+          "linha": 148,
+          "titulo": "financeiro-evolucao.spec.ts > falha no resumo permite nova tentativa e mudança de mês não exibe totais antigos",
+          "estado": "passed"
+        }
+      ]
+    },
+    "consolidadoPorUltimoResultadoDoCenario": {
+      "totais": {
+        "total": 91,
+        "aprovados": 90,
+        "falhas": 1,
+        "ignorados": 0
+      },
+      "observacao": "Consolidação de duas execuções; não equivale a uma única execução integral aprovada.",
+      "falhas": [
+        {
+          "arquivo": "motion-superficies.spec.ts",
+          "linha": 195,
+          "titulo": "motion-superficies.spec.ts > superfícies cabem nos dois temas e no celular, com quadros intermediários de entrada e saída",
+          "estado": "timedOut"
+        }
+      ]
+    },
+    "suiteInteiraAprovada": false
+  },
+  "impecavel": {
+    "achados": []
+  },
+  "capturas": [
+    {
+      "arquivo": ".devops-local/interface/imagens/recorrencia-fim-2026-11-21/termino-dark-1440.png",
+      "sha256": "997c790722c4e24d1e15769d3891455cbd0ae78852a9e246d7081c7463362dff"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/recorrencia-fim-2026-11-21/termino-dark-320.png",
+      "sha256": "0d451c337dacfc01429fe8a5df4c7f24dde86942fa2608c95df9dfa78c9b0216"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/recorrencia-fim-2026-11-21/termino-dark-390.png",
+      "sha256": "ed229073cab1e2b8382b0618826c3fe608ef9852911cbec1b85acdd6d72e22ba"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/recorrencia-fim-2026-11-21/termino-light-1440.png",
+      "sha256": "2efed3277437c4a5ac36e60d5ffb3a7eed8c6211278b5fcc9bea682915daf478"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/recorrencia-fim-2026-11-21/termino-light-320.png",
+      "sha256": "974aa4ace95b4ab68b2c2f3a7ae1ac72b6f7e40ef3567b39d220d7163aac0364"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/recorrencia-fim-2026-11-21/termino-light-390.png",
+      "sha256": "2586cc0d5479e6d985b61577d043b1a8fec104ca1818ece0c9dab845935fb5d6"
+    }
+  ],
+  "inspecaoVisual": [
+    "termino-dark-320.png",
+    "termino-light-1440.png"
+  ],
+  "semCommitPushPublicacaoOuEnvioRealDeEmail": true
+}

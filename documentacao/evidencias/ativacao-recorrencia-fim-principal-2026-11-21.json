@@ -1,0 +1,136 @@
+{
+  "dataLocal": "2026-11-21",
+  "ambiente": "principal local",
+  "autorizado": true,
+  "iniciadoEm": "2026-11-22T00:42:40.040Z",
+  "semSeedResetOuContasDeTeste": true,
+  "envioReal": false,
+  "autorizacao": "Usuário autorizou explicitamente a nova migration, backup e reinício da API",
+  "funcionalidade": "Término opcional das recorrências",
+  "volumesAntes": [
+    "projeto-rephouse_postgres_data"
+  ],
+  "migrationsAntes": 24,
+  "pendentesAntes": [
+    "202611220001_recorrencia_data_fim"
+  ],
+  "versaoAnterior": "4.1.0",
+  "preflight": {
+    "checksumsConferem": true,
+    "comprovantesValidos": true,
+    "tarefasHistoricasValidas": true
+  },
+  "validacaoPrevia": {
+    "backend": {
+      "testes": 327,
+      "aprovados": 327,
+      "falhas": 0,
+      "ignorados": 0,
+      "cancelados": 0
+    },
+    "jornadasFinanceiras": 6,
+    "animacaoPreexistentePendente": true
+  },
+  "compilacaoLocal": ".devops-local/api-principal-recorrencia-fim-71abf64b",
+  "backup": {
+    "diretorio": "copias-seguranca/2026-11-22T00-42-41-742Z-antes-recorrencia-fim-2161e87c",
+    "formato": 2,
+    "catalogoConferido": true,
+    "hashConfere": true,
+    "restauracaoExecutada": false
+  },
+  "dadosPreservadosAntesDeIniciarApi": true,
+  "tabelasAnterioresComparadas": 20,
+  "contagensAnteriores": {
+    "competencias_recorrencia": 0,
+    "comprovantes": 0,
+    "configuracoes_recorrencia": 0,
+    "desafios_google": 0,
+    "despesas": 1,
+    "emails_verificados": 0,
+    "eventos_notificacao": 0,
+    "identidades_google": 0,
+    "limites_envio_email": 0,
+    "links_email": 0,
+    "membros_republica": 1,
+    "notificacoes": 0,
+    "operacoes_criacao": 0,
+    "pagamentos": 1,
+    "rateios_despesa": 1,
+    "recorrencias_despesa": 0,
+    "recorrencias_participantes": 0,
+    "republicas": 1,
+    "tarefas": 0,
+    "usuarios": 1
+  },
+  "migrationsDepois": 25,
+  "pendentesDepois": [],
+  "contaLimitada": {
+    "rolsuper": false,
+    "rolcreatedb": false,
+    "rolcreaterole": false,
+    "rolreplication": false,
+    "rolbypassrls": false
+  },
+  "permissoes": {
+    "eventos_leitura_gravacao": true,
+    "notificacoes_leitura_gravacao": true,
+    "leitura_atualizavel": true,
+    "destinatario_atualizavel": false,
+    "pode_excluir": false
+  },
+  "overrideAnterior": ".devops-local/api-principal-recorrencia-fim-71abf64b-anterior.yml",
+  "http": [
+    {
+      "path": "/api/health",
+      "status": 200
+    },
+    {
+      "path": "/api/ready",
+      "status": 200
+    },
+    {
+      "path": "/api/me",
+      "status": 401
+    },
+    {
+      "path": "/api/notificacoes/nao-lidas",
+      "status": 401
+    },
+    {
+      "path": "/login",
+      "status": 200
+    }
+  ],
+  "terminoRecorrencia": {
+    "colunaDateOpcional": true,
+    "constraintValidada": true,
+    "contratoAtualizado": true,
+    "formularioServido": true
+  },
+  "versaoServida": "4.1.0",
+  "aprovado": true,
+  "verificacaoRetomadaEm": "2026-11-22T00:44:50.054Z",
+  "consultasAutenticadas": {
+    "contaExistenteSemAlteracao": true,
+    "apiEProxy": true,
+    "paginacao": true,
+    "sseConectado": true,
+    "tokenSomenteMemoria": true
+  },
+  "volumesPreservados": true,
+  "acid": {
+    "fsync": "on",
+    "synchronous_commit": "on",
+    "full_page_writes": "on"
+  },
+  "concluidoEm": "2026-11-22T00:44:50.365Z",
+  "falhaInicial": {
+    "path": "/api/recorrencias?pagina=1&limite=20",
+    "base": "http://localhost:5173",
+    "esperado": 200,
+    "recebido": 400,
+    "codigoPublico": "VALIDATION_ERROR",
+    "motivo": "A checagem inicial enviou paginação canônica ao adaptador que entrega arrays. Verificação corrigida conforme o contrato, sem mudar a API."
+  }
+}

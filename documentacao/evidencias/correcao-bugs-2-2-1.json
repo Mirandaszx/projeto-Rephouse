@@ -1,0 +1,167 @@
+{
+  "versao": "2.2.1",
+  "ambiente": "local",
+  "data": "2026-11-20",
+  "bugs": {
+    "entradaMonetaria": "corrigido",
+    "reenvioDespesas": "corrigido",
+    "reenvioTarefas": "corrigido"
+  },
+  "baseline": {
+    "testes": 35,
+    "aprovados": 27,
+    "falhas": 8,
+    "ignorados": 0,
+    "log": ".devops-local/correcao-bugs-antes.log"
+  },
+  "backend": {
+    "comando": "npm run test:completo",
+    "testes": 285,
+    "aprovados": 285,
+    "falhas": 0,
+    "ignorados": 0,
+    "cancelados": 0,
+    "codigoSaida": 0,
+    "relatorio": ".devops-local/testes-criticos/2026-11-20T21-54-40.693Z.json",
+    "schemaTemporarioRemovido": true
+  },
+  "verificacoesPosteriores": {
+    "permissoes": {
+      "testes": 6,
+      "aprovados": 6,
+      "falhas": 0,
+      "ignorados": 0,
+      "log": ".devops-local/correcao-bugs-permissoes-final.log"
+    },
+    "reversao": {
+      "testes": 1,
+      "aprovados": 1,
+      "falhas": 0,
+      "ignorados": 0,
+      "log": ".devops-local/correcao-bugs-reversao-final.log"
+    }
+  },
+  "contrato": {
+    "versao": "2.2.1",
+    "sincronizado": true,
+    "arquivos": [
+      {
+        "file": "documentacao/openapi.json",
+        "sha256": "0f881a3095c758bb3054174183115ea827ea348ac2f76eac87063df985fac2de"
+      },
+      {
+        "file": "integracao/api.d.ts",
+        "sha256": "f5b96561a376383e3d48cfe3c0318a16ee11615149b92deba2dfff82be364955"
+      }
+    ]
+  },
+  "frontend": {
+    "comando": "npm --prefix interface run verificar",
+    "completo": {
+      "testes": 71,
+      "aprovados": 70,
+      "falhas": 1,
+      "ignorados": 0,
+      "relatorio": ".devops-local/correcao-bugs-interface-completo.json",
+      "log": ".devops-local/correcao-bugs-interface-final.log"
+    },
+    "falhaConhecida": {
+      "arquivo": "interface/testes-pr2/motion-superficies.spec.ts",
+      "linha": 192,
+      "timeoutNaLinha": 227,
+      "preexistente": true,
+      "testePreservado": true
+    },
+    "reenviosVersaoFinal": {
+      "aprovados": 4,
+      "falhas": 0,
+      "ignorados": 0,
+      "log": ".devops-local/correcao-bugs-interface-reenvios-final.log"
+    },
+    "build": true,
+    "tipagem": true,
+    "lint": {
+      "erros": 0,
+      "avisosAnteriores": 5
+    },
+    "capturas": [
+      ".devops-local/interface/reenvios-2-2-1/despesas-resultado-incerto.png",
+      ".devops-local/interface/reenvios-2-2-1/tarefas-resultado-incerto.png"
+    ]
+  },
+  "ativacaoPrincipal": {
+    "executadoEm": "2026-11-20T22:13:26.382Z",
+    "ambiente": "principal local",
+    "versao": "2.2.1",
+    "autorizacaoUsuario": true,
+    "backup": {
+      "diretorio": "copias-seguranca/2026-11-20T22-09-25-914Z-antes-2-2-1-bcc31f19",
+      "hashConfere": true,
+      "formato": 2,
+      "catalogoConferido": true
+    },
+    "migrationsAntes": 10,
+    "migrationsDepois": 20,
+    "pendentes": [],
+    "checksumsConferem": true,
+    "dadosPreservados": true,
+    "tabelasAnterioresComparadas": 14,
+    "preflightSemViolacoes": true,
+    "database": {
+      "role": "rephouse_api",
+      "flags": {
+        "rolsuper": false,
+        "rolcreatedb": false,
+        "rolcreaterole": false,
+        "rolreplication": false,
+        "rolbypassrls": false
+      },
+      "grants": {
+        "leitura": true,
+        "insercao": true,
+        "alteracao": false,
+        "exclusao": false
+      },
+      "constraintsNaoValidadas": 0
+    },
+    "http": [
+      {
+        "url": "http://localhost:3000/api/health",
+        "status": 200,
+        "expected": 200
+      },
+      {
+        "url": "http://localhost:3000/api/ready",
+        "status": 200,
+        "expected": 200
+      },
+      {
+        "url": "http://localhost:5173/login",
+        "status": 200,
+        "expected": 200
+      },
+      {
+        "url": "http://localhost:3000/api/openapi.json",
+        "status": 200,
+        "expected": 200,
+        "version": "2.2.1"
+      },
+      {
+        "url": "http://localhost:5173/api/me",
+        "status": 401,
+        "expected": 401
+      }
+    ],
+    "volumesPreservados": true,
+    "semContasOuRegistrosDeTesteNoPrincipal": true,
+    "aprovado": true,
+    "ensaioRestauracaoNestaAtivacao": false
+  },
+  "limites": {
+    "commit": false,
+    "push": false,
+    "ciRemota": false,
+    "testeNoBancoPrincipal": false,
+    "suiteFrontendIntegralAprovada": false
+  }
+}

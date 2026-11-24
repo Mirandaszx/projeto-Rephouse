@@ -1,0 +1,174 @@
+{
+  "data": "2026-11-20",
+  "executadoEm": "2026-11-20T23:38:59.896Z",
+  "ambiente": "local",
+  "versao": "2.2.1",
+  "branch": "teste-devops",
+  "escopo": "Refinamento Impeccable, preservando identidade e comportamento financeiro",
+  "verificacao": {
+    "comando": "npm --prefix interface run verificar",
+    "build": true,
+    "tipagem": true,
+    "lint": {
+      "erros": 0,
+      "avisosFastRefresh": 6,
+      "avisosAnteriores": 5,
+      "novoAviso": "Mesmo padrão de lazy component no ponto de entrada, para NotFound"
+    },
+    "total": 79,
+    "aprovados": 78,
+    "falhas": 1,
+    "ignorados": 0,
+    "flaky": 0,
+    "codigoSaida": 1,
+    "pendencias": [
+      {
+        "arquivo": "motion-superficies.spec.ts",
+        "linha": 192,
+        "titulo": "superfícies cabem nos dois temas e no celular, com quadros intermediários de entrada e saída"
+      }
+    ],
+    "log": ".devops-local/impeccable-ajustes-verificacao-final.log"
+  },
+  "testesNovos": {
+    "total": 8,
+    "todosAprovados": true,
+    "cenarios": [
+      {
+        "cenario": "despesa, pagamento e tarefa recebem foco após montar o formulário correto",
+        "aprovado": true
+      },
+      {
+        "cenario": "falha incerta tem um alerta, detalhes copiáveis e reenvio idêntico após reabrir",
+        "aprovado": true
+      },
+      {
+        "cenario": "moradores, tarefas e configurações funcionam sem consultar dashboard ou despesas",
+        "aprovado": true
+      },
+      {
+        "cenario": "painel mostra Atrasada e pagamento parcial usando a referência do servidor",
+        "aprovado": true
+      },
+      {
+        "cenario": "painel mostra Vence hoje e pagamento parcial usando a referência do servidor",
+        "aprovado": true
+      },
+      {
+        "cenario": "painel mostra Vence em breve e pagamento parcial usando a referência do servidor",
+        "aprovado": true
+      },
+      {
+        "cenario": "endereço desconhecido explica a falha e conserva redirecionamentos antigos",
+        "aprovado": true
+      },
+      {
+        "cenario": "aviso sem situação pronta usa a data civil do servidor, mesmo com relógio local diferente",
+        "aprovado": true
+      }
+    ]
+  },
+  "primeiraExecucao": {
+    "aprovados": 75,
+    "falhas": 3,
+    "ignorados": 0,
+    "relatorio": ".devops-local/impeccable-primeira-execucao.json",
+    "observacao": "Duas falhas novas foram corrigidas no código; a falha de animação preexistente permaneceu. Expectativas não foram afrouxadas."
+  },
+  "visual": {
+    "combinacoes": 40,
+    "larguras": [
+      320,
+      390,
+      768,
+      1440
+    ],
+    "temas": [
+      "light",
+      "dark"
+    ],
+    "api": "Respostas fictícias controladas no navegador, sem gravar no banco principal",
+    "overflowHorizontal": false,
+    "errosJavaScript": [],
+    "diretorio": ".devops-local/interface/imagens/impeccable-ajustes-real",
+    "capturasFinais": ".devops-local/interface/imagens/impeccable-ajustes-final",
+    "contraste": {
+      "amostras": 32,
+      "minimo": 5.33,
+      "abaixoDe4_5": 0,
+      "limite": "Amostragem; não representa auditoria WCAG integral"
+    },
+    "modal": {
+      "focoDentro": true,
+      "escape": true,
+      "retornoAoAcionador": true,
+      "alertasNaFalhaIncerta": 1
+    }
+  },
+  "observacaoArquivos": {
+    "executadoEm": "2026-11-20T23:28:33.225Z",
+    "intervaloMs": 1000,
+    "atualizacaoSemReinicio": true,
+    "esperaMs": 1118,
+    "arquivoTemporarioRemovido": true,
+    "apiPrincipalPronta": true
+  },
+  "detector": {
+    "achados": 0,
+    "escopo": "Arquivos de interface alterados",
+    "relatorio": ".devops-local/impeccable-ajustes-detector-final.json"
+  },
+  "contrato": {
+    "tiposSincronizados": true,
+    "arquivos": [
+      {
+        "arquivo": "documentacao/openapi.json",
+        "sha256": "0f881a3095c758bb3054174183115ea827ea348ac2f76eac87063df985fac2de",
+        "inalterado": true
+      },
+      {
+        "arquivo": "integracao/api.d.ts",
+        "sha256": "f5b96561a376383e3d48cfe3c0318a16ee11615149b92deba2dfff82be364955",
+        "inalterado": true
+      }
+    ]
+  },
+  "servidor": {
+    "http": [
+      {
+        "url": "http://localhost:5173/login",
+        "status": 200
+      },
+      {
+        "url": "http://localhost:5173/pagina-inexistente",
+        "status": 200
+      },
+      {
+        "url": "http://localhost:3000/api/health",
+        "status": 200
+      },
+      {
+        "url": "http://localhost:3000/api/ready",
+        "status": 200
+      }
+    ],
+    "apenasFrontendRecriado": true,
+    "volumesPreservados": true
+  },
+  "documentos": [
+    "DESIGN.md",
+    ".impeccable/design.json",
+    "documentacao/REFINAMENTO_IMPECCABLE_2026_11_20.md"
+  ],
+  "limites": {
+    "apiAlterada": false,
+    "bancoPrincipalAlterado": false,
+    "regrasFinanceirasAlteradas": false,
+    "novasDependencias": false,
+    "commit": false,
+    "push": false,
+    "ciRemota": false,
+    "celularFisico": false,
+    "suiteCompletaAprovada": false
+  }
+}

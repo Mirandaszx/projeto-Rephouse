@@ -1,0 +1,214 @@
+{
+  "entrega": "Notificações gerais e aba Todas",
+  "versao": "4.1.0",
+  "data": "2026-11-21",
+  "ambiente": "local",
+  "branch": "teste-devops",
+  "backend": {
+    "comando": "npm run test:completo",
+    "executadoEm": "2026-11-21T23:53:47.078Z",
+    "ambiente": "local",
+    "destino": {
+      "host": "127.0.0.1",
+      "porta": "5544",
+      "banco": "rabbu_mvp_test",
+      "usuario": "rephouse_interface_test"
+    },
+    "etapas": [
+      {
+        "comando": "Verificar Docker",
+        "codigo": 0
+      },
+      {
+        "comando": "Iniciar somente PostgreSQL de testes",
+        "codigo": 0
+      },
+      {
+        "comando": "Aplicar migrations somente no schema temporário",
+        "codigo": 0
+      },
+      {
+        "comando": "Verificação completa do backend e request specs",
+        "codigo": 0
+      }
+    ],
+    "totais": {
+      "testes": 321,
+      "aprovados": 321,
+      "falhas": 0,
+      "ignorados": 0,
+      "cancelados": 0
+    },
+    "codigoSaida": 0,
+    "schemaTemporario": "complete_test_8bce5e63a59548bdb21ae3a72ece5658",
+    "schemaRemovido": true,
+    "contratoAntes": [
+      {
+        "file": "documentacao/openapi.json",
+        "sha256": "e12d7dad8a9a44aaed03a2f1cfbdee88cd086669d5055c75a430825078c3f930"
+      },
+      {
+        "file": "integracao/api.d.ts",
+        "sha256": "8881934861aab7c819d112fde4664e10592fc65954c125756efce75354417270"
+      }
+    ],
+    "contratoDepois": [
+      {
+        "file": "documentacao/openapi.json",
+        "sha256": "e12d7dad8a9a44aaed03a2f1cfbdee88cd086669d5055c75a430825078c3f930"
+      },
+      {
+        "file": "integracao/api.d.ts",
+        "sha256": "8881934861aab7c819d112fde4664e10592fc65954c125756efce75354417270"
+      }
+    ],
+    "relatorioLocal": ".devops-local/testes-criticos/2026-11-21T23-47-58.938Z.json",
+    "sha256": "346a8b86ec25b5f45525dd9897d1b6d3ede4cc309f47862699a8065192c02c01"
+  },
+  "frontend": {
+    "comando": "npm --prefix interface run verificar",
+    "build": "aprovado",
+    "tipagem": "aprovada",
+    "lint": {
+      "erros": 0,
+      "avisosAnteriores": 6
+    },
+    "testes": 90,
+    "aprovados": 89,
+    "falhas": 1,
+    "ignorados": 0,
+    "iniciadoEm": "2026-11-21T23:49:21.994Z",
+    "duracaoMs": 528409.1950000001,
+    "relatorioLocal": ".devops-local/notificacoes-gerais-frontend-completo.json",
+    "sha256": "0bfe6bb8b3394f0a12825bb654e4dcb6f6125bb04be3c4ffc73957760a36878d",
+    "confirmacaoFinal": {
+      "comando": "npm --prefix interface run test:e2e -- notificacoes.spec.ts",
+      "aprovados": 6,
+      "falhas": 0,
+      "ignorados": 0,
+      "relatorioLocal": ".devops-local/notificacoes-gerais-browser-final.json",
+      "sha256": "8d2153e4bba460cc7635fc6dc547bb09c9725cbba0dfdb02332e2d44f0b2ec1d",
+      "observacao": "Verificação adicional de reentrada recebida, abas sem cortes e capturas finais. Tem sobreposição com a suíte completa; não somar os totais."
+    },
+    "compilacaoCssFinal": ".devops-local/notificacoes-gerais-build-final.log",
+    "pendencia": {
+      "teste": "interface/testes-pr2/motion-superficies.spec.ts:195",
+      "linhaFalha": 230,
+      "observacao": "Falha já conhecida na captura intermediária da saída do modal; teste e expectativas preservados.",
+      "suiteInteiraAprovada": false
+    }
+  },
+  "cenariosNovos": [
+    "Entrada e destinatários ativos, sem autoaviso ou acesso entre casas",
+    "Concorrência de entrada/saída sem duplicação; reentrada com vínculo preservado",
+    "Troca entre casas e rollback de código inválido",
+    "Desativação pelo administrador e exclusão lógica sem divulgação do motivo",
+    "Rollback real por rejeição do PostgreSQL",
+    "Todas paginada, contadores por categoria e leitura individual/em lote",
+    "SSE na interface, navegação entre três abas, leitura abre Moradores e nova reentrada aparece"
+  ],
+  "testes": {
+    "requestSpecs": "testes/request-notificacoes-gerais.test.ts",
+    "navegador": "interface/testes-pr2/notificacoes.spec.ts"
+  },
+  "banco": {
+    "migration": "202611210001_notificacoes_gerais",
+    "aplicadasAnterioresPreservadas": true,
+    "reversao": "down.sql recusa se houver eventos gerais; sem apagar histórico.",
+    "semAtualizacaoDeRegistrosAnteriores": true
+  },
+  "visual": {
+    "capturas": [
+      {
+        "arquivo": ".devops-local/interface/imagens/notificacoes-gerais-2026-11-21/painel-1440-dark.png",
+        "sha256": "b3c85b0010f2b0aaffeeefb1862b77fc33f0ee31ff8cbadcffc2a7a958614faf"
+      },
+      {
+        "arquivo": ".devops-local/interface/imagens/notificacoes-gerais-2026-11-21/painel-1440-light.png",
+        "sha256": "b37c9f1a47fdae552d5e15fc7f58ca469fe88609ae2194a28834d0d27363095e"
+      },
+      {
+        "arquivo": ".devops-local/interface/imagens/notificacoes-gerais-2026-11-21/painel-320-dark.png",
+        "sha256": "e3551f71c244c177b65f3c0821e9132674960268f0b40eb6ecb7254f21e4786b"
+      },
+      {
+        "arquivo": ".devops-local/interface/imagens/notificacoes-gerais-2026-11-21/painel-320-light.png",
+        "sha256": "ef7951898dfc489847c31ac95a75eb628b0e47397ea1245c3e5596fe256575ce"
+      },
+      {
+        "arquivo": ".devops-local/interface/imagens/notificacoes-gerais-2026-11-21/painel-390-dark.png",
+        "sha256": "e8f8a05afe6232675e2e3137a3cbe02595f016da614d329d470750a7d7a28e9f"
+      },
+      {
+        "arquivo": ".devops-local/interface/imagens/notificacoes-gerais-2026-11-21/painel-390-light.png",
+        "sha256": "a1f92b8f2cf8295fc0bf9c5d5e00773112ea036adc84a9538171b9b781c58c7f"
+      },
+      {
+        "arquivo": ".devops-local/interface/imagens/notificacoes-gerais-2026-11-21/painel-768-dark.png",
+        "sha256": "bafd7efafea9d3e287495c5573e0b6c777947c80f626a33126a4e5a6ff3261f9"
+      },
+      {
+        "arquivo": ".devops-local/interface/imagens/notificacoes-gerais-2026-11-21/painel-768-light.png",
+        "sha256": "a47df26e906e3641b839fdcec3088fb2e830910d1364e882b5a1588053126e15"
+      }
+    ],
+    "detectorImpeccable": "Sem achados mecânicos na leitura final do diretório de notificações.",
+    "larguras": [
+      320,
+      390,
+      768,
+      1440
+    ],
+    "temas": [
+      "claro",
+      "escuro"
+    ],
+    "semCortesNasAbas": true,
+    "aparelhoFisico": false
+  },
+  "ativacao": {
+    "estado": "ATIVADA",
+    "evidencia": "ativacao-gerais-principal-2026-11-21.json",
+    "versaoServida": "4.1.0",
+    "migrations": 24,
+    "pendentes": [],
+    "preflight": {
+      "checksumsConferem": true,
+      "comprovantesValidos": true,
+      "tarefasHistoricasValidas": true
+    },
+    "migrationAplicadaNoPrincipal": true,
+    "backup": {
+      "diretorio": "copias-seguranca/2026-11-22T00-03-45-402Z-antes-4-1-0-2078e743",
+      "formato": 2,
+      "catalogoConferido": true,
+      "hashConfere": true,
+      "restauracaoExecutada": false
+    },
+    "dadosPreservadosAntesDeIniciarApi": true,
+    "volumesPreservados": true,
+    "consultasAutenticadas": {
+      "contaExistenteSemAlteracao": true,
+      "apiEProxy": true,
+      "paginacao": true,
+      "sseConectado": true,
+      "tokenSomenteMemoria": true
+    },
+    "autorizacaoExplicitaPosterior": true,
+    "bloqueioAnteriorResolvido": true,
+    "scriptLocal": ".devops-local/ativar-gerais-principal.mjs"
+  },
+  "limites": {
+    "novasDependencias": false,
+    "emailRealEnviado": false,
+    "contasDeTesteNoPrincipal": false,
+    "seed": false,
+    "reset": false,
+    "commit": false,
+    "push": false,
+    "publicacao": false,
+    "ciRemota": false,
+    "restauracaoDeBackupExecutada": false
+  },
+  "conclusao": "Avisos gerais e Todas implementados, validados no banco dedicado e ativados no principal após autorização explícita e backup. Backend aprovado; frontend completo mantém uma falha anterior de animação."
+}

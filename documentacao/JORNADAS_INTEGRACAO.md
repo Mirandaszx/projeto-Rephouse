@@ -1,5 +1,7 @@
 # Integração de conta, repúblicas, moradores e tarefas
 
+**Atualização 3.0.0:** o cadastro agora exige confirmação por e-mail e retorna 202 sem sessão. O comportamento de cadastro imediato 201 abaixo é histórico. Antes de seguir a jornada da conta nova, configurar o envio e confirmar o link com o mesmo navegador/cookie. Sem configuração, a demonstração pode usar as contas fictícias existentes, mas não cadastrar novas. Consulte [autenticação por e-mail](AUTENTICACAO_EMAIL.md). Evidências anteriores não comprovam o fluxo novo.
+
 Entrega para quem consumirá o backend TypeScript. Usa o contrato **2.0.1**, sem mudar rotas ou respostas. Pagamentos, Pix, comprovantes, uploads e novos ensaios financeiros ficam para outra etapa. Os exemplos financeiros anteriores continuam disponíveis, separados desta jornada.
 
 ## Iniciar uma sessão isolada

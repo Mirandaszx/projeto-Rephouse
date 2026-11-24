@@ -1,5 +1,37 @@
 # Direção visual do RepHouse
 
+## Foto e informações do perfil — 22/11/2026
+
+“Meu perfil” mantém a identidade aprovada e organiza foto, edição do nome, informações da conta/casa e exclusão em áreas distintas. A foto tem prévia circular, arrasto, zoom e confirmação antes de substituir; sem imagem ou com falha, as iniciais permanecem. O mesmo avatar atende atalhos, lateral, identificação móvel, moradores e tarefas existentes. O diálogo reutiliza foco, Escape, bloqueio durante envio e motion dos diálogos atuais; o recorte usa o tamanho final do diálogo sem animação de escala. Dados de consulta têm rótulos claros, com ausência de vínculo e de confirmação por link explícitas. Veja [funcionamento e limites](PERFIL_E_FOTO.md). Capturas novas: `.devops-local/interface/imagens/perfil-foto-2026-11-22/`.
+
+Build, tipagem e lint passaram, com seis avisos Fast Refresh existentes. As oito jornadas do perfil passaram na suíte completa, incluindo enquadramento com teclado/toque, cancelamento, retorno de foco, envio lento, falha, liberação das URLs, compatibilidade com a API anterior e reflow. A última suíte inteira terminou com 104 aprovações e três falhas fora dessas jornadas: animação já conhecida, troca automática de tema e timeout aguardando a página inicial de um teste de avisos. O arquivo de tema passou isoladamente sem alterações; isso não aprova a execução completa. A [evidência do perfil](evidencias/perfil-foto-2026-11-22.json) mantém essa distinção. O envio no principal permanece desabilitado até ativar a API/migration 4.2.0.
+
+## Tema em cápsula com sol e lua — 22/11/2026
+
+O controle interno passou a usar a referência enviada: cápsula com sol à esquerda, lua à direita e indicador que desliza. Clicar no lado escolhe o tema; arrastar acompanha o dedo ou mouse e confirma ao soltar. Cancelar o gesto mantém a escolha anterior. A transição de 220 ms fica imediata por teclado ou movimento reduzido. Espaço/Enter alternam; setas escolhem Claro/Escuro. A posição à esquerda do sino, persistência, sincronização entre abas e controles públicos foram preservados. As capturas desta revisão ficam em `.devops-local/interface/imagens/tema-capsula-2026-11-21/`, separadas da etapa anterior.
+
+Build, tipagem, lint e 25 testes direcionados passaram, sem testes ignorados. Permanecem seis avisos Fast Refresh preexistentes. A validação incluiu clique, arrasto nos dois sentidos, cancelamento, toque em navegador emulado, teclado, alto contraste, movimento reduzido, persistência, sincronização entre abas e regressão de gestão. O teste de tema passou a usar uma conta fictícia exclusiva, pois a jornada de gestão revogava a sessão compartilhada; suas expectativas foram mantidas. As [evidências locais](evidencias/tema-capsula-2026-11-22.json) preservam a tentativa inicial e os resultados finais. A suíte inteira não foi repetida e a falha de animação anterior não foi alterada. O frontend em `http://localhost:5173` já serve a cápsula.
+
+## Tema no cabeçalho — 21/11/2026
+
+O controle de aparência foi movido da lateral para a esquerda do sino, em formato compacto. As telas internas oferecem somente **Claro** e **Escuro**, incluindo perfil, financeiro, entrada/criação da casa e MASTER. A área de conta no celular não repete o seletor. A escolha manual continua salva e sincronizada entre abas; uma preferência antiga de sistema mostra o tema efetivo sem oferecer uma terceira opção nas telas internas. Home, login e cadastro mantêm seus controles existentes. As novas capturas ficam em `.devops-local/interface/imagens/tema-cabecalho-2026-11-21/`.
+
+Build, tipagem, lint e 12 testes direcionados passaram, sem testes ignorados e com seis avisos Fast Refresh preexistentes. Foram conferidos os dois temas em 320, 390, 768 e 1440 px, teclado, contraste, preferência salva e sincronização entre abas. As [evidências locais](evidencias/tema-cabecalho-2026-11-21.json) registram as capturas e distinguem a execução da suíte completa; a falha de animação anterior não foi alterada. O frontend em `http://localhost:5173` já serve a mudança.
+
+## Atalho de perfil na visão geral — 21/11/2026
+
+O botão **Nova despesa** do cabeçalho da visão geral foi substituído por um ícone circular que abre **Meu perfil**, ao lado do sino. A criação continua disponível na página de despesas e a orientação de primeira despesa foi preservada. O atalho funciona para administradores e moradores, usa foco visível e mantém os temas existentes. As capturas desta alteração ficam em `.devops-local/interface/imagens/perfil-cabecalho-2026-11-21/`, separadas das anteriores.
+
+Build, tipagem, lint e 15 testes direcionados da interface passaram, com seis avisos Fast Refresh preexistentes e nenhum teste ignorado nessa execução. Foram conferidos os dois temas em 320, 390, 768 e 1440 px, incluindo clique, teclado, espaçamento entre sino/perfil e navegação para os dados reais de uma conta fictícia no banco dedicado. As [evidências locais](evidencias/perfil-cabecalho-2026-11-21.json) distinguem essa regressão da suíte inteira; a falha de animação anterior não foi alterada. O frontend em `http://localhost:5173` já serve a mudança, sem reiniciar serviços ou alterar o banco principal.
+
+## Término da repetição mensal — 21/11/2026
+
+Os formulários financeiros acrescentam o campo de data **Repetir até (opcional)** junto à configuração mensal. O rótulo e a ajuda explicam que o limite considera o vencimento e que deixar em branco mantém a repetição sem prazo. A listagem de recorrências mostra a data em dia/mês/ano ou “Sem prazo de término”. A composição, os temas e os controles existentes foram preservados. Capturas específicas e o estado de ativação estão registrados no [guia do término das recorrências](RECORRENCIA_DATA_FIM.md).
+
+## Referência atual e refinamento de 20/11/2026
+
+O sistema vigente está resumido no [DESIGN.md](../DESIGN.md). As seções abaixo preservam o histórico das decisões; não devem ser lidas como novas propostas de layout. Os [ajustes Impeccable desta revisão](REFINAMENTO_IMPECCABLE_2026_11_20.md) melhoram erros, foco, vencimentos e atualização local, mantendo a composição aprovada.
+
 ## Avisos de login e cadastro — 18/11/2026
 
 O texto principal orienta a correção sem exibir o identificador técnico. O código continua disponível em “Detalhes para suporte”, com ação de copiar. Por solicitação do usuário, esses avisos desaparecem após oito segundos e também podem ser fechados manualmente; hover, foco ou detalhes abertos suspendem o fechamento, e a contagem recomeça ao sair. Nova tentativa limpa o aviso anterior e recebe seu próprio temporizador. Isso se limita à autenticação: erros dos formulários internos e avisos financeiros conservam seu comportamento. Build, tipagem, lint e oito testes focados de autenticação foram aprovados, incluindo cadastro/login reais no PostgreSQL dedicado. A regressão completa de 64 testes registrada na etapa de motion é anterior a este ajuste e não foi reapresentada como validação dele. Evidência: [aviso de autenticação](evidencias/validacao-aviso-autenticacao.json).
@@ -210,3 +242,11 @@ As capturas desta combinação ficam em `imagens/login-painel-foto/`, separadas 
 Na correção seguinte, o usuário esclareceu que o painel esquerdo da foto deveria ser preservado. Foram retomados o verde original `#1d5140`, os cantos de 17 px, espaçamentos e tipografia originais, a casa com o tamanho anterior e o ícone circular do rodapé. O título segue as quatro linhas da foto: “Dividir a casa.”, “Compartilhar”, “uma boa”, “rotina.”. O formulário atualizado permanece à direita. As novas capturas ficam em `imagens/painel-original-restaurado/`; as anteriores foram preservadas.
 
 O ajuste posterior de altura elimina a rolagem excedente no desktop: a casa ocupa o espaço disponível no painel e os espaçamentos se adaptam às telas mais baixas. Login e cadastro foram conferidos sem rolagem em 1366×768, 1536×864, 1440×900, 1440×1000 e 1920×1080. Em celulares, janelas muito baixas ou estados com conteúdo adicional, a rolagem continua disponível para não esconder controles. Não há bloqueio global de rolagem no navegador.
+
+## Tarefas compartilhadas e sino — 21/11/2026
+
+O sino usa a identidade das telas internas, com contador legível e sem animação permanente. No computador o painel abre junto ao controle; no celular usa diálogo com cabeçalho e fechamento disponíveis, deixando a lista rolar. Abas Tarefas/Despesas, leitura individual, paginação e estados de reconexão/erro não dependem somente de cor. Teclado, Escape, retorno de foco e movimento reduzido foram conferidos no navegador.
+
+Tarefas disponíveis mostram a ação de assumir; tarefas de responsável inativo indicam necessidade de redistribuição. Não houve redesenho de home, login, cadastro ou casinha. O detector Impeccable não encontrou ocorrências mecânicas nas novas telas. Os tokens do painel atingiram contraste mínimo de 5,81:1 para texto e 3,56:1 para contornos nos temas conferidos.
+
+As oito capturas novas ficam em `.devops-local/interface/imagens/notificacoes-2026-11-20/`, para 320, 390, 768 e 1440 px nos temas claro/escuro. A [evidência](evidencias/notificacoes-tarefas-2026-11-21.json) registra também a falha anterior de animação que impede considerar toda a suíte da interface aprovada. Essas capturas são de navegador automatizado, sem validação em aparelho físico.

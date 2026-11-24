@@ -1,0 +1,85 @@
+{
+  "dataLocal": "2026-11-21",
+  "registradoEm": "2026-11-22T01:14:09.307Z",
+  "ambiente": "local",
+  "mudanca": "Controle compacto de tema à esquerda do sino, com Claro e Escuro nas telas internas; sem duplicação na lateral ou na área de conta do celular.",
+  "semAlteracoesEmBackendBancoVersao": true,
+  "semCommitPushPublicacao": true,
+  "buildTipagemLint": {
+    "aprovados": true,
+    "avisosFastRefreshPreexistentes": 6,
+    "log": ".devops-local/tema-cabecalho-checks.log"
+  },
+  "navegador": {
+    "comando": "npm --prefix interface run test:e2e -- tema-cabecalho.spec.ts tema.spec.ts painel.spec.ts conta-layout.spec.ts",
+    "aprovados": 12,
+    "falhas": 0,
+    "ignorados": 0,
+    "relatorio": ".devops-local/tema-cabecalho-browser.json",
+    "escopo": "Regressão direcionada; não representa repetição da suíte inteira. A falha de animação anterior não foi alterada.",
+    "dados": "Cenários visuais controlados e jornadas HTTP com PostgreSQL dedicado rabbu_mvp_test, em schema descartável; sem escrita no principal.",
+    "larguras": [
+      320,
+      390,
+      768,
+      1440
+    ],
+    "temas": [
+      "claro",
+      "escuro"
+    ],
+    "teclado": true,
+    "contraste": true,
+    "persistencia": true,
+    "sincronizacaoEntreAbas": true,
+    "preferenciaAntigaSistema": true
+  },
+  "capturas": [
+    {
+      "arquivo": ".devops-local/interface/imagens/tema-cabecalho-2026-11-21/tema-dark-1440.png",
+      "sha256": "1c88082388a44dc11c040ad94d2658849606581601f2d7c09bc811ac31bc73b8"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/tema-cabecalho-2026-11-21/tema-dark-320.png",
+      "sha256": "debf14093dbb16de777876b8ae28c5ce54fec330af818836497ca77cd39b5c60"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/tema-cabecalho-2026-11-21/tema-dark-390.png",
+      "sha256": "0170ed0f695c1e32db41ed9f403d360801293ad0e39d27bd6ee2f1a98f73a197"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/tema-cabecalho-2026-11-21/tema-dark-768.png",
+      "sha256": "b1208f1e85666e12bfd0fd1c5610b4b847372527f14af37fb7c805b36bc65bd5"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/tema-cabecalho-2026-11-21/tema-light-1440.png",
+      "sha256": "907fda00607614676db170a9f433b5a5ca7078bac3faca0b9634f4f3e7203488"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/tema-cabecalho-2026-11-21/tema-light-320.png",
+      "sha256": "cf3429813f0d4c3c51d8a17b9d5b5f853751335105f0890ae1d5ba08bd4401f9"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/tema-cabecalho-2026-11-21/tema-light-390.png",
+      "sha256": "2aab804dcae8cedcb4dfdc18bc4ad718cd8013279deef24d608aad7d347b0c29"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/tema-cabecalho-2026-11-21/tema-light-768.png",
+      "sha256": "18e56fde150876ad75d998fa85487f7649ccb2562459fdadcaa7116386a46173"
+    }
+  ],
+  "inspecaoVisual": [
+    "tema-dark-1440.png",
+    "tema-light-320.png"
+  ],
+  "servidoNoAmbientePrincipal": {
+    "url": "http://localhost:5173/republica",
+    "http": 200,
+    "moduloReactConferido": true,
+    "reinicioDesnecessario": true
+  },
+  "detectorImpeccable": {
+    "achados": 0,
+    "log": ".devops-local/tema-cabecalho-impeccable.json"
+  }
+}

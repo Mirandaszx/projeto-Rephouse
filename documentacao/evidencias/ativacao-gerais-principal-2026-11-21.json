@@ -1,0 +1,107 @@
+{
+  "dataLocal": "2026-11-21",
+  "ambiente": "principal local",
+  "autorizado": true,
+  "iniciadoEm": "2026-11-22T00:03:43.646Z",
+  "semSeedResetOuContasDeTeste": true,
+  "envioReal": false,
+  "volumesAntes": [
+    "projeto-rephouse_postgres_data"
+  ],
+  "migrationsAntes": 23,
+  "pendentesAntes": [
+    "202611210001_notificacoes_gerais"
+  ],
+  "versaoAnterior": "4.0.0",
+  "preflight": {
+    "checksumsConferem": true,
+    "comprovantesValidos": true,
+    "tarefasHistoricasValidas": true
+  },
+  "compilacaoLocal": ".devops-local/api-principal-4-1-0-a7529ed9",
+  "backup": {
+    "diretorio": "copias-seguranca/2026-11-22T00-03-45-402Z-antes-4-1-0-2078e743",
+    "formato": 2,
+    "catalogoConferido": true,
+    "hashConfere": true,
+    "restauracaoExecutada": false
+  },
+  "dadosPreservadosAntesDeIniciarApi": true,
+  "tabelasAnterioresComparadas": 20,
+  "contagensAnteriores": {
+    "competencias_recorrencia": 0,
+    "comprovantes": 0,
+    "configuracoes_recorrencia": 0,
+    "desafios_google": 0,
+    "despesas": 1,
+    "emails_verificados": 0,
+    "eventos_notificacao": 0,
+    "identidades_google": 0,
+    "limites_envio_email": 0,
+    "links_email": 0,
+    "membros_republica": 1,
+    "notificacoes": 0,
+    "operacoes_criacao": 0,
+    "pagamentos": 1,
+    "rateios_despesa": 1,
+    "recorrencias_despesa": 0,
+    "recorrencias_participantes": 0,
+    "republicas": 1,
+    "tarefas": 0,
+    "usuarios": 1
+  },
+  "migrationsDepois": 24,
+  "pendentesDepois": [],
+  "contaLimitada": {
+    "rolsuper": false,
+    "rolcreatedb": false,
+    "rolcreaterole": false,
+    "rolreplication": false,
+    "rolbypassrls": false
+  },
+  "permissoes": {
+    "eventos_leitura_gravacao": true,
+    "notificacoes_leitura_gravacao": true,
+    "leitura_atualizavel": true,
+    "destinatario_atualizavel": false,
+    "pode_excluir": false
+  },
+  "http": [
+    {
+      "path": "/api/health",
+      "status": 200
+    },
+    {
+      "path": "/api/ready",
+      "status": 200
+    },
+    {
+      "path": "/api/me",
+      "status": 401
+    },
+    {
+      "path": "/api/notificacoes/nao-lidas",
+      "status": 401
+    },
+    {
+      "path": "/login",
+      "status": 200
+    }
+  ],
+  "versaoServida": "4.1.0",
+  "consultasAutenticadas": {
+    "contaExistenteSemAlteracao": true,
+    "apiEProxy": true,
+    "paginacao": true,
+    "sseConectado": true,
+    "tokenSomenteMemoria": true
+  },
+  "volumesPreservados": true,
+  "acid": {
+    "fsync": "on",
+    "synchronous_commit": "on",
+    "full_page_writes": "on"
+  },
+  "aprovado": true,
+  "concluidoEm": "2026-11-22T00:04:07.032Z"
+}

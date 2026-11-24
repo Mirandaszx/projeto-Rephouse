@@ -1,5 +1,9 @@
 # Contas técnicas do PostgreSQL — ambiente local
 
+**Perfil 4.2.0, ativo no principal local em 22/11/2026:** o provisionamento acrescenta SELECT/INSERT/UPDATE/DELETE somente em `fotos_perfil`, quando a tabela já existe. Substituição e remoção são exclusivas do proprietário no serviço; o PostgreSQL permanece acessível somente pelo backend. A nova concessão foi exercitada em schema dedicado de testes. No principal local, a migration e estas concessões foram aplicadas após autorização e backup, com acesso real de leitura pela conta limitada conferido. Outros destinos continuam exigindo sua própria ativação autorizada. Veja [o guia do perfil](PERFIL_E_FOTO.md).
+
+**Revisão 2.2.1:** o provisionamento também concede somente SELECT e INSERT em `operacoes_criacao`, quando essa tabela já existe. Não concede UPDATE ou DELETE, não aplica sua migration e não altera dados de negócio. A tabela foi criada e essas permissões foram conferidas no banco principal local em 20/11/2026, após autorização explícita. Outros destinos precisam de aplicação administrativa autorizada. A compatibilidade com schemas anteriores continua coberta pelos testes. Veja [o guia de criações idempotentes](CORRECOES_2_2_1.md).
+
 A API do Compose principal usa `rephouse_api`. A conta administrativa existente continua responsável por migrations e manutenção. Isso é independente dos perfis NORMAL, ADMIN e MASTER, que continuam sendo regras da aplicação.
 
 ## Permissões da API
@@ -37,7 +41,7 @@ O provisionamento aceita somente `localhost`/`127.0.0.1:5432/rabbu_mvp`, schema 
 
 ## Banco local existente neste checkout
 
-As nove migrations da auditoria de schema continuam pendentes no banco da equipe. **Não execute o comando padrão do serviço `migracoes` nesse banco enquanto sua aplicação não for autorizada.** A troca de conta não depende dessas migrations: foi testada nos schemas anterior e posterior a elas.
+Na validação original da conta limitada, as nove migrations da auditoria estavam pendentes. Posteriormente, em 20/11/2026, o usuário autorizou sua aplicação junto da migration de idempotência: o banco principal local passou de dez para vinte migrations aplicadas, sem pendências. Essa autorização não se estende a migrations futuras ou outros bancos. A troca de conta foi testada nos schemas anterior e posterior à auditoria.
 
 O override local `.devops-local/restricao-portas.override.json` continua preservando a configuração original do container PostgreSQL. Para recriar somente a API, depois do provisionamento:
 
