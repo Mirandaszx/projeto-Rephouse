@@ -8,6 +8,7 @@ import { startRecurringScheduler } from './modulos/financeiro/recorrencias.servi
 import { createResendSender } from './infraestrutura/email/resend.js'
 import { startNotificationsScheduler } from './modulos/notificacoes/notificacoes.service.js'
 import { createNotificationsSignal } from './modulos/notificacoes/notificacoes.stream.js'
+import { startSaturationSampler } from './modulos/saude/saturacao.js'
 
 async function startServer(): Promise<void> {
   const env = loadEnv()
@@ -18,7 +19,7 @@ async function startServer(): Promise<void> {
     const inventory=await receiptInventory(database)
     if(inventory.referenciasLegadasPendentes||inventory.invalidos)throw new Error('Conclua a importação e a conferência dos comprovantes antes de iniciar a API.')
     const signal = createNotificationsSignal(env.DATABASE_URL, stdoutLog)
-    const app = createApp({ database, readiness: () => probe.check(), jwtSecret: env.JWT_SECRET, corsOrigins: env.CORS_ORIGINS, notificationsSignal: signal,
+    const app = createApp({ database, readiness: () => probe.check(), jwtSecret: env.JWT_SECRET, corsOrigins: env.CORS_ORIGINS, notificationsSignal: signal, trustProxy: env.TRUST_PROXY,
       google: env.GOOGLE_CLIENT_ID ? { clientId: env.GOOGLE_CLIENT_ID, secureCookies: env.NODE_ENV === 'production' } : undefined,
       email: env.RESEND_API_KEY ? { send: createResendSender(env.RESEND_API_KEY, env.EMAIL_FROM!), publicUrl: env.APP_PUBLIC_URL!, secureCookies: env.NODE_ENV === 'production' } : undefined,
     })
@@ -28,6 +29,7 @@ async function startServer(): Promise<void> {
     let encerrando = false
     const stopRecurring = startRecurringScheduler(database, stdoutLog)
     const stopNotifications = startNotificationsScheduler(database, stdoutLog)
+    const stopSaturation = startSaturationSampler(stdoutLog)
     server.headersTimeout=10000
     server.requestTimeout=30000
     server.keepAliveTimeout=5000
@@ -35,6 +37,7 @@ async function startServer(): Promise<void> {
     const shutdown = (): void => {
       if (encerrando) return
       encerrando = true
+      stopSaturation()
       app.locals.closeNotifications()
       const recurringStopped = Promise.all([stopRecurring(), stopNotifications(), signal.close()])
       const limite = setTimeout(() => { process.exit(1) }, 15000)

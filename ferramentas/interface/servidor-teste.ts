@@ -41,6 +41,8 @@ const createTestApp = () => createApp({
   database: environment.db,
   jwtSecret,
   notificationsSignal: notificationSignal,
+  // Igual ao ambiente real: o Vite de teste é o único proxy e repassa o IP em X-Forwarded-For.
+  trustProxy: 1,
   corsOrigins: ["http://127.0.0.1:5174"],
   email: { publicUrl: 'http://127.0.0.1:5174', send: async message => {
     // Caixa de e-mail do harness, fora do produto e acessível somente com o identificador da execução.

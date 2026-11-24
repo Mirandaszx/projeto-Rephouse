@@ -84,9 +84,10 @@ export function createFinanceiroService(db: PrismaClient) {
     }),
     edit: (actor: Actor, id: string, input: Partial<Omit<CriarDespesaInput, 'republicaId' | 'criadaPorId'>>, scope?: string) => withActor(db, actor, async (tx, user) => {
       const republic = await republicContext(tx, user, scope)
-      requireAdmin(user, republic)
       const expense = await repository.detalharDespesa(tx, id, republic.id)
       if (!expense) throw new AppError(404, 'NOT_FOUND', 'Despesa não encontrada.')
+      // Corrige quem cadastrou a conta ou o administrador da casa.
+      if (expense.criadaPorId !== user.id) requireAdmin(user, republic)
       const { membroIds, valorTotal, ...metadata } = input
       if (membroIds || valorTotal) {
         if (await repository.contarPagamentos(tx, id)) {
@@ -96,9 +97,19 @@ export function createFinanceiroService(db: PrismaClient) {
         const members = membroIds ?? expense.rateios.map(item => item.membroId)
         await validarSelecao(tx, republic.id, members)
         const parcelas = parcelasValidas(value, members)
-        await repository.removerRateios(tx, id)
+        // Atualiza as parcelas no lugar: avisos de vencimento já enviados continuam apontando para elas.
+        const atuais = new Map(expense.rateios.map(item => [item.membroId, item]))
+        const retiradas = expense.rateios.filter(item => !members.includes(item.membroId)).map(item => item.id)
+        if (retiradas.length && await repository.contarAvisos(tx, retiradas)) {
+          throw new AppError(409, 'DUE_NOTICE_SENT', 'Este morador já recebeu o aviso de vencimento desta conta. Para tirá-lo da divisão, crie uma nova despesa.')
+        }
+        if (retiradas.length) await repository.removerRateiosPorId(tx, retiradas)
         await repository.editarDespesa(tx, id, { valorTotal: value })
-        await repository.criarRateios(tx, id, parcelas)
+        for (const parcela of parcelas) {
+          const atual = atuais.get(parcela.membroId)
+          if (!atual) await repository.criarRateios(tx, id, [parcela])
+          else if (atual.valorDevido.toFixed(2) !== parcela.valorDevido) await repository.atualizarRateio(tx, atual.id, parcela.valorDevido)
+        }
       }
       await repository.editarDespesa(tx, id, metadata)
       return expenseView(await repository.buscarDespesaComRateios(tx, id))

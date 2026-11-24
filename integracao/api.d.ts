@@ -194,7 +194,7 @@ export type paths = {
         put?: never;
         /**
          * Criar despesa com rateio igual entre selecionados
-         * @description Perfis: USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Participantes ativos da mesma república. Sobra de centavos distribuída por ordem dos IDs. Um participante assume o valor inteiro.
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Qualquer morador ativo da república pode cadastrar. Participantes ativos da mesma república. Sobra de centavos distribuída por ordem dos IDs. Um participante assume o valor inteiro.
          */
         post: operations["post__api_despesas"];
         delete?: never;
@@ -222,7 +222,7 @@ export type paths = {
         head?: never;
         /**
          * Editar despesa
-         * @description Perfis: USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Valor e participantes ficam bloqueados após o primeiro pagamento (409 FINANCIAL_HISTORY_LOCKED). Título, categoria e vencimento podem ser editados.
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Corrige quem cadastrou a despesa ou o administrador da república (demais: 403; outra república: 404). Valor e participantes ficam bloqueados após o primeiro pagamento (409 FINANCIAL_HISTORY_LOCKED). Depois do aviso de vencimento, valor e participantes ainda podem mudar, mas o morador já avisado não sai da divisão (409 DUE_NOTICE_SENT). Título, categoria e vencimento podem ser editados.
          */
         patch: operations["patch__api_despesas_id"];
         trace?: never;
@@ -422,7 +422,7 @@ export type paths = {
         put?: never;
         /**
          * Criar despesa com rateio igual entre selecionados
-         * @description Perfis: USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Participantes ativos da mesma república. Sobra de centavos distribuída por ordem dos IDs. Um participante assume o valor inteiro. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Qualquer morador ativo da república pode cadastrar. Participantes ativos da mesma república. Sobra de centavos distribuída por ordem dos IDs. Um participante assume o valor inteiro. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
          */
         post: operations["frontV1_post__api_despesas"];
         delete?: never;
@@ -450,7 +450,7 @@ export type paths = {
         head?: never;
         /**
          * Editar despesa
-         * @description Perfis: USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Valor e participantes ficam bloqueados após o primeiro pagamento (409 FINANCIAL_HISTORY_LOCKED). Título, categoria e vencimento podem ser editados. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         * @description Perfis: USUARIO_NORMAL, USUARIO_ADMIN, USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Corrige quem cadastrou a despesa ou o administrador da república (demais: 403; outra república: 404). Valor e participantes ficam bloqueados após o primeiro pagamento (409 FINANCIAL_HISTORY_LOCKED). Depois do aviso de vencimento, valor e participantes ainda podem mudar, mas o morador já avisado não sai da divisão (409 DUE_NOTICE_SENT). Título, categoria e vencimento podem ser editados. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
          */
         patch: operations["frontV1_patch__api_despesas_id"];
         trace?: never;
@@ -574,7 +574,7 @@ export type paths = {
         put?: never;
         /**
          * Criar despesa com rateio igual entre selecionados
-         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Participantes ativos da mesma república. Sobra de centavos distribuída por ordem dos IDs. Um participante assume o valor inteiro. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Qualquer morador ativo da república pode cadastrar. Participantes ativos da mesma república. Sobra de centavos distribuída por ordem dos IDs. Um participante assume o valor inteiro. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
          */
         post: operations["frontV1_post__api_master_republicas_republicaId_despesas"];
         delete?: never;
@@ -602,7 +602,7 @@ export type paths = {
         head?: never;
         /**
          * Editar despesa
-         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Valor e participantes ficam bloqueados após o primeiro pagamento (409 FINANCIAL_HISTORY_LOCKED). Título, categoria e vencimento podem ser editados. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Corrige quem cadastrou a despesa ou o administrador da república (demais: 403; outra república: 404). Valor e participantes ficam bloqueados após o primeiro pagamento (409 FINANCIAL_HISTORY_LOCKED). Depois do aviso de vencimento, valor e participantes ainda podem mudar, mas o morador já avisado não sai da divisão (409 DUE_NOTICE_SENT). Título, categoria e vencimento podem ser editados. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
          */
         patch: operations["frontV1_patch__api_master_republicas_republicaId_despesas_id"];
         trace?: never;
@@ -1634,7 +1634,7 @@ export type paths = {
         put?: never;
         /**
          * Criar despesa com rateio igual entre selecionados
-         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Participantes ativos da mesma república. Sobra de centavos distribuída por ordem dos IDs. Um participante assume o valor inteiro.
+         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Qualquer morador ativo da república pode cadastrar. Participantes ativos da mesma república. Sobra de centavos distribuída por ordem dos IDs. Um participante assume o valor inteiro.
          */
         post: operations["post__api_master_republicas_republicaId_despesas"];
         delete?: never;
@@ -1662,7 +1662,7 @@ export type paths = {
         head?: never;
         /**
          * Editar despesa
-         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Valor e participantes ficam bloqueados após o primeiro pagamento (409 FINANCIAL_HISTORY_LOCKED). Título, categoria e vencimento podem ser editados.
+         * @description Perfis: USUARIO_MASTER. Conta ativa e token vigente obrigatórios. Corrige quem cadastrou a despesa ou o administrador da república (demais: 403; outra república: 404). Valor e participantes ficam bloqueados após o primeiro pagamento (409 FINANCIAL_HISTORY_LOCKED). Depois do aviso de vencimento, valor e participantes ainda podem mudar, mas o morador já avisado não sai da divisão (409 DUE_NOTICE_SENT). Título, categoria e vencimento podem ser editados.
          */
         patch: operations["patch__api_master_republicas_republicaId_despesas_id"];
         trace?: never;

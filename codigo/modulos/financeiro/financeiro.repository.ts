@@ -23,7 +23,16 @@ export class FinanceiroRepository {
   contarPagamentos(tx: Prisma.TransactionClient, despesaId: string) {
     return tx.pagamento.count({ where: { rateio: { despesaId } } })
   }
-  removerRateios(tx: Prisma.TransactionClient, despesaId: string) { return tx.rateioDespesa.deleteMany({ where: { despesaId } }) }
+  atualizarRateio(tx: Prisma.TransactionClient, id: string, valorDevido: string) {
+    return tx.rateioDespesa.update({ where: { id }, data: { valorDevido } })
+  }
+  removerRateiosPorId(tx: Prisma.TransactionClient, ids: readonly string[]) {
+    return tx.rateioDespesa.deleteMany({ where: { id: { in: [...ids] } } })
+  }
+  // Avisos de vencimento apontam para a parcela; com aviso, a parcela não pode ser apagada.
+  contarAvisos(tx: Prisma.TransactionClient, rateioIds: readonly string[]) {
+    return tx.eventoNotificacao.count({ where: { rateioId: { in: [...rateioIds] } } })
+  }
   editarDespesa(tx: Prisma.TransactionClient, id: string, data: Prisma.DespesaUncheckedUpdateInput) {
     return tx.despesa.update({ where: { id }, data })
   }

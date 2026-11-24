@@ -99,6 +99,37 @@ describe('Cadastro, sessão e perfil pelas rotas reais', () => {
       assert.equal((await c.request('POST', '/api/auth/login', undefined, { email: a.usuario.email, senha: password })).status, 401)
     } finally { await c.close() }
   })
+  it('quando o e-mail não existe ou a senha está errada, então responde de forma idêntica', async () => {
+    const c = await abrirRequestSpec()
+    try {
+      const a = await c.account('ana')
+      const missing = await c.request('POST', '/api/auth/login', undefined, { email: `${randomUUID()}@request.rephouse.test`, senha: password })
+      const wrong = await c.request('POST', '/api/auth/login', undefined, { email: a.usuario.email, senha: `${password}-errada` })
+      assert.equal(missing.status, 401); assert.equal(wrong.status, 401)
+      assert.deepEqual(missing.body, wrong.body)
+    } finally { await c.close() }
+  })
+})
+
+describe('Limite de autenticação atrás de proxy', () => {
+  const tentar = (c: Awaited<ReturnType<typeof abrirRequestSpec>>, ip: string) =>
+    c.request('POST', '/api/auth/login', undefined, { email: `ausente-${randomUUID()}@request.rephouse.test`, senha: password }, undefined, { 'X-Forwarded-For': ip })
+  it('quando confia em um proxy, então cada cliente tem o próprio limite', async () => {
+    const c = await abrirRequestSpec(undefined, { trustProxy: 1 })
+    try {
+      for (let i = 0; i < 20; i++) assert.equal((await tentar(c, '203.0.113.10')).status, 401)
+      const limited = await tentar(c, '203.0.113.10')
+      assert.equal(limited.status, 429); assert.ok(limited.headers.get('retry-after'))
+      assert.equal((await tentar(c, '203.0.113.20')).status, 401)
+    } finally { await c.close() }
+  })
+  it('quando não confia em proxy, então ignora o cabeçalho enviado pelo cliente', async () => {
+    const c = await abrirRequestSpec()
+    try {
+      for (let i = 0; i < 20; i++) assert.equal((await tentar(c, `203.0.113.${i + 1}`)).status, 401)
+      assert.equal((await tentar(c, '203.0.113.99')).status, 429)
+    } finally { await c.close() }
+  })
 })
 
 describe('Vínculos, permissões e tarefas', () => {

@@ -34,12 +34,14 @@ import type { EmailOptions } from './infraestrutura/email/resend.js'
 import { createNotificationsRouter } from './modulos/notificacoes/notificacoes.routes.js'
 import type { NotificationsSignal } from './modulos/notificacoes/notificacoes.stream.js'
 
-interface AppOptions { database?: PrismaClient; jwtSecret?: string; corsOrigins?: string[]; log?: LogSink; readiness?: () => Promise<unknown>; google?: GoogleOptions; email?: EmailOptions; notificationsSignal?: NotificationsSignal }
+interface AppOptions { database?: PrismaClient; jwtSecret?: string; corsOrigins?: string[]; log?: LogSink; readiness?: () => Promise<unknown>; google?: GoogleOptions; email?: EmailOptions; notificationsSignal?: NotificationsSignal; trustProxy?: number }
 
 // Monta HTTP sem abrir porta ou conexão: reutilizável nos testes.
 export function createApp(options: AppOptions = {}): Express {
   const app = express()
   app.disable('x-powered-by')
+  // Atrás do Vite ou do Nginx, o IP do cliente vem de X-Forwarded-For; sem proxy confiável, o cabeçalho é ignorado.
+  if (options.trustProxy) app.set('trust proxy', options.trustProxy)
   app.use(requestLog(options.log))
   app.use(helmet({strictTransportSecurity:false,contentSecurityPolicy:{directives:{upgradeInsecureRequests:null}}}))
   app.use('/api',(_req,res,next)=>{res.set('Cache-Control','no-store');next()})

@@ -17,12 +17,12 @@ export type Page<T> = { dados: T[]; paginacao: { pagina: number; limite: number;
 export const password = 'Senha-exclusiva-request-spec-2026!'
 export const secret = 'segredo-exclusivo-request-spec-com-mais-de-32-caracteres'
 
-export async function abrirRequestSpec(google?: GoogleOptions) {
+export async function abrirRequestSpec(google?: GoogleOptions, opcoes: { trustProxy?: number } = {}) {
   validarDestinoTestes(process.env.TEST_DATABASE_URL)
   const env = await abrirAmbienteIntegracao(process.env.TEST_DATABASE_URL, password)
   const logs: Record<string, unknown>[] = []
   const mailbox = testMailbox()
-  const server = createApp({ database: env.db, jwtSecret: secret, corsOrigins: ['http://localhost:5173'], google, email: mailbox.options, log: event => { logs.push(event) } }).listen(0, '127.0.0.1')
+  const server = createApp({ database: env.db, jwtSecret: secret, corsOrigins: ['http://localhost:5173'], google, email: mailbox.options, log: event => { logs.push(event) }, ...opcoes }).listen(0, '127.0.0.1')
   await once(server, 'listening')
   const address = server.address()
   assert.ok(address && typeof address !== 'string')

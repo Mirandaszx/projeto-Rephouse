@@ -29,8 +29,29 @@ describe('Despesas, rateio e pagamentos por HTTP', () => {
         assert.equal((await c.request('POST', '/api/despesas', c.admin.token, input)).status, 400, JSON.stringify(input))
         assert.equal(await c.db.despesa.count(), 0); assert.equal(await c.db.rateioDespesa.count(), 0)
       })
-      assert.equal((await c.request('POST', '/api/despesas', c.ana.token, base)).status, 403)
+      // Morador também cadastra contas (decisão de 24/11/2026); a validação de entrada vale igual para ele.
+      assert.equal((await c.request('POST', '/api/despesas', c.ana.token, { ...base, valorTotal: '0' })).status, 400)
       assert.equal(await c.db.despesa.count(), 0); assert.equal(await c.db.rateioDespesa.count(), 0)
+    } finally { await c.close() }
+  })
+  it('quando um morador cadastra uma conta, então ela é dividida na casa e só ele ou o administrador podem corrigi-la', async () => {
+    const c = await contextoCasa()
+    try {
+      const created = await c.request<{ id: string; criadaPorId: string; rateios: { membroId: string; valorDevido: string }[] }>('POST', '/api/despesas', c.ana.token,
+        { titulo: 'Conta de luz', categoria: 'Contas da casa', valorTotal: '90.00', vencimento: '2099-01-31', membroIds: [c.own.id, c.anaMember.id, c.brunoMember.id] })
+      assert.equal(created.status, 201, JSON.stringify(created.body))
+      assert.equal(created.body.criadaPorId, c.ana.usuario.id)
+      assert.deepEqual(created.body.rateios.map(r => r.valorDevido), ['30.00', '30.00', '30.00'])
+      // Outro morador não corrige a conta de quem cadastrou.
+      assert.equal((await c.request('PATCH', `/api/despesas/${created.body.id}`, c.bruno.token, { titulo: 'Alterada por outro' })).status, 403)
+      assert.equal((await c.request<{ titulo: string }>('PATCH', `/api/despesas/${created.body.id}`, c.ana.token, { titulo: 'Conta de luz de janeiro' })).status, 200)
+      assert.equal((await c.request('PATCH', `/api/despesas/${created.body.id}`, c.admin.token, { categoria: 'Energia' })).status, 200)
+      // O morador não corrige contas cadastradas pelo administrador.
+      const doAdmin = await c.expense(c.admin, [c.anaMember.id])
+      assert.equal((await c.request('PATCH', `/api/despesas/${doAdmin.id}`, c.ana.token, { titulo: 'Indevida' })).status, 403)
+      // No banco, quem não é morador ativo da casa continua impedido de figurar como autor.
+      await assert.rejects(c.db.despesa.create({ data: { republicaId: c.house.id, criadaPorId: c.other.usuario.id, titulo: 'Fora da casa', categoria: 'Casa', valorTotal: '1.00', vencimento: new Date('2099-01-31') } }))
+      assert.equal(await c.db.despesa.count({ where: { titulo: { in: ['Alterada por outro', 'Indevida', 'Fora da casa'] } } }), 0)
     } finally { await c.close() }
   })
   it('quando registra R$ 25,00 de uma parcela de R$ 60,00, então o saldo é R$ 35,00 e a repetição não duplica', async () => {

@@ -151,8 +151,12 @@ describe('Conta técnica limitada da API no PostgreSQL real',()=>{
       const expense=await request<Expense>('POST','/api/despesas',201,admin.token,expenseInput,creationKey)
       if(creationKey)assert.deepEqual(await request<Expense>('POST','/api/despesas',201,admin.token,expenseInput,creationKey),expense)
       const share=expense.rateios[0]!
-      // Edição exercita DELETE/INSERT de rateios antes do primeiro pagamento.
+      // Edição exercita, antes do primeiro pagamento: UPDATE da parcela no lugar (novo valor),
+      // INSERT de participante adicionado e DELETE de participante retirado.
       await request('PATCH',`/api/despesas/${expense.id}`,200,admin.token,{valorTotal:'80.00',membroIds:[member.id]})
+      const adminMember=(await request<{dados:Member[]}>('GET','/api/membros',200,admin.token)).dados.find(item=>item.usuarioId===admin.usuario.id)!
+      assert.equal((await request<Expense>('PATCH',`/api/despesas/${expense.id}`,200,admin.token,{membroIds:[member.id,adminMember.id]})).rateios.length,2)
+      assert.equal((await request<Expense>('PATCH',`/api/despesas/${expense.id}`,200,admin.token,{membroIds:[member.id]})).rateios.length,1)
       const edited=await request<Expense>('GET',`/api/despesas/${expense.id}`,200,admin.token)
       const content=Buffer.from('%PDF-1.4\ncomprovante de permissoes\n%%EOF')
       const data=new FormData();data.set('rateioId',edited.rateios[0]!.id);data.set('valor','25.00');data.set('comprovante',new Blob([content],{type:'application/pdf'}),'comprovante.pdf')
@@ -190,7 +194,9 @@ describe('Conta técnica limitada da API no PostgreSQL real',()=>{
       await request('DELETE','/api/me',204,admin.token,{senha:userPassword})
       await request('POST','/api/auth/logout',204,resident.token,{})
       await request('GET','/api/me',401,resident.token)
-      assert.notEqual(share.id,edited.rateios[0]!.id)
+      // A parcela do morador foi atualizada no lugar: mesmo id, novo valor.
+      assert.equal(share.id,edited.rateios[0]!.id)
+      assert.equal(edited.rateios[0]!.valorDevido,'80.00')
       assert.equal((await c.db.query('SELECT count(*)::int n FROM pagamentos WHERE id=$1',[payment.id])).rows[0].n,1)
     }finally{
       server.closeAllConnections();await new Promise<void>((resolve,reject)=>server.close(error=>error?reject(error):resolve()));await runtimeDb.$disconnect();await c.close()
