@@ -1,0 +1,129 @@
+apiVersion: v1
+kind: Service
+metadata: {name: elasticsearch, namespace: rephouse-observabilidade}
+spec:
+  clusterIP: None
+  selector: {app: elasticsearch}
+  ports: [{port: 9200, targetPort: 9200}]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: {name: elasticsearch, namespace: rephouse-observabilidade}
+spec:
+  replicas: 1
+  serviceName: elasticsearch
+  selector: {matchLabels: {app: elasticsearch}}
+  template:
+    metadata: {labels: {app: elasticsearch}}
+    spec:
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: elasticsearch
+          image: docker.elastic.co/elasticsearch/elasticsearch:9.5.6
+          env:
+            - {name: discovery.type, value: single-node}
+            - {name: xpack.security.enabled, value: "true"}
+            - {name: xpack.security.http.ssl.enabled, value: "true"}
+            - {name: xpack.security.http.ssl.key, value: /usr/share/elasticsearch/config/certs/server.key}
+            - {name: xpack.security.http.ssl.certificate, value: /usr/share/elasticsearch/config/certs/ca.crt}
+            - {name: xpack.security.autoconfiguration.enabled, value: "false"}
+            - {name: xpack.license.self_generated.type, value: basic}
+            - {name: node.store.allow_mmap, value: "false"}
+            - {name: ingest.geoip.downloader.enabled, value: "false"}
+            - {name: ES_JAVA_OPTS, value: -Xms768m -Xmx768m}
+            - {name: ELASTIC_PASSWORD, valueFrom: {secretKeyRef: {name: elastic-admin, key: password}}}
+          ports: [{containerPort: 9200}]
+          securityContext: {allowPrivilegeEscalation: false, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 250m, memory: 1Gi}, limits: {cpu: "2", memory: 2Gi}}
+          startupProbe:
+            exec: {command: [sh, -c, 'curl --silent --fail --cacert /usr/share/elasticsearch/config/certs/ca.crt -u "elastic:$ELASTIC_PASSWORD" https://localhost:9200 -o /dev/null']}
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 90
+          readinessProbe:
+            exec: {command: [sh, -c, 'curl --silent --fail --cacert /usr/share/elasticsearch/config/certs/ca.crt -u "elastic:$ELASTIC_PASSWORD" "https://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=2s" -o /dev/null']}
+            periodSeconds: 10
+            timeoutSeconds: 5
+          volumeMounts:
+            - {name: data, mountPath: /usr/share/elasticsearch/data}
+            - {name: certs, mountPath: /usr/share/elasticsearch/config/certs, readOnly: true}
+      volumes: [{name: certs, secret: {secretName: elastic-tls, defaultMode: 0440}}]
+  volumeClaimTemplates:
+    - metadata: {name: data}
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources: {requests: {storage: 4Gi}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: kibana, namespace: rephouse-observabilidade}
+spec:
+  selector: {app: kibana}
+  ports: [{port: 5601, targetPort: 5601}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: kibana, namespace: rephouse-observabilidade}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: kibana}}
+  template:
+    metadata: {labels: {app: kibana}}
+    spec:
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: kibana
+          image: docker.elastic.co/kibana/kibana:9.5.6
+          env:
+            - {name: SERVER_HOST, value: 0.0.0.0}
+            - {name: ELASTICSEARCH_HOSTS, value: '["https://elasticsearch:9200"]'}
+            - {name: ELASTICSEARCH_USERNAME, value: kibana_system}
+            - {name: ELASTICSEARCH_PASSWORD, valueFrom: {secretKeyRef: {name: kibana-runtime, key: password}}}
+            - {name: ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES, value: '["/certs/ca.crt"]'}
+            - {name: XPACK_SECURITY_ENCRYPTIONKEY, valueFrom: {secretKeyRef: {name: kibana-runtime, key: encryptionKey}}}
+            - {name: XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY, valueFrom: {secretKeyRef: {name: kibana-runtime, key: encryptionKey}}}
+            - {name: XPACK_REPORTING_ENCRYPTIONKEY, valueFrom: {secretKeyRef: {name: kibana-runtime, key: encryptionKey}}}
+            - {name: TELEMETRY_ENABLED, value: "false"}
+            - {name: NODE_OPTIONS, value: --max-old-space-size=1024}
+          ports: [{containerPort: 5601}]
+          securityContext: {allowPrivilegeEscalation: false, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 200m, memory: 768Mi}, limits: {cpu: "2", memory: 1792Mi}}
+          startupProbe: {httpGet: {path: /login, port: 5601}, periodSeconds: 5, failureThreshold: 120, timeoutSeconds: 5}
+          readinessProbe: {httpGet: {path: /login, port: 5601}, periodSeconds: 10, timeoutSeconds: 5}
+          volumeMounts: [{name: certs, mountPath: /certs, readOnly: true}]
+      volumes: [{name: certs, secret: {secretName: elastic-tls-public}}]
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata: {name: filebeat, namespace: rephouse-observabilidade}
+spec:
+  selector: {matchLabels: {app: filebeat}}
+  template:
+    metadata: {labels: {app: filebeat}}
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext: {seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: filebeat
+          image: docker.elastic.co/beats/filebeat:9.5.6
+          args: [-e, --strict.perms=false, -c, /etc/filebeat.yml]
+          env:
+            - {name: FILEBEAT_API_KEY, valueFrom: {secretKeyRef: {name: filebeat-writer, key: apiKey}}}
+          securityContext: {runAsUser: 0, allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: 500m, memory: 256Mi}}
+          readinessProbe: {httpGet: {path: /, port: 5066}, periodSeconds: 10}
+          volumeMounts:
+            - {name: config, mountPath: /etc/filebeat.yml, subPath: filebeat.yml, readOnly: true}
+            - {name: containers, mountPath: /var/log/containers, readOnly: true}
+            - {name: pods, mountPath: /var/log/pods, readOnly: true}
+            - {name: registry, mountPath: /usr/share/filebeat/data}
+            - {name: certs, mountPath: /certs, readOnly: true}
+      volumes:
+        - {name: config, configMap: {name: filebeat-config}}
+        - {name: containers, hostPath: {path: /var/log/containers, type: Directory}}
+        - {name: pods, hostPath: {path: /var/log/pods, type: Directory}}
+        - {name: registry, hostPath: {path: /var/lib/rephouse-filebeat, type: DirectoryOrCreate}}
+        - {name: certs, secret: {secretName: elastic-tls-public}}

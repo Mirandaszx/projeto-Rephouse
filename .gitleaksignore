@@ -1,0 +1,45 @@
+# Falsos positivos do Gitleaks revisados um a um em 24/11/2026 (regra generic-api-key).
+# Cada linha é a impressão digital de UM achado (arquivo, regra e linha; no histórico, também o commit).
+# Um segredo novo, ou o mesmo texto em outra linha, continua sendo detectado. Revise ao mover essas linhas.
+
+# Arquivos atuais
+# texto de exemplo ("preencha_com_segredo_aleatorio..."), não é segredo
+/source/.env.backend.example:generic-api-key:6
+# hash SHA-256 de arquivo do contrato, registrado como evidência
+/source/documentacao/evidencias/validacao-request-specs.json:generic-api-key:37
+# hash SHA-256 de arquivo do contrato, registrado como evidência
+/source/documentacao/evidencias/validacao-request-specs.json:generic-api-key:38
+# tag de imagem Docker com hash de commit e de conteúdo
+/source/infra/devops/CORRECOES_DEPENDENCIAS.md:generic-api-key:47
+# segredo JWT fictício usado só nos testes automatizados
+/source/testes/email-adapter.test.ts:generic-api-key:37
+# segredo JWT fictício usado só nos testes automatizados
+/source/testes/financeiro-reinicio.test.ts:generic-api-key:20
+# segredo JWT fictício usado só nos testes automatizados
+/source/testes/financeiro-evolucao-db.test.ts:generic-api-key:24
+# segredo JWT fictício usado só nos testes automatizados
+/source/testes/robustez.test.ts:generic-api-key:76
+# segredo JWT fictício usado só nos testes automatizados
+/source/testes/migration.test.ts:generic-api-key:48
+
+# Histórico do Git
+# segredo JWT fictício usado só nos testes automatizados
+7e1984222ac0774f6f3adcef5dc16a2000f36e23:testes/email-adapter.test.ts:generic-api-key:37
+# segredo JWT fictício usado só nos testes automatizados
+7e1984222ac0774f6f3adcef5dc16a2000f36e23:testes/migration.test.ts:generic-api-key:48
+# hash SHA-256 de arquivo do contrato, registrado como evidência
+006343423b77107d366b21666a457e328578f97b:documentacao/evidencias/validacao-request-specs.json:generic-api-key:37
+# hash SHA-256 de arquivo do contrato, registrado como evidência
+006343423b77107d366b21666a457e328578f97b:documentacao/evidencias/validacao-request-specs.json:generic-api-key:38
+# segredo JWT fictício usado só nos testes automatizados
+bbe7672d4d53bd4258e2a8ae3141eff4a61bdbef:testes/financeiro-evolucao-db.test.ts:generic-api-key:24
+# segredo JWT fictício usado só nos testes automatizados
+bbe7672d4d53bd4258e2a8ae3141eff4a61bdbef:testes/financeiro-reinicio.test.ts:generic-api-key:20
+# segredo JWT fictício usado só nos testes automatizados
+133a5aed87686c0510f86b0c474224a72d09f748:testes/migration.test.ts:generic-api-key:42
+# segredo JWT fictício usado só nos testes automatizados
+89c376c8e982f0aeba07559d07651e3bfb5eccb9:testes/robustez.test.ts:generic-api-key:75
+# texto de exemplo ("preencha_com_segredo_aleatorio..."), não é segredo
+7781cfbcceb5c4abe0283cd38010626e117f3324:.env.backend.example:generic-api-key:6
+# segredo JWT fictício usado só nos testes automatizados
+6d86d5ee51734862476e4babdcd78e08162b8769:testes/migration.test.ts:generic-api-key:37

@@ -1,0 +1,50 @@
+rules:
+  - id: rephouse-no-eval
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: Não execute texto como JavaScript.
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: new Function(...)
+  - id: rephouse-request-to-shell
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: Entrada HTTP alcançando um comando de shell.
+    mode: taint
+    pattern-sources:
+      - pattern-either:
+          - pattern: $REQ.body
+          - pattern: $REQ.query
+          - pattern: $REQ.params
+    pattern-sinks:
+      - pattern-either:
+          - pattern: exec($CMD, ...)
+          - pattern: execSync($CMD, ...)
+          - pattern: $CP.exec($CMD, ...)
+          - pattern: $CP.execSync($CMD, ...)
+  - id: rephouse-request-to-unsafe-sql
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: Entrada HTTP alcançando SQL inseguro. Use parâmetros e listas permitidas.
+    mode: taint
+    pattern-sources:
+      - pattern-either:
+          - pattern: $REQ.body
+          - pattern: $REQ.query
+          - pattern: $REQ.params
+    pattern-sinks:
+      - pattern-either:
+          - pattern: $DB.$queryRawUnsafe($SQL, ...)
+          - pattern: $DB.$executeRawUnsafe($SQL, ...)
+  - id: rephouse-no-disabled-tls
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: Não desative a validação TLS.
+    pattern-either:
+      - pattern: process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
+      - pattern: '{rejectUnauthorized: false, ...}'
+  - id: rephouse-no-wildcard-postmessage
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: Declare a origem de destino de postMessage.
+    pattern: $WINDOW.postMessage($DATA, "*")

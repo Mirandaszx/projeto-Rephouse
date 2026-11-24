@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - kubernetes/namespaces.yaml
+  - kubernetes/app.yaml
+  - kubernetes/rede.yaml
+  - kubernetes/observabilidade.yaml
+configMapGenerator:
+  - name: filebeat-config
+    namespace: rephouse-observabilidade
+    files: [filebeat.yml]
+generatorOptions:
+  disableNameSuffixHash: true

@@ -33,6 +33,7 @@ services:
       APP_TIME_ZONE: ${APP_TIME_ZONE:-America/Sao_Paulo}
       PORT: 3000
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
+      TRUST_PROXY: ${TRUST_PROXY:-1}
       DATABASE_URL: postgresql://${API_DB_USER:-rephouse_api}:${API_DB_PASSWORD:-}@postgres:5432/${POSTGRES_DB:-rabbu_mvp}?schema=public
     ports:
       - "127.0.0.1:3000:3000"
