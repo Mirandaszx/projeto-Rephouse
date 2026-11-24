@@ -1,0 +1,82 @@
+{
+  "dataLocal": "2026-11-21",
+  "registradoEm": "2026-11-22T01:07:01.645Z",
+  "ambiente": "local",
+  "mudanca": "Visão geral usa ícone de perfil ao lado do sino; criação permanece na página de despesas e no primeiro uso.",
+  "semAlteracoesEmBackendBancoVersao": true,
+  "semCommitPushPublicacao": true,
+  "buildTipagemLint": {
+    "aprovados": true,
+    "avisosFastRefreshPreexistentes": 6,
+    "log": ".devops-local/perfil-cabecalho-checks.log"
+  },
+  "navegador": {
+    "comando": "npm --prefix interface run test:e2e -- perfil-cabecalho.spec.ts painel.spec.ts escuro-fluidez.spec.ts refinamentos-financeiros.spec.ts",
+    "aprovados": 15,
+    "falhas": 0,
+    "ignorados": 0,
+    "relatorio": ".devops-local/perfil-cabecalho-browser.json",
+    "escopo": "Regressão direcionada; não representa repetição da suíte inteira. A falha de animação anterior não foi alterada.",
+    "dados": "Cenários visuais controlados e jornadas HTTP com PostgreSQL dedicado rabbu_mvp_test, em schema descartável; sem escrita no principal.",
+    "larguras": [
+      320,
+      390,
+      768,
+      1440
+    ],
+    "temas": [
+      "claro",
+      "escuro"
+    ],
+    "teclado": true,
+    "contraste": true,
+    "retornoAoPerfilReal": true
+  },
+  "capturas": [
+    {
+      "arquivo": ".devops-local/interface/imagens/perfil-cabecalho-2026-11-21/perfil-dark-1440.png",
+      "sha256": "ee151656d2e1d9165a9b4a226a39e95ebb8124abb46fa87f887ac3ac8244f19c"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/perfil-cabecalho-2026-11-21/perfil-dark-320.png",
+      "sha256": "bcf941391a87dcc1931afd091ae1cc7d5a7b8390856b92f14011f869e19ac7b4"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/perfil-cabecalho-2026-11-21/perfil-dark-390.png",
+      "sha256": "99c7d721e08ace12858dde51d34cdb8211a5cd3185a783f481f020dc452af4d0"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/perfil-cabecalho-2026-11-21/perfil-dark-768.png",
+      "sha256": "3265e3f5fea7336c70e2151af9f8724398a4c708a9eb974df0ffb42dc5c29e36"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/perfil-cabecalho-2026-11-21/perfil-light-1440.png",
+      "sha256": "0b25b3613d97ae84b585c1982b3735ac8e2b14e03b94e7bcae81ac6535dc3659"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/perfil-cabecalho-2026-11-21/perfil-light-320.png",
+      "sha256": "955ac87bad0c3c2d27b4c294c8a3ad1e50f8ecad7f0fc824f6bc2f1c391c05f8"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/perfil-cabecalho-2026-11-21/perfil-light-390.png",
+      "sha256": "2f1ec08c3276a411d669bbe333ddf1010ef3dafbd26b0f3c30d528488373bfa8"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/perfil-cabecalho-2026-11-21/perfil-light-768.png",
+      "sha256": "ac7b044c90f7afe62eb4fdfb26def07fd991e7830537fe551e85d301f7a5aa36"
+    }
+  ],
+  "inspecaoVisual": [
+    "perfil-light-1440.png",
+    "perfil-dark-320.png"
+  ],
+  "servidoNoAmbientePrincipal": {
+    "url": "http://localhost:5173/republica",
+    "moduloReactConferido": true,
+    "reinicioDesnecessario": true
+  },
+  "detectorImpeccable": {
+    "achados": 0,
+    "log": ".devops-local/perfil-cabecalho-impeccable.json"
+  }
+}

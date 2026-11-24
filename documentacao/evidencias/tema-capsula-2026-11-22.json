@@ -1,0 +1,115 @@
+{
+  "dataLocal": "2026-11-22",
+  "registradoEm": "2026-11-22T05:03:08.654Z",
+  "ambiente": "local",
+  "mudanca": "Cápsula de tema com sol e lua, seleção por clique ou arrasto, à esquerda do sino nas telas internas.",
+  "semAlteracoesEmBackendBancoPrincipalVersao": true,
+  "semCommitPushPublicacao": true,
+  "novasDependencias": false,
+  "interacao": {
+    "largura": 104,
+    "altura": 44,
+    "transicaoMs": 220,
+    "ferramenta": "Pointer Events e transição CSS de transform",
+    "tecladoOuMovimentoReduzido": "imediato",
+    "preferenciaSalva": true,
+    "sincronizacaoEntreAbas": true
+  },
+  "buildTipagemLint": {
+    "aprovados": true,
+    "avisosFastRefreshPreexistentes": 6,
+    "log": ".devops-local/tema-capsula-checks.log"
+  },
+  "navegador": {
+    "comando": "npm --prefix interface run test:e2e -- tema-cabecalho.spec.ts tema.spec.ts painel.spec.ts conta-layout.spec.ts gestao.spec.ts",
+    "aprovados": 25,
+    "falhas": 0,
+    "ignorados": 0,
+    "relatorio": ".devops-local/tema-capsula-browser-final.json",
+    "escopo": "Regressão direcionada; não é a suíte inteira. A falha de animação anterior permanece fora deste escopo.",
+    "dados": "PostgreSQL dedicado rabbu_mvp_test, porta 5544, schema descartável. Ações de gestão exercitam HTTP real. Cenários visuais e gestos usam respostas controladas.",
+    "largurasCapsula": [
+      320,
+      390,
+      768,
+      1440
+    ],
+    "temas": [
+      "claro",
+      "escuro"
+    ],
+    "cenarios": [
+      "clique em ambos os lados",
+      "arrasto nos dois sentidos com posição intermediária",
+      "cancelamento do gesto",
+      "teclado",
+      "toque em navegador com hasTouch",
+      "movimento reduzido",
+      "alto contraste",
+      "persistência e sincronização entre abas",
+      "preferência antiga Sistema",
+      "MASTER",
+      "regressão das telas públicas e jornadas de gestão"
+    ]
+  },
+  "tentativasAnteriores": [
+    {
+      "relatorio": ".devops-local/tema-capsula-browser.json",
+      "aprovados": 24,
+      "falhas": 1,
+      "causa": "O teste de persistência usava a conta admin compartilhada, revogada pela jornada de gestão anterior.",
+      "correcao": "Conta fictícia tema-admin exclusiva no harness; expectativas de persistência, sessão e sincronização mantidas."
+    },
+    {
+      "causa": "PostgreSQL dedicado estava desligado na retomada; inicialização recusou conexão antes dos testes.",
+      "correcao": "Iniciado somente o serviço postgres do Compose de testes, preservando volumes e principal."
+    }
+  ],
+  "capturas": [
+    {
+      "arquivo": ".devops-local/interface/imagens/tema-capsula-2026-11-21/tema-dark-1440.png",
+      "sha256": "cb16daa26a192fe1e5f5fc50c7a8add85ae53b1ac878b88df62041505e18b1e2"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/tema-capsula-2026-11-21/tema-dark-320.png",
+      "sha256": "1829f600347f93951ac165bcc96b594abef849663ef992750613364dbe2ce0ee"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/tema-capsula-2026-11-21/tema-dark-390.png",
+      "sha256": "05eafc96e7427c8846db917d6444b864ce8eb570f171b716da7cc065b64a8397"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/tema-capsula-2026-11-21/tema-dark-768.png",
+      "sha256": "0049fb0df9bd537876a408c7d1e632479b434c1f8d07aca5102aaa7c9b4b768d"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/tema-capsula-2026-11-21/tema-light-1440.png",
+      "sha256": "a38c01e28419b0aa1505ddcf3e5db4b2f2125231774de88bfa5fac3a861ed8e2"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/tema-capsula-2026-11-21/tema-light-320.png",
+      "sha256": "bed682a4f6cd9fb479de453a11fc1a2e4689f7110fa1a59b803669819bfbe4c7"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/tema-capsula-2026-11-21/tema-light-390.png",
+      "sha256": "9caea70f48be281b86e8192935ca6fe1fa150ccb3f2f87c92999caa2d4eec379"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/tema-capsula-2026-11-21/tema-light-768.png",
+      "sha256": "03fa6e30af35be3be19bfa77612f025227f595cdee3d5a3e387baae8ee2cef6d"
+    }
+  ],
+  "inspecaoVisual": [
+    "tema-dark-1440.png",
+    "tema-light-320.png"
+  ],
+  "servidoNoAmbientePrincipal": {
+    "url": "http://localhost:5173/republica",
+    "moduloConferido": true,
+    "reinicioDesnecessario": true
+  },
+  "detectorImpeccable": {
+    "achados": 0,
+    "log": ".devops-local/tema-capsula-impeccable.json"
+  }
+}

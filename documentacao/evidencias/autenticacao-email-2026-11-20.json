@@ -1,0 +1,140 @@
+{
+  "dataLocal": "2026-11-20",
+  "fuso": "America/Fortaleza",
+  "executadoEm": "2026-11-21T01:07:33.611Z",
+  "ambiente": "local",
+  "branch": "teste-devops",
+  "versaoCodigo": "3.0.0",
+  "escopo": [
+    "confirmacao obrigatoria de novos cadastros",
+    "login por link magico em contas existentes",
+    "adaptador HTTPS Resend",
+    "interface e contrato"
+  ],
+  "backend": {
+    "comando": "npm run test:completo",
+    "testes": 301,
+    "aprovados": 301,
+    "falhas": 0,
+    "ignorados": 0,
+    "cancelados": 0,
+    "codigoSaida": 0,
+    "schemaRemovido": true,
+    "relatorio": ".devops-local/testes-criticos/2026-11-21T00-57-53.646Z.json",
+    "contratoAntes": [
+      {
+        "file": "documentacao/openapi.json",
+        "sha256": "045a6217aeecef41d65798d64f58a17a87e265f8c6b603cc00ce320448732887"
+      },
+      {
+        "file": "integracao/api.d.ts",
+        "sha256": "1354af55e9f94eba4ba9a215826aae7373a84e097e1c14c678f6926557deac0a"
+      }
+    ],
+    "contratoDepois": [
+      {
+        "file": "documentacao/openapi.json",
+        "sha256": "045a6217aeecef41d65798d64f58a17a87e265f8c6b603cc00ce320448732887"
+      },
+      {
+        "file": "integracao/api.d.ts",
+        "sha256": "1354af55e9f94eba4ba9a215826aae7373a84e097e1c14c678f6926557deac0a"
+      }
+    ]
+  },
+  "frontend": {
+    "comando": "npm --prefix interface run verificar",
+    "compilacao": true,
+    "tipagem": true,
+    "lint": {
+      "erros": 0,
+      "avisosPreexistentes": 6
+    },
+    "suiteCompleta": {
+      "executados": 83,
+      "aprovados": 82,
+      "falhas": 1,
+      "ignorados": 0,
+      "instaveis": 0,
+      "log": ".devops-local/email-regressao-frontend-final.log"
+    },
+    "complementoFinal": {
+      "executados": 13,
+      "aprovados": 13,
+      "falhas": 0,
+      "ignorados": 0,
+      "log": ".devops-local/email-frontend-contraste-final.log",
+      "inclui": "cinco cenarios de email, cinco de cadastro/republica, tres de rotas; inclui cobertura adicional para API antiga",
+      "contrasteRetornoSenhaMinimo": 4.5
+    },
+    "falhaConhecida": {
+      "arquivo": "interface/testes-pr2/motion-superficies.spec.ts",
+      "linha": 195,
+      "descricao": "Quadro intermediario da saida do dialogo; timeout com relogio e captura. Expectativas preservadas; nao corrigido neste escopo."
+    },
+    "capturas": {
+      "quantidade": 16,
+      "larguras": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "temas": [
+        "light",
+        "dark"
+      ],
+      "diretorio": ".devops-local/interface/imagens/autenticacao-email-2026-11-20",
+      "rolagemHorizontal": false,
+      "inspecaoVisual": true,
+      "inspecaoVisualFinal": true
+    },
+    "impeccable": {
+      "achadosMecanicos": 0,
+      "arquivo": ".devops-local/impeccable-email-detector-final.json"
+    }
+  },
+  "isolamento": {
+    "host": "127.0.0.1",
+    "porta": 5544,
+    "banco": "rabbu_mvp_test",
+    "schemasPorExecucao": true,
+    "instanciaHttpPorArquivoFrontend": true,
+    "controlesDesabilitados": false,
+    "envioExterno": "somente fronteira controlada",
+    "envioRealRealizado": false
+  },
+  "principal": {
+    "versaoServida": "2.2.1",
+    "health": 200,
+    "readiness": 200,
+    "frontend": 200,
+    "metodoEmailAnunciado": false,
+    "migrationEmailAplicada": false,
+    "confirmacaoMigration": "SELECT no historico retornou zero",
+    "migrationAlteracoes": "nao aplicada no principal",
+    "configuracaoResendCompleta": false
+  },
+  "seguranca": {
+    "senha": "Argon2id",
+    "token": "32 bytes aleatorios; SHA-256 no banco; 10 minutos; uso unico",
+    "cookie": "HttpOnly; SameSite=Lax; Secure em producao; vinculo com navegador",
+    "origemValidada": true,
+    "consumoTransacional": true,
+    "limiteEmailPersistente": true,
+    "chaveCompartilhadaNaoUtilizada": true,
+    "rotacaoDaChave": "necessaria; nao confirmada"
+  },
+  "pendencias": [
+    "revogar a chave compartilhada e configurar uma nova chave de envio somente no backend",
+    "definir remetente e origem publica; verificar dominio para destinatarios diferentes da conta Resend",
+    "ativar migration e permissoes no principal com backup e etapa operacional separada",
+    "validar entrega e login numa caixa real",
+    "corrigir separadamente a falha de animacao existente"
+  ],
+  "commit": false,
+  "push": false,
+  "ciRemota": false,
+  "publicacao": false,
+  "fusoFinanceiroAplicacao": "America/Sao_Paulo"
+}

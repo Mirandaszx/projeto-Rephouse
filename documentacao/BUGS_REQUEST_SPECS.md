@@ -1,6 +1,12 @@
 # Bugs reproduzidos pelos request specs
 
-Expectativas confirmadas pelo usuário em 18/11/2026. Nenhuma correção do produto foi feita nesta etapa. Nenhuma falha foi ignorada ou convertida em sucesso esperado.
+Expectativas confirmadas pelo usuário em 18/11/2026. O diagnóstico abaixo registra a etapa original, quando nenhuma correção do produto havia sido feita. Nenhuma falha foi ignorada ou convertida em sucesso esperado.
+
+## Revisão 2.2.1
+
+Foram implementadas a validação monetária em etapas e a identidade transacional das criações de despesas e tarefas, com proteção nos formulários. Consulte [a implementação e seus limites](CORRECOES_2_2_1.md) e [o resultado local desta revisão](evidencias/correcao-bugs-2-2-1.json). As descrições e contagens abaixo são históricas; não devem ser usadas como resultado de uma execução posterior.
+
+BUG-01, BUG-02 e BUG-03 foram corrigidos nos cenários auditados: `npm run test:completo` passou com 285 testes, zero falhas e zero ignorados. Na interface, 70 dos 71 testes passaram; a falha de animação preexistente permanece registrada separadamente e impede declarar a suíte completa aprovada.
 
 ## BUG-01 — Criação de despesa não respeita a identidade da operação
 
@@ -32,4 +38,4 @@ Expectativas confirmadas pelo usuário em 18/11/2026. Nenhuma correção do prod
 
 São três problemas de produto. BUG-01 e BUG-02 geram três falhas cada. BUG-03 também pode fazer o teste agrupador aparecer como falho no TAP, além do subcaso. Por isso a quantidade de testes falhando não corresponde à quantidade de bugs distintos.
 
-O comando completo retorna código 1 enquanto houver essas falhas. O relatório local registra as contagens reais; não existe aprovação remota desta entrega.
+O comando completo retorna código 1 enquanto houver falhas. Os relatórios locais de cada etapa registram suas contagens reais; não existe aprovação remota desta revisão.

@@ -1,5 +1,51 @@
 # Matriz de validação do MVP
 
+## Avisos gerais e aba Todas 4.1.0 — 21/11/2026
+
+Entrada, saída, reentrada, troca e desativação de vínculo/exclusão lógica geram avisos aos demais moradores habilitados, na mesma transação, sem retroativos. Todas reúne as três categorias; clicar em aviso geral abre Moradores. As permissões das tarefas e operações financeiras foram preservadas. Consulte [o guia](NOTIFICACOES_GERAIS.md) e a [evidência local](evidencias/notificacoes-gerais-2026-11-21.json).
+
+- Backend completo: **321 aprovados**, zero falhas/ignorados/cancelados; contrato/tipos sincronizados e schema de testes removido.
+- Frontend completo: **89 de 90 aprovados**, zero ignorados; permanece somente a falha anterior de animação em `motion-superficies.spec.ts:195`. Build, tipagem e lint sem erros, com seis avisos anteriores. Confirmação final: **6 de 6 cenários de notificações aprovados**, com sobreposição à suíte completa; inclui abas sem cortes e nova reentrada efetivamente recebida.
+- Principal **4.1.0**, com **24 migrations e nenhuma pendente**. Após a autorização explícita posterior, a ativação foi concluída com backup formato 2, conferência de 20 tabelas anteriores, permissões e volume preservados. Consultas autenticadas e SSE passaram pela API e pelo proxy do frontend. Nenhum dado de teste foi criado no principal. Veja a [evidência de ativação](evidencias/ativacao-gerais-principal-2026-11-21.json).
+- Sem novas dependências, commit, push, publicação ou CI remota. A ativação está concluída; a suíte inteira da interface não está aprovada pela falha anterior registrada.
+
+## Ativação 4.0.0 no principal local — 21/11/2026
+
+Após autorização posterior do usuário, as duas migrations de tarefas/notificações foram aplicadas ao banco `rabbu_mvp`. A API serve **4.0.0**, com **23 migrations e nenhuma pendente**. Backup formato 2 conferido por hash e catálogo; campos históricos de 18 tabelas e volume PostgreSQL preservados. Conta limitada reaplicada, readiness 200 e consultas autenticadas/SSE funcionando pela API e pelo proxy do frontend. Não houve seed, reset, contas fictícias ou execução das suítes no principal. Consulte [evidência própria](evidencias/ativacao-notificacoes-principal-2026-11-21.json). A falha anterior de animação continua registrada; esta ativação não significa aprovação integral da suíte de interface.
+
+## Tarefas compartilhadas e notificações 4.0.0 — 21/11/2026
+
+Implementação local na branch `teste-devops`. O [guia da entrega](NOTIFICACOES_E_TAREFAS.md) descreve as regras, rotas, SSE, permissões e futura ativação. A [evidência local](evidencias/notificacoes-tarefas-2026-11-21.json) separa as execuções atuais das históricas abaixo.
+
+| Requisito | Evidência atual | Resultado |
+| --- | --- | --- |
+| Morador cria disponível ou para si; administrador atribui outros | `request-notificacoes.test.ts`, `notificacoes.spec.ts` | Aprovado; criação de despesas permanece restrita |
+| Assumir, liberar, concluir, reabrir e editar conforme perfil | Request specs HTTP, concorrência real e jornada no navegador | Aprovado; apenas uma associação concorrente e sem eventos repetidos |
+| Eventos e destinatários na transação da tarefa | Rejeição real do PostgreSQL e consulta de tarefas/operações/eventos | Aprovado; rollback conjunto |
+| Avisos individuais de vencimento e quitação parcial/total | Request specs, geração no processo compilado e jornada financeira no navegador | Aprovado; geração concorrente/reinício sem duplicação |
+| Caixa individual, paginação, leitura e isolamento por vínculo | Request specs e duas abas no navegador | Aprovado; adaptador mantém paginação |
+| SSE entre instâncias e reconciliação | Duas APIs com LISTEN/NOTIFY, revogação e evento em outra casa | Aprovado; sem token na URL |
+| Migração com registros anteriores e comprovante | `notificacoes-migracao.test.ts` | Aprovado; snapshot antigo e bytes do download preservados, sem autoria inventada |
+| Conta limitada e contrato/tipos | `permissoes-db.test.ts` e verificação completa | Aprovado; leitura atualiza somente `lida_em`, sem DELETE |
+| Interface responsiva e acessível | Cinco novos testes de navegador, oito capturas em quatro larguras/dois temas | Aprovado nos cenários automatizados; não representa teste em celular físico |
+
+- Backend: `npm run test:completo`, **314 aprovados**, zero falhas, ignorados ou cancelados. PostgreSQL dedicado na porta 5544; schema temporário removido e hashes de contrato/tipos inalterados após geração.
+- Frontend: build, tipagem e lint sem erros; seis avisos anteriores de Fast Refresh. `npm --prefix interface run verificar`: **88 de 89 aprovados**, zero ignorados. Permanece a falha conhecida em `motion-superficies.spec.ts:195`, na captura intermediária de saída do diálogo. Suíte inteira não aprovada; teste e expectativas preservados. Os cinco cenários novos passaram na execução completa.
+- Revisão visual: detector Impeccable sem achados mecânicos, contraste dos tokens conferido e capturas locais inspecionadas. Layout público e casinha não foram redesenhados.
+- Na validação anterior à ativação: principal servia **3.0.0**, com 21 migrations, novas tabelas ausentes e readiness 200, verificados por consultas somente de leitura. As duas migrations 4.0.0 ainda não haviam sido aplicadas. A ativação posterior está registrada na seção própria acima. Sem seed, reset, limpeza de volumes, envio de e-mail, novas dependências, commit, push ou CI remota.
+
+Os registros seguintes documentam suas respectivas datas; números anteriores não substituem a validação desta entrega.
+
+## Autenticação por e-mail 3.0.0 — 20/11/2026
+
+Confirmação obrigatória para novos cadastros, login por link mágico, cookie do navegador, expiração, reenvio, origem e limites. A conta só é criada depois da confirmação; contas anteriores não são alteradas nem marcadas artificialmente como verificadas. Consulte [regras e ativação](AUTENTICACAO_EMAIL.md) e [evidência local](evidencias/autenticacao-email-2026-11-20.json).
+
+- Backend: `npm run test:completo`, **301 aprovados**, zero falhas/ignorados/cancelados, contrato/tipos sincronizados e schema temporário removido. Banco exclusivo na porta 5544; envio externo controlado.
+- Frontend: build, tipagem e lint aprovados (seis avisos anteriores de Fast Refresh). Suíte completa: **82 de 83 aprovados**; permanece a falha anterior do quadro intermediário de animação, sem apagar, ignorar ou afrouxar suas expectativas. Complemento final de autenticação/cadastro/convite/rotas: **13 de 13 aprovados**, incluindo a proteção contra API antiga. Esses dois resultados são execuções separadas, com sobreposição de cenários.
+- Interface: 16 capturas nos dois temas em 320/390/768/1440 px, sem rolagem horizontal; marca, casinha e cores preservadas. Detector Impeccable sem achados mecânicos. Capturas de navegador não comprovam entrega de e-mail real.
+- Principal preservado na API servida **2.2.1**; SELECT confirmou zero aplicações da migration de e-mail. Health/readiness/frontend 200. Não houve aplicação da migration nova, seed, reset, envio real, commit, push ou CI remota. Ativação exige credenciais novas, remetente, migration e permissões, com preparação operacional própria.
+- Uma chave foi compartilhada no chat: ela não foi usada ou copiada ao projeto. Revogar e substituir antes de configurar o envio real; rotação ainda não confirmada.
+
 ## Request specs dos fluxos críticos — 18/11/2026
 
 Nova cobertura com API HTTP e PostgreSQL reais, incluindo concorrência e geração pelo processo compilado. A [matriz dos comportamentos aprovados](TESTES_FLUXOS_CRITICOS.md) separa request specs de testes complementares. A execução local encontrou falhas de idempotência na criação de despesas/tarefas e erro 500 para valor com vírgula; os testes permanecem falhando. Consulte a [lista de bugs](BUGS_REQUEST_SPECS.md) e a [evidência local](evidencias/validacao-request-specs.json). Não houve correção de funcionalidades, alteração do contrato, execução remota ou novo E2E. As aprovações históricas abaixo não significam aprovação desta nova especificação.
@@ -192,3 +238,29 @@ O código validado foi publicado em `homologacao`. A entrega seguinte está no [
 A API do Compose principal passou a usar conta técnica limitada, sem a credencial administrativa ou montagem do `.env` no container. Migrations ficam no serviço manual de manutenção. O [guia](PERMISSOES_POSTGRESQL.md) e a [evidência local](evidencias/permissoes-postgresql.json) registram o escopo: cinco testes de permissões aprovados; regressão com 267 testes, 259 aprovados, as mesmas oito falhas de produto e zero ignorados/cancelados. O backend integral continua sem aprovação devido aos [bugs conhecidos](BUGS_REQUEST_SPECS.md).
 
 A comparação antes/depois confirmou preservação dos dados nas 15 tabelas e das dez migrations aplicadas; as nove migrations da auditoria continuam pendentes no banco da equipe. PostgreSQL, frontend, imagens e volumes foram preservados; somente a API foi recriada. Não houve commit, push ou validação remota nesta correção.
+
+## Correções 2.2.1 e ativação local autorizada — 20/11/2026
+
+O parágrafo anterior registra o estado histórico da revisão de permissões. Nesta nova etapa, os três bugs de criação e validação monetária foram corrigidos. Após a validação isolada, o usuário autorizou explicitamente a aplicação das dez migrations pendentes no banco principal local com backup preparado.
+
+| Verificação | Resultado local desta etapa |
+| --- | --- |
+| Backend completo, HTTP e PostgreSQL dedicado | 285 aprovados; zero falhas, ignorados ou cancelados |
+| Permissões após os últimos ajustes | Seis aprovados; API pode somente SELECT/INSERT no controle de criações |
+| Reversão protegida da nova migration | Um aprovado; histórico existente impede remoção da estrutura |
+| Contrato e tipos | OpenAPI 2.2.1 e tipos sincronizados |
+| Frontend completo | 70 de 71 aprovados; falha preexistente em motion-superficies.spec.ts:192, sem ignorados |
+| Novos cenários de reenvio na versão final | Quatro aprovados, com API real em banco dedicado |
+| Compilação, tipagem e lint da interface | Aprovados; cinco avisos de lint anteriores, zero erros |
+| Banco principal local | Vinte migrations aplicadas, zero pendentes; dados das catorze tabelas de negócio anteriores preservados por contagens e hashes |
+| Backup preventivo | Formato 2, hash e catálogo conferidos; sem novo ensaio de restauração nesta ativação |
+| Aplicação em execução | Login em localhost:5173/login; health/readiness 200, contrato servido 2.2.1 |
+| Git e execução remota nesta etapa | Sem commit, push ou CI remota |
+
+A [evidência estruturada](evidencias/correcao-bugs-2-2-1.json) separa os testes isolados da ativação do ambiente principal. A falha de animação impede declarar a suíte completa do frontend aprovada; nenhum teste foi apagado, ignorado ou enfraquecido.
+
+## Refinamento Impeccable do frontend — 20/11/2026
+
+O [guia desta revisão](REFINAMENTO_IMPECCABLE_2026_11_20.md) registra foco, erros/suporte, vencimentos no painel, consultas por rota, endereço não encontrado e atualização de arquivos no Docker. A identidade visual e o contrato 2.2.1 foram preservados. Não houve alteração no banco principal, commit, push ou execução remota nesta revisão.
+
+A verificação final da interface executou **79 testes: 78 aprovados, uma falha preexistente de animação e zero ignorados**. Os oito novos cenários passaram; build e tipagem passaram; lint não teve erros e registrou seis avisos de Fast Refresh. Nas conferências visuais controladas foram 40 combinações sem rolagem horizontal ou erros JavaScript e 32 amostras de contraste acima de 4,5:1. Esses cenários não equivalem a execução em dispositivo físico nem substituem as jornadas HTTP reais incluídas na suíte. Os resultados completos estão na [evidência local](evidencias/refinamento-impeccable-2026-11-20.json).

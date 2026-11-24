@@ -1,0 +1,244 @@
+{
+  "dataLocal": "2026-11-22",
+  "ambiente": "principal local",
+  "autorizado": true,
+  "iniciadoEm": "2026-11-22T06:21:39.178Z",
+  "semSeedResetOuContasDeTeste": true,
+  "envioReal": false,
+  "autorizacao": "Usuário autorizou explicitamente a nova migration, backup e reinício da API",
+  "funcionalidade": "Perfil, foto e informações da conta 4.2.0",
+  "volumesAntes": [
+    "projeto-rephouse_postgres_data"
+  ],
+  "migrationsAntes": 25,
+  "pendentesAntes": [
+    "202611220002_fotos_perfil"
+  ],
+  "versaoAnterior": "4.1.0",
+  "preflight": {
+    "checksumsConferem": true,
+    "comprovantesValidos": true,
+    "tarefasHistoricasValidas": true
+  },
+  "validacaoPrevia": {
+    "backend": {
+      "testes": 337,
+      "aprovados": 337,
+      "falhas": 0,
+      "ignorados": 0,
+      "cancelados": 0
+    },
+    "frontend": {
+      "startTime": "2026-11-22T06:02:06.992Z",
+      "duration": 537913.294,
+      "expected": 104,
+      "skipped": 0,
+      "unexpected": 3,
+      "flaky": 0
+    },
+    "jornadasPerfil": 8,
+    "suiteFrontendIntegralAprovada": false,
+    "falhasDocumentadas": [
+      "tema automático",
+      "fechamento de diálogo",
+      "preparação de cenário de aviso"
+    ]
+  },
+  "imagemLocal": {
+    "referencia": "rephouse-perfil-420-local",
+    "id": "sha256:171b56ea8e1babd6dcc3b42abe4fd9ab27b98ef044975c16bc53caff350ac107"
+  },
+  "runtimeValidado": {
+    "version": "4.2.0",
+    "sharp": "0.35.5",
+    "width": 512,
+    "height": 512
+  },
+  "compilacaoLocal": {
+    "referencia": "rephouse-perfil-420-local",
+    "id": "sha256:171b56ea8e1babd6dcc3b42abe4fd9ab27b98ef044975c16bc53caff350ac107"
+  },
+  "backup": {
+    "diretorio": "copias-seguranca/2026-11-22T06-21-40-619Z-antes-perfil-foto-24a77232",
+    "formato": 2,
+    "catalogoConferido": true,
+    "hashConfere": true,
+    "restauracaoExecutada": false
+  },
+  "acessoRealContaLimitada": true,
+  "dadosPreservadosAntesDeIniciarApi": true,
+  "tabelasAnterioresComparadas": 20,
+  "contagensAnteriores": {
+    "competencias_recorrencia": 0,
+    "comprovantes": 0,
+    "configuracoes_recorrencia": 0,
+    "desafios_google": 0,
+    "despesas": 1,
+    "emails_verificados": 0,
+    "eventos_notificacao": 0,
+    "identidades_google": 0,
+    "limites_envio_email": 0,
+    "links_email": 0,
+    "membros_republica": 1,
+    "notificacoes": 0,
+    "operacoes_criacao": 0,
+    "pagamentos": 1,
+    "rateios_despesa": 1,
+    "recorrencias_despesa": 0,
+    "recorrencias_participantes": 0,
+    "republicas": 1,
+    "tarefas": 0,
+    "usuarios": 1
+  },
+  "migrationsDepois": 26,
+  "pendentesDepois": [],
+  "contaLimitada": {
+    "rolsuper": false,
+    "rolcreatedb": false,
+    "rolcreaterole": false,
+    "rolreplication": false,
+    "rolbypassrls": false
+  },
+  "permissoes": {
+    "notificacoes": {
+      "eventos_leitura_gravacao": true,
+      "notificacoes_leitura_gravacao": true,
+      "leitura_atualizavel": true,
+      "destinatario_atualizavel": false,
+      "pode_excluir": false
+    },
+    "foto": {
+      "leitura": true,
+      "insercao": true,
+      "atualizacao": true,
+      "remocao": true
+    }
+  },
+  "overrideAnterior": ".devops-local/api-principal-perfil-13c41f98-anterior.yml",
+  "http": [
+    {
+      "base": "http://127.0.0.1:3000",
+      "path": "/api/openapi.json",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "base": "http://127.0.0.1:3000",
+      "path": "/api/health",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "base": "http://127.0.0.1:3000",
+      "path": "/api/ready",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "base": "http://127.0.0.1:3000",
+      "path": "/api/me",
+      "method": "GET",
+      "status": 401
+    },
+    {
+      "base": "http://127.0.0.1:3000",
+      "path": "/api/me/foto",
+      "method": "POST",
+      "status": 401
+    },
+    {
+      "base": "http://127.0.0.1:3000",
+      "path": "/api/me/foto",
+      "method": "DELETE",
+      "status": 401
+    },
+    {
+      "base": "http://127.0.0.1:3000",
+      "path": "/api/usuarios/00000000-0000-4000-8000-000000000000/foto",
+      "method": "GET",
+      "status": 401
+    },
+    {
+      "base": "http://127.0.0.1:3000",
+      "path": "/api/notificacoes/nao-lidas",
+      "method": "GET",
+      "status": 401
+    },
+    {
+      "base": "http://localhost:5173",
+      "path": "/api/me",
+      "method": "GET",
+      "status": 401
+    },
+    {
+      "base": "http://localhost:5173",
+      "path": "/api/me/foto",
+      "method": "POST",
+      "status": 401
+    },
+    {
+      "base": "http://localhost:5173",
+      "path": "/api/me/foto",
+      "method": "DELETE",
+      "status": 401
+    },
+    {
+      "base": "http://localhost:5173",
+      "path": "/api/usuarios/00000000-0000-4000-8000-000000000000/foto",
+      "method": "GET",
+      "status": 401
+    },
+    {
+      "base": "http://localhost:5173",
+      "path": "/api/notificacoes/nao-lidas",
+      "method": "GET",
+      "status": 401
+    },
+    {
+      "base": "http://127.0.0.1:3000",
+      "path": "/api/front/v1/me/foto",
+      "method": "POST",
+      "status": 401
+    },
+    {
+      "base": "http://127.0.0.1:3000",
+      "path": "/api/front/v1/usuarios/00000000-0000-4000-8000-000000000000/foto",
+      "method": "GET",
+      "status": 401
+    },
+    {
+      "base": "http://localhost:5173",
+      "path": "/perfil",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "base": "http://localhost:5173",
+      "path": "/codigo/perfil/ProfilePhoto.tsx",
+      "method": "GET",
+      "status": 200
+    }
+  ],
+  "aprovado": true,
+  "volumesPreservados": true,
+  "acid": {
+    "fsync": "on",
+    "synchronous_commit": "on",
+    "full_page_writes": "on"
+  },
+  "perfil": {
+    "tabelaCriada": true,
+    "constraintsValidadas": 11,
+    "nenhumaFotoArtificial": true,
+    "contratoAtualizado": true,
+    "apiEProxy": true,
+    "formularioServido": true,
+    "autenticacaoObrigatoria": true
+  },
+  "versaoServida": "4.2.0",
+  "checagemInicial": {
+    "codigo": "HTTP_CHECK_FAILED",
+    "causa": "O proxy encaminha /api para /api/front/v1; OpenAPI deve ser consultado diretamente na API. Nenhum dado foi alterado para resolver a checagem."
+  },
+  "concluidoEm": "2026-11-22T06:23:01.786Z"
+}

@@ -1,0 +1,287 @@
+{
+  "dataLocal": "2026-11-22",
+  "registradoEm": "2026-11-22T06:17:12.828Z",
+  "versaoLocal": "4.2.0",
+  "ambiente": "local",
+  "principal": {
+    "api": "4.1.0",
+    "migrationNovaAplicada": false,
+    "permissoesNovasAplicadas": false,
+    "semEscritasSolicitadasNoBanco": true,
+    "frontendAtualizado": true,
+    "nota": "Dependências do container frontend atualizadas e somente esse serviço reiniciado. Upload desabilitado quando a API anterior não informa os metadados."
+  },
+  "semCommitPushPublicacao": true,
+  "dependencias": {
+    "sharp": "0.35.5",
+    "react-easy-crop": "6.2.5"
+  },
+  "backend": {
+    "comando": "npm run test:completo",
+    "testes": 337,
+    "aprovados": 337,
+    "falhas": 0,
+    "ignorados": 0,
+    "cancelados": 0,
+    "relatorio": ".devops-local/testes-criticos/2026-11-22T05-36-36.998Z.json",
+    "schemaRemovido": true,
+    "contratos": [
+      {
+        "file": "documentacao/openapi.json",
+        "sha256": "d17284f6bbd0956aecb6bc1a68fb541e1e4efd0553b7d02853ca9c27b8d24497"
+      },
+      {
+        "file": "integracao/api.d.ts",
+        "sha256": "4c80651e6f64f94561b49d07ddc42d5c5c8d9f42a6e0c01ada4f644871ee0629"
+      }
+    ],
+    "verificacoesFinais": {
+      "compilacao": true,
+      "tipagem": true,
+      "tiposSincronizados": true,
+      "fotosEPermissoes": {
+        "aprovados": 16,
+        "falhas": 0,
+        "ignorados": 0,
+        "log": ".devops-local/perfil-backend-seguranca-final.log"
+      },
+      "fotosComGpsEContainerAnimadoUmQuadro": {
+        "aprovados": 10,
+        "falhas": 0,
+        "ignorados": 0,
+        "log": ".devops-local/perfil-backend-fotos-validado.log"
+      },
+      "preservacaoFinanceira": {
+        "aprovados": 10,
+        "falhas": 0,
+        "ignorados": 0,
+        "log": ".devops-local/perfil-backend-preservacao-final.log",
+        "dados": "Despesa, rateios, pagamento parcial e comprovante fictícios presentes; comparação de todas as tabelas antes/depois da migration."
+      }
+    }
+  },
+  "frontend": {
+    "comando": "npm --prefix interface run verificar",
+    "buildTipagemLint": true,
+    "avisosFastRefreshPreexistentes": 6,
+    "aprovados": 104,
+    "falhas": 3,
+    "ignorados": 0,
+    "perfilAprovados": 8,
+    "relatorio": ".devops-local/perfil-interface-entrega.json",
+    "falhasDetalhadas": [
+      {
+        "arquivo": "motion-superficies.spec.ts",
+        "linha": 127,
+        "titulo": "avisos novos interrompem a saída antiga sem perder a mensagem, inclusive com texto idêntico",
+        "preexistente": null,
+        "testePreservado": true,
+        "classificacao": "Timeout aguardando título da página, antes de iniciar o cenário de avisos; causa pendente."
+      },
+      {
+        "arquivo": "motion-superficies.spec.ts",
+        "linha": 195,
+        "titulo": "superfícies cabem nos dois temas e no celular, com quadros intermediários de entrada e saída",
+        "preexistente": true,
+        "testePreservado": true,
+        "classificacao": "Falha conhecida antes desta etapa"
+      },
+      {
+        "arquivo": "tema.spec.ts",
+        "linha": 8,
+        "titulo": "aparência segue o sistema, respeita escolha manual e sincroniza entre páginas e abas",
+        "preexistente": null,
+        "testePreservado": true,
+        "classificacao": "Falha de tema na suíte completa; não reproduzida no arquivo isolado. Não classificada como preexistente confirmada."
+      }
+    ],
+    "escopo": "Suíte inteira não aprovada. Nenhum teste foi apagado, ignorado ou afrouxado.",
+    "temaIsolado": {
+      "comando": "npm --prefix interface run test:e2e -- tema.spec.ts",
+      "aprovados": 3,
+      "falhas": 0,
+      "ignorados": 0,
+      "relatorio": ".devops-local/perfil-tema-diagnostico.json",
+      "codigoDoTemaInalteradoNestaEtapa": true
+    },
+    "motionIsolado": {
+      "comando": "npm --prefix interface run test:e2e -- motion-superficies.spec.ts",
+      "aprovados": 6,
+      "falhas": 1,
+      "ignorados": 0,
+      "relatorio": ".devops-local/perfil-motion-diagnostico.json",
+      "falha": "Somente o cenário conhecido declarado na linha 195, timeout na linha 230. O timeout de inicialização do cenário de avisos não se reproduziu nesta execução."
+    },
+    "perfilETemaEmSequencia": {
+      "aprovados": 11,
+      "falhas": 0,
+      "ignorados": 0,
+      "relatorio": ".devops-local/perfil-contexto-tema.json",
+      "preparacao": "Contexto do novo teste de toque explicita colorScheme light, alinhado ao ambiente de testes, em vez de herdar preferências nativas. Expectativas preservadas. Os 11 passaram nesta sequência; isso NÃO resolveu a falha de tema na suíte completa."
+    },
+    "coberturas": [
+      "criação, enquadramento por teclado, zoom, persistência",
+      "cancelamento e falha preservam foto",
+      "submissão duplicada e Escape durante envio",
+      "remoção e liberação de URLs",
+      "perfil sem casa e rejeição antes de upload",
+      "avatares da casa com leitura deduplicada e fallback",
+      "320,390,768,1440 px; dois temas; janela baixa; zoom equivalente a 200%",
+      "toque em Chromium emulado e retorno do foco",
+      "compatibilidade visual com resposta da API anterior"
+    ]
+  },
+  "tentativasPreservadas": [
+    {
+      "arquivo": ".devops-local/perfil-backend-completo.log",
+      "motivo": "Exemplo 413 ausente no OpenAPI; acrescentado sem alterar teste."
+    },
+    {
+      "arquivo": ".devops-local/perfil-backend-completo-final.log",
+      "motivo": "Snapshot histórico não criava emails_verificados exigida pela API atual. Preparação inclui migrations funcionais; verificações mantidas."
+    },
+    {
+      "arquivo": ".devops-local/perfil-interface-completo.json",
+      "aprovados": 103,
+      "falhas": 3,
+      "motivo": "Motion conhecido, retorno de foco do seletor corrigido e falha de tema investigada separadamente."
+    },
+    {
+      "arquivo": ".devops-local/perfil-interface-final.json",
+      "aprovados": 105,
+      "falhas": 2,
+      "motivo": "Retorno do foco corrigido; persistiam motion e mudança de tema no contexto da sequência."
+    },
+    {
+      "arquivo": ".devops-local/perfil-frontend-jornadas-final.json",
+      "aprovados": 10,
+      "falhas": 1,
+      "motivo": "Sequência perfil/tema reproduziu a falha; a execução seguinte passou com contexto touch explícito, mas o problema persistiu na suíte completa final."
+    }
+  ],
+  "docker": {
+    "imagemLocal": "rephouse-perfil-420-local",
+    "semRedeSemBanco": true,
+    "node": "v24.21.0",
+    "sharp": "0.35.5",
+    "format": "webp",
+    "width": 512,
+    "height": 512,
+    "metadataStripped": true,
+    "processamentoReal": true,
+    "logBuild": ".devops-local/perfil-docker-build-validado.log"
+  },
+  "detectorImpeccable": {
+    "achados": 0
+  },
+  "capturas": [
+    {
+      "arquivo": ".devops-local/interface/imagens/perfil-foto-2026-11-22/editor-dark-1440.png",
+      "sha256": "9f6b427aa36ddbaddf6f32585ae3d267b7965e375b29acab8024ed5505205519"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/perfil-foto-2026-11-22/editor-dark-320.png",
+      "sha256": "bfd7d1c07a083fc32fe702551ac975a0b48032032fc0712371afcbf1ca04ec13"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/perfil-foto-2026-11-22/editor-dark-390.png",
+      "sha256": "595316fda1df29d0c373c3d7b39ba6b5a8ff6ad2b54ffbd4bcba20533f735b3b"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/perfil-foto-2026-11-22/editor-dark-768.png",
+      "sha256": "76e77c508260ff0b57ada58593ccba15d8d0b649dee8715b19ea19bc249806d7"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/perfil-foto-2026-11-22/editor-light-1440.png",
+      "sha256": "3e8a1db1fdaf2a64ec0fa36bf86156f5638f69d0c12fe35e146f53db5a4ddeb8"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/perfil-foto-2026-11-22/editor-light-320.png",
+      "sha256": "542fdd4e65324ec5615d1cccf9a59acdd49e8ccce0a14ce2a75ff1f524ceaab0"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/perfil-foto-2026-11-22/editor-light-390.png",
+      "sha256": "d7d5e52dfab5cc4c9d9fe55143bf9e2770771c2db537b4edb5be46a65c5c9b39"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/perfil-foto-2026-11-22/editor-light-768.png",
+      "sha256": "9ba25416d6baf95d26c8e1abd32aa42170a26e2d5da1c492e9cdcc41808b7e70"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/perfil-foto-2026-11-22/perfil-dark-1440.png",
+      "sha256": "7f2af8f1ab56ec37a2de4fb67009ca036fdccc710258a93fe079ed5c616009b8"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/perfil-foto-2026-11-22/perfil-dark-320.png",
+      "sha256": "d982c82b7efa8c98743271ad48671b44799f8a9c01837d93e71234c2c2c971d2"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/perfil-foto-2026-11-22/perfil-dark-390.png",
+      "sha256": "8a4fa04c5bfc4476ecaf0cb3253208af022a5b2945b15c84f092ac68157517c0"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/perfil-foto-2026-11-22/perfil-dark-768.png",
+      "sha256": "2dcfa222b0372d2d4a42beccf9ad646db723bbe940533583b393cd1440c0a3ec"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/perfil-foto-2026-11-22/perfil-light-1440.png",
+      "sha256": "138d7daeb8c730afd1611d59ed53924624a4f12c90f6eead5bff92926ea226a8"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/perfil-foto-2026-11-22/perfil-light-320.png",
+      "sha256": "786cc6852a095d89387c62d6d5a151681a76302f8be2f4345facfed6fa6d2fe8"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/perfil-foto-2026-11-22/perfil-light-390.png",
+      "sha256": "fbaf3548996cc022986bc5f5a01395226db8f05f6a28a6c7a5f5f61a7e698879"
+    },
+    {
+      "arquivo": ".devops-local/interface/imagens/perfil-foto-2026-11-22/perfil-light-768.png",
+      "sha256": "78bcc5f012dfacc2067d386749af1ff546fdc945059542294687b1ee30c82cf9"
+    }
+  ],
+  "inspecaoVisual": [
+    "perfil-dark-1440.png",
+    "editor-light-320.png"
+  ],
+  "limites": [
+    "Banco principal não ativado nesta etapa",
+    "Suíte completa do frontend tem três falhas: motion conhecido, tema e inicialização de um cenário de avisos; sem aprovação global",
+    "Testes de toque são emulação no navegador, sem validação em aparelho físico",
+    "Sem troca de senha, edição de e-mail, dados sociais ou importação automática do Google"
+  ],
+  "arquivosVerificados": [
+    {
+      "arquivo": "codigo/modulos/perfil/foto.service.ts",
+      "sha256": "d31df6257be300a5a709d08694d5458d2f0efeaa2dae00dba58fc903d8ddd099"
+    },
+    {
+      "arquivo": "codigo/modulos/perfil/foto.routes.ts",
+      "sha256": "43195fb42c685218b1786983b784158961ae68954e0be2f273282e552a5a9a77"
+    },
+    {
+      "arquivo": "prisma/migracoes/202611220002_fotos_perfil/migration.sql",
+      "sha256": "192fec0f922a1079c6ba585f253e891f84efa31c1ab8f6343c99400a7ad8dc48"
+    },
+    {
+      "arquivo": "interface/codigo/perfil/ProfilePhoto.tsx",
+      "sha256": "5a5c4d64a35f43cd08f0b0213e441e8186195028e65c70999faaaf3b618e8bb7"
+    },
+    {
+      "arquivo": "interface/codigo/perfil/PhotoAvatar.tsx",
+      "sha256": "7d746f6ba416e6f4bc86a39f3f37e42cee7c6504dc20835af7461c456214c317"
+    },
+    {
+      "arquivo": "interface/codigo/perfil/photo-cache.ts",
+      "sha256": "d111c409a56c3b6284a122c52d2acbb0fd3502e8fc074a1f14e178e9d49c5003"
+    },
+    {
+      "arquivo": "testes/request-perfil.test.ts",
+      "sha256": "9ed39adbe1ed977a8923f62781bcb206b3de43d2384a3bc89d1d7582c0082b4a"
+    },
+    {
+      "arquivo": "interface/testes-pr2/perfil-foto.spec.ts",
+      "sha256": "061d118f61ae56ea7c30e1b925970772642380de5771afc9cbcc9edb250b58ea"
+    }
+  ]
+}

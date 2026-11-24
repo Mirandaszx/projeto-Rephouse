@@ -1,0 +1,206 @@
+{
+  "entrega": "Tarefas compartilhadas e notificações em tempo real",
+  "versao": "4.0.0",
+  "data": "2026-11-21",
+  "ambiente": "local",
+  "branch": "teste-devops",
+  "backend": {
+    "comando": "npm run test:completo",
+    "executadoEm": "2026-11-21T03:09:10.784Z",
+    "ambiente": "local",
+    "destino": {
+      "host": "127.0.0.1",
+      "porta": "5544",
+      "banco": "rabbu_mvp_test",
+      "usuario": "rephouse_interface_test"
+    },
+    "etapas": [
+      {
+        "comando": "Verificar Docker",
+        "codigo": 0
+      },
+      {
+        "comando": "Iniciar somente PostgreSQL de testes",
+        "codigo": 0
+      },
+      {
+        "comando": "Aplicar migrations somente no schema temporário",
+        "codigo": 0
+      },
+      {
+        "comando": "Verificação completa do backend e request specs",
+        "codigo": 0
+      }
+    ],
+    "totais": {
+      "testes": 314,
+      "aprovados": 314,
+      "falhas": 0,
+      "ignorados": 0,
+      "cancelados": 0
+    },
+    "codigoSaida": 0,
+    "schemaTemporario": "complete_test_d621cf1dcced4e1c94a6d08c8148e8aa",
+    "schemaRemovido": true,
+    "contratoAntes": [
+      {
+        "file": "documentacao/openapi.json",
+        "sha256": "f3b074240c349a0737b00840aa643257ebc224bb76adffee91a22ea47ef84f63"
+      },
+      {
+        "file": "integracao/api.d.ts",
+        "sha256": "e137a79af8955c02885c01e7f248d9c0752fb106ba84fe81afe8b311526eb670"
+      }
+    ],
+    "contratoDepois": [
+      {
+        "file": "documentacao/openapi.json",
+        "sha256": "f3b074240c349a0737b00840aa643257ebc224bb76adffee91a22ea47ef84f63"
+      },
+      {
+        "file": "integracao/api.d.ts",
+        "sha256": "e137a79af8955c02885c01e7f248d9c0752fb106ba84fe81afe8b311526eb670"
+      }
+    ],
+    "relatorioLocal": ".devops-local/testes-criticos/2026-11-21T03-04-14.043Z.json",
+    "sha256": "c6c2d98865910efdb932cb908ea0cee322ab31233c2f8acf76388441e5820426"
+  },
+  "frontend": {
+    "comando": "npm --prefix interface run verificar",
+    "build": "aprovado",
+    "tipagem": "aprovada",
+    "lint": {
+      "erros": 0,
+      "avisosAnteriores": 6
+    },
+    "testes": 89,
+    "aprovados": 88,
+    "falhas": 1,
+    "ignorados": 0,
+    "instaveis": 0,
+    "iniciadoEm": "2026-11-21T03:01:08.137Z",
+    "duracaoMs": 483914.313,
+    "relatorioLocal": ".devops-local/notificacoes-frontend-entrega.json",
+    "sha256": "616a9a9e991e35737320fff3be28d5bad78a7d236accda0032c676292605a69f",
+    "novosCenarios": {
+      "total": 5,
+      "aprovados": 5
+    },
+    "pendencia": {
+      "teste": "interface/testes-pr2/motion-superficies.spec.ts:195",
+      "observacao": "Falha anterior no quadro intermediário de saída do modal; espera por dialog em evaluate excede timeout na linha 230.",
+      "expectativasPreservadas": true,
+      "suiteInteiraAprovada": false
+    },
+    "rodadaInicial": {
+      "relatorioLocal": ".devops-local/notificacoes-frontend-completa-inicial.json",
+      "aprovados": 86,
+      "falhas": 3,
+      "observacao": "Histórico preservado. Repetição final confirma foco e os novos cenários; os resultados não são somados entre rodadas."
+    }
+  },
+  "cobertura": {
+    "requestSpecs": "testes/request-notificacoes.test.ts",
+    "migracao": "testes/notificacoes-migracao.test.ts",
+    "privilegios": "testes/permissoes-db.test.ts",
+    "navegador": "interface/testes-pr2/notificacoes.spec.ts",
+    "cenarios": [
+      "permissões de tarefas e restrição de despesas",
+      "associação simultânea e idempotência",
+      "rollback conjunto por rejeição real do PostgreSQL",
+      "vínculo inativo e transferência de administração",
+      "caixa por destinatário, paginação e leitura individual/em lote",
+      "saldo parcial, quitação e alteração de vencimento",
+      "SSE em duas instâncias, revogação e isolamento entre casas",
+      "geração na inicialização e reinício real da API",
+      "migração com snapshot histórico, tarefa e download de comprovante preservados",
+      "duas abas, teclado, foco, temas, movimento reduzido e falha de consulta"
+    ]
+  },
+  "visual": {
+    "detector": {
+      "ferramenta": "Impeccable",
+      "achados": []
+    },
+    "contraste": {
+      "origem": "tokens CSS efetivamente usados no painel",
+      "temas": [
+        {
+          "tema": "claro",
+          "texto": 11.79,
+          "secundario": 5.81,
+          "contador": 9.93,
+          "contorno": 3.56
+        },
+        {
+          "tema": "escuro",
+          "texto": 15.51,
+          "secundario": 8.61,
+          "contador": 9.93,
+          "contorno": 4.86
+        }
+      ]
+    },
+    "capturas": [
+      {
+        "arquivo": ".devops-local/interface/imagens/notificacoes-2026-11-20/painel-1440-dark.png",
+        "sha256": "12f20adc060d5e04ddaee9b2efb76811b4a9d33cde9878c4db98dea227892f6d"
+      },
+      {
+        "arquivo": ".devops-local/interface/imagens/notificacoes-2026-11-20/painel-1440-light.png",
+        "sha256": "a60b8f106adca43cd5ee250444b83e3d72d2a74a4c5b476dd0e6ec7a4c1dcccd"
+      },
+      {
+        "arquivo": ".devops-local/interface/imagens/notificacoes-2026-11-20/painel-320-dark.png",
+        "sha256": "37541db5bf670a320714e519b3bd42fdac867caf6c72ccfbdaf147ef5218fca2"
+      },
+      {
+        "arquivo": ".devops-local/interface/imagens/notificacoes-2026-11-20/painel-320-light.png",
+        "sha256": "b72b288e1cedcb7b5cf82b7a6b50be832d8b05d15b6e9012cc25a51d1613b30c"
+      },
+      {
+        "arquivo": ".devops-local/interface/imagens/notificacoes-2026-11-20/painel-390-dark.png",
+        "sha256": "af5b12cce6b147f5efb1e93f82ffb779fad44f1d020793d1d1baa21d6418d74a"
+      },
+      {
+        "arquivo": ".devops-local/interface/imagens/notificacoes-2026-11-20/painel-390-light.png",
+        "sha256": "d061d243ef36547ef5fd9aa55e98b5a2ffde4c7afa7e0c03a688a6f80acfe56c"
+      },
+      {
+        "arquivo": ".devops-local/interface/imagens/notificacoes-2026-11-20/painel-768-dark.png",
+        "sha256": "49a1544ee416127c9dfe2baa0e4d36d908402dce7a41981675c831c0fa8a3f19"
+      },
+      {
+        "arquivo": ".devops-local/interface/imagens/notificacoes-2026-11-20/painel-768-light.png",
+        "sha256": "2990523a68fcea1cfd37726a548c7f88fc739705f1af437bf11584b5add2c106"
+      }
+    ],
+    "aparelhoFisico": false,
+    "paginasPublicasRedesenhadas": false
+  },
+  "principal": {
+    "principalLocal": true,
+    "migrations": 21,
+    "tabelasNovas": {
+      "eventos": false,
+      "notificacoes": false
+    },
+    "versaoServida": "3.0.0",
+    "readiness": 200,
+    "consultasSomenteLeitura": true,
+    "migrationsNovasAplicadas": false,
+    "overrideLocal": ".devops-local/principal-estavel.yml",
+    "ativacao": "Etapa posterior: backup, pausa, migrations, permissões e API 4."
+  },
+  "limites": {
+    "novasDependencias": false,
+    "commit": false,
+    "push": false,
+    "publicacao": false,
+    "ciRemota": false,
+    "emailRealEnviado": false,
+    "reset": false,
+    "volumesRemovidos": false
+  },
+  "conclusao": "Implementação e cenários novos aprovados localmente. Backend aprovado; frontend completo com uma falha anterior de animação. Ativação no principal não realizada."
+}
