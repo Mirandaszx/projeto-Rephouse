@@ -1,0 +1,17 @@
+.git
+.env
+.env.*
+**/.env
+**/.env.*
+**/node_modules
+**/dist
+**/coverage
+**/test-results
+**/playwright-report
+*.log
+documentacao
+copias-seguranca
+.devops-local
+armazenamento
+.agents
+.codex

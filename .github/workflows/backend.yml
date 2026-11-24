@@ -1,9 +1,9 @@
 name: Validar backend
 on:
   push:
-    branches: [main, homologacao]
+    branches: [main, homologacao, teste-devops]
   pull_request:
-    branches: [main, homologacao]
+    branches: [main, homologacao, teste-devops]
   workflow_dispatch:
 permissions:
   contents: read
@@ -28,10 +28,10 @@ jobs:
       TEST_DATABASE_URL: postgresql://rephouse_ci:credencial_exclusiva_ci_temporaria@localhost:5432/rabbu_mvp_test?schema=public
       JWT_SECRET: segredo_exclusivo_dos_testes_ci_nao_utilizar_em_producao
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: '24'
           cache: npm
@@ -40,3 +40,55 @@ jobs:
       - run: npm run verificar
       - name: Conferir contrato versionado
         run: git diff --exit-code -- documentacao/openapi.json integracao/api.d.ts
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: rephouse_interface_test
+          POSTGRES_PASSWORD: rephouse_interface_test_local
+          POSTGRES_DB: rabbu_mvp_test
+        ports: ['5544:5432']
+        options: >-
+          --health-cmd "pg_isready -U rephouse_interface_test -d rabbu_mvp_test"
+          --health-interval 5s --health-timeout 5s --health-retries 15
+    env:
+      TEST_DATABASE_URL: postgresql://rephouse_interface_test:rephouse_interface_test_local@127.0.0.1:5544/rabbu_mvp_test
+      RESEND_API_KEY: ''
+      EMAIL_FROM: ''
+      APP_PUBLIC_URL: ''
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with: {node-version: '24', cache: npm, cache-dependency-path: interface/package-lock.json}
+      - run: npm ci
+      - run: npm --prefix interface ci
+      - run: npx --prefix interface playwright install --with-deps chromium
+      - run: npm --prefix interface run verificar
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: frontend-resultado
+          path: .devops-local/interface/resultado-playwright.json
+          retention-days: 7
+  seguranca-e-imagens:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with: {persist-credentials: false, fetch-depth: 0}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with: {node-version: '24'}
+      - name: Construir imagens locais sem publicação
+        run: node infra/devops/operar.mjs build
+      - name: Verificar segredos, código, dependências e imagens
+        run: node infra/devops/seguranca.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: seguranca-relatorios
+          path: .devops-local/devops/seguranca/*.json
+          retention-days: 7

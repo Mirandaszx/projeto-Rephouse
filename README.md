@@ -1,5 +1,7 @@
 # RepHouse
 
+Para a demonstração isolada de Kubernetes, Kibana e segurança, consulte [DevOps local](infra/devops/README.md). Esse ambiente tem banco próprio e não substitui o caminho de desenvolvimento abaixo.
+
 Sistema para organizar moradores, tarefas e despesas de uma república. A versão **4.2.0** inclui rateios, pagamentos manuais, recorrências, notificações, perfil com foto e autenticação por e-mail.
 
 Este guia explica a primeira configuração no **Windows, usando PowerShell e Docker Desktop**. Execute os passos na ordem. Se um comando falhar, resolva o erro antes de continuar.
