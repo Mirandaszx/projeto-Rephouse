@@ -33,10 +33,10 @@ export default function Profile({ account, token, onChanged }: { account: Accoun
     <section className="rep-management-card" aria-labelledby="account-details-title"><SectionHeading id="account-details-title" title="Sua conta e sua casa" />
       <dl className="profile-account-details">
         <div><dt>E-mail da conta</dt><dd>{account.email}</dd></div>
-        <div><dt>Confirmação por e-mail</dt><dd>{account.emailConfirmadoEm === undefined ? 'Informação de confirmação indisponível' : account.emailConfirmadoEm ? 'Confirmado por link' : 'Confirmação por e-mail não registrada'}</dd></div>
+        <div><dt>Confirmação por e-mail</dt><dd>{account.emailConfirmadoEm === undefined ? 'Informação de confirmação indisponível' : account.emailConfirmadoEm ? 'Confirmado por link' : 'E-mail ainda não confirmado'}</dd></div>
         <div><dt>Cadastro no RepHouse</dt><dd>{new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'long' }).format(new Date(account.criadoEm))}</dd></div>
         <div><dt>República atual</dt><dd>{account.membro?.republica.nome ?? 'Sem vínculo ativo com uma república'}</dd></div>
-        <div><dt>Sua função</dt><dd>{account.tipoUsuario === 'USUARIO_MASTER' ? 'MASTER' : account.membro ? account.membro.republica.adminId === account.id ? 'Administrador da república' : 'Morador' : 'Sem função em uma república'}</dd></div>
+        <div><dt>Sua função</dt><dd>{account.tipoUsuario === 'USUARIO_MASTER' ? 'MASTER' : account.membro ? account.membro.republica.adminId === account.id ? 'Administra a república' : 'Mora na república' : 'Sem função em uma república'}</dd></div>
       </dl>
     </section>
     <section className="rep-management-card rep-danger-zone"><SectionHeading title="Excluir minha conta" />

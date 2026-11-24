@@ -65,7 +65,9 @@ test('pagamento parcial aparece no resumo mensal e filtros da própria parcela',
   await expect(dialog).not.toBeVisible()
   await expect(row).toContainText('35,00')
   await expect(row).toContainText('Parcial')
-  await page.getByRole('combobox',{name:'Valores e filtros',exact:true}).selectOption('PESSOAL')
+  // Desde 24/11/2026 o filtro é um seletor Base UI (lista animada), não um <select> nativo.
+  await page.getByRole('combobox',{name:'Valores e filtros',exact:true}).click()
+  await page.getByRole('option',{name:'Minha parte',exact:true}).click()
   await page.getByRole('radio',{name:'Pendentes',exact:true}).click()
   await expect(row).toBeVisible()
   await page.getByRole('link',{name:'Meu financeiro',exact:true}).first().click()
@@ -75,7 +77,8 @@ test('pagamento parcial aparece no resumo mensal e filtros da própria parcela',
   const response=await request.get(api+`/me/financeiro/resumo?competencia=${reference.slice(0,7)}`,{headers:headers()})
   const value=await response.json() as Schemas['ResumoIndividual']
   expect(value.saldoPendente).toBe('35.00')
-  await page.getByRole('combobox',{name:'Situação das suas parcelas',exact:true}).selectOption('PAGAS')
+  await page.getByRole('combobox',{name:'Situação das suas parcelas',exact:true}).click()
+  await page.getByRole('option',{name:'Pagas',exact:true}).click()
   await expect(page.getByText('Nenhuma despesa no seu histórico.',{exact:true})).toBeVisible()
 })
 
@@ -135,7 +138,9 @@ test('novos controles e resumo cabem nos temas e larguras sem cortes',async({pag
     await expect(page.locator('#despesas li')).toHaveCount(1)
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+1)).toBe(true)
     await page.screenshot({path:`${folder}/despesas-${colorScheme}-${width}.png`,fullPage:true})
-    await page.getByRole('link',{name:'Meu financeiro',exact:true}).first().click()
+    // No celular, "Meu financeiro" fica no menu da conta (redesign de 24/11/2026).
+    if(width<720)await page.getByRole('button',{name:/Abrir menu da conta/}).click()
+    await page.getByRole('link',{name:'Meu financeiro',exact:true}).filter({visible:true}).first().click()
     await expect(page.getByRole('region',{name:'Resumo do seu financeiro'})).toBeVisible()
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+1)).toBe(true)
     await page.screenshot({path:`${folder}/pessoal-${colorScheme}-${width}.png`,fullPage:true})

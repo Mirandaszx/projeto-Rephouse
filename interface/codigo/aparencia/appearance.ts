@@ -9,12 +9,16 @@ function read(): Appearance {
   try { return valid(localStorage.getItem(key)) } catch { return 'system' }
 }
 let preference = read()
+// Lido uma única vez e depois só pelo evento. Ler `system.matches` (por exemplo, no getSnapshot
+// de cada render) atualiza o estado guardado pelo navegador e pode engolir o próximo `change`.
+let systemDark = system.matches
+const resolved = () => preference === 'system' ? (systemDark ? 'dark' : 'light') : preference
 function apply() {
-  document.documentElement.dataset.theme = preference === 'system' ? (system.matches ? 'dark' : 'light') : preference
+  document.documentElement.dataset.theme = resolved()
   listeners.forEach(listener => listener())
 }
 apply()
-system.addEventListener('change', () => { if (preference === 'system') apply() })
+system.addEventListener('change', event => { systemDark = event.matches; if (preference === 'system') apply() })
 window.addEventListener('storage', event => {
   if (event.key === key || event.key === null) { preference = read(); apply() }
 })
@@ -30,6 +34,6 @@ function change(value: Appearance) {
 }
 export function useAppearance() {
   const value = useSyncExternalStore(subscribe, () => preference)
-  const theme = useSyncExternalStore(subscribe, () => preference === 'system' ? (system.matches ? 'dark' : 'light') : preference)
+  const theme = useSyncExternalStore(subscribe, resolved)
   return { preference: value, theme, change }
 }

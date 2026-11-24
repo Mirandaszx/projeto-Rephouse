@@ -84,3 +84,84 @@
 @media (hover: hover) and (pointer: fine) {
   .rep-internal .rep-metric a:hover, .rep-internal .workspace-section-heading a:hover { text-decoration: underline; text-underline-offset: 4px; }
 }
+
+/* Parte zerada: texto de confirmação no lugar de "R$ 0,00". */
+.rep-metric-settled { display: inline-flex; align-items: center; gap: 10px; font-size: clamp(24px, 3vw, 30px); line-height: 1.15; }
+
+/* Gráficos da visão geral: barras simples e uma barra de progresso, com os valores sempre visíveis. */
+.rep-overview-charts { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 24px; margin-block: 24px; }
+.rep-chart-card { display: grid; align-content: start; gap: 16px; }
+.rep-bars { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); align-items: end; gap: 12px; min-block-size: 190px; margin: 0; padding: 0; list-style: none; }
+.rep-bars li { display: grid; grid-template-rows: auto 140px auto; justify-items: center; gap: 8px; min-width: 0; }
+.rep-bar-value { color: var(--app-muted); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rep-bar-track { display: flex; align-items: end; inline-size: 100%; max-inline-size: 48px; block-size: 140px; border-radius: 8px; background: var(--app-raised, #eef3ee); }
+.rep-bar { display: block; inline-size: 100%; border-radius: 8px; background: #a9c9b6; }
+.rep-bars li[data-current] .rep-bar { background: var(--app-accent, #205448); }
+.rep-bars li[data-current] .rep-bar-value { color: var(--app-text); font-weight: 600; }
+.rep-bar-month { color: var(--app-muted); font-size: 14px; text-transform: capitalize; }
+.rep-bars li[data-current] .rep-bar-month { color: var(--app-text); font-weight: 600; }
+.rep-my-month-status { font-size: 26px; line-height: 1.2; font-weight: 600; color: var(--app-text); font-variant-numeric: tabular-nums; }
+.rep-meter { block-size: 12px; border-radius: 999px; background: var(--app-raised, #eef3ee); overflow: hidden; }
+/* A barra cresce por transform (scaleX), não por largura; o trilho arredondado recorta as pontas. */
+.rep-meter span { display: block; inline-size: 100%; block-size: 100%; background: var(--app-accent, #205448); transform-origin: left center; }
+.rep-my-month-detail { margin: 0; color: var(--app-muted); font-size: 15px; font-variant-numeric: tabular-nums; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 719px) {
+  .rep-overview-charts { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .rep-bars { gap: 6px; }
+  .rep-bar-value { font-size: 11px; }
+}
+
+/* Troca de modo: link discreto na visão completa; botão no menu da conta. */
+.rep-internal .mode-switch-link, .rep-internal .account-menu-mode { justify-self: start; min-height: 44px; padding: 0 4px; border: 0; background: none; color: var(--app-accent); font: inherit; font-size: 15px; font-weight: 500; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.rep-internal .mode-switch-link { display: block; margin: -8px 0 16px; }
+.rep-internal .account-menu-mode { width: 100%; padding: 0 12px; text-align: start; }
+.rep-internal :is(.mode-switch-link, .account-menu-mode):focus-visible { outline: 3px solid var(--app-focus); outline-offset: 2px; }
+
+/* Modo simples: só o essencial, letras de 18px, botões de no mínimo 64px de altura. */
+.rep-internal[data-modo='simples'] .rep-main { font-size: 18px; }
+.rep-internal .simple-overview { display: grid; gap: 24px; max-inline-size: 720px; }
+.rep-internal .simple-owed { display: grid; gap: 8px; padding: 28px; border-radius: 18px; background: #205448; color: #f7f5ef; }
+.rep-internal .simple-owed h2 { margin: 0; font-size: 20px; font-weight: 500; color: inherit; }
+.rep-internal .simple-owed strong { font-size: clamp(40px, 8vw, 56px); line-height: 1.05; font-weight: 600; font-variant-numeric: tabular-nums; }
+.rep-internal .simple-owed .simple-settled { display: inline-flex; align-items: center; gap: 12px; font-size: clamp(30px, 6vw, 40px); }
+.rep-internal .simple-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.rep-internal .simple-actions :is(a, button) { justify-content: flex-start; text-align: start; display: flex; align-items: center; gap: 14px; min-height: 72px; padding: 0 20px; border: 2px solid #205448; border-radius: 16px; background: var(--app-surface); color: var(--app-text); font: inherit; font-size: 20px; font-weight: 600; text-decoration: none; cursor: pointer; }
+.rep-internal .simple-actions :is(a, button):first-child { background: #d2ec9c; }
+.rep-internal .simple-actions svg { flex: none; color: #205448; }
+.rep-internal .simple-actions :is(a, button):focus-visible, .simple-to-pay button:focus-visible, .simple-switch:focus-visible { outline: 3px solid var(--app-focus); outline-offset: 3px; }
+.rep-internal .simple-to-pay { display: grid; gap: 12px; padding: 24px; border: 1px solid var(--app-border); border-radius: 18px; background: var(--app-surface); }
+.rep-internal .simple-to-pay:focus { outline: none; }
+.rep-internal .simple-to-pay h2 { margin: 0; font-size: 24px; font-weight: 600; }
+.rep-internal .simple-to-pay p { margin: 0; color: var(--app-muted); }
+.rep-internal .simple-to-pay ul { display: grid; margin: 0; padding: 0; list-style: none; }
+.rep-internal .simple-to-pay li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 16px; padding-block: 16px; border-top: 1px solid var(--app-border); }
+.rep-internal .simple-to-pay li div { display: grid; gap: 4px; min-width: 0; }
+.rep-internal .simple-to-pay li div strong { font-size: 20px; font-weight: 600; }
+.rep-internal .simple-to-pay li div span { color: var(--app-muted); font-size: 17px; }
+.rep-internal .simple-amount { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.rep-internal .simple-to-pay button { min-height: 56px; min-width: 112px; padding: 0 24px; border: 0; border-radius: 14px; background: #205448; color: #f7f5ef; font: inherit; font-size: 19px; font-weight: 600; cursor: pointer; }
+.rep-internal .simple-switch { justify-self: start; min-height: 48px; padding: 0 4px; border: 0; background: none; color: var(--app-accent); font: inherit; font-size: 17px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+:root[data-theme='dark'] .rep-internal .simple-actions :is(a, button) { border-color: #d2ec9c; }
+:root[data-theme='dark'] .rep-internal .simple-actions :is(a, button):first-child { color: #193732; }
+:root[data-theme='dark'] .rep-internal .simple-actions svg { color: currentColor; }
+@media (max-width: 719px) {
+  .rep-internal .simple-owed, .simple-to-pay { padding: 20px; }
+  .rep-internal .simple-to-pay li { grid-template-columns: minmax(0, 1fr) auto; }
+  .rep-internal .simple-to-pay li button { grid-column: 1 / -1; }
+}
+
+/* Motion das peças do redesign (24/11/2026). Mesma curva de saída do app; com movimento
+   reduzido o workspace zera as transições, e no modo teclado nada se move. */
+@media (prefers-reduced-motion: no-preference) {
+  /* 1. Toque nos botões do Modo simples: retorno de que o toque foi registrado, como o lg-button. */
+  .rep-internal :is(.simple-actions > *, .simple-to-pay button) { transition: transform 140ms cubic-bezier(.23, 1, .32, 1); }
+  .rep-internal :is(.simple-actions > *, .simple-to-pay button):active:not(:disabled):not(:focus-visible) { transform: scale(.98); }
+  /* 3. Troca entre Modo simples e completo: só o bloco recém-montado pela troca entra. */
+  .rep-internal .mode-view[data-entering] { transition: opacity 180ms cubic-bezier(.23, 1, .32, 1), transform 180ms cubic-bezier(.23, 1, .32, 1); }
+  @starting-style { .rep-internal .mode-view[data-entering] { opacity: 0; transform: translateY(4px); } }
+  /* 4. "Seu mês" avança quando um pagamento muda o valor; ao abrir a tela não há transição. */
+  .rep-internal .rep-meter span { transition: transform 300ms cubic-bezier(.23, 1, .32, 1); }
+  .rep-internal[data-workspace-input='keyboard'] .mode-view[data-entering] { transition: none; }
+}
+.rep-internal .mode-view:focus { outline: none; }

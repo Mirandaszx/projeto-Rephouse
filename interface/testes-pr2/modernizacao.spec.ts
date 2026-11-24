@@ -29,7 +29,8 @@ test('identidade interna mantém largura, contraste e navegação nos dois temas
           return { width: main.width, display: getComputedStyle(element).display, overflow: document.documentElement.scrollWidth > innerWidth, offenders: Array.from(element.querySelectorAll('*')).filter(node => node.getBoundingClientRect().right > innerWidth + 1 && node.getBoundingClientRect().width > 0).slice(0, 8).map(node => ({ class: node.className, right: node.getBoundingClientRect().right })) }
         })
         expect(layout.overflow, `${path} ${theme} ${width}: ${JSON.stringify(layout.offenders)}`).toBe(false)
-        const account = path.endsWith('/perfil') || path.endsWith('/financeiro')
+        // Desde 24/11/2026, perfil e financeiro de quem mora numa casa usam o mesmo layout com barra lateral.
+        const account = false
         expect(layout.width).toBeGreaterThanOrEqual(account ? Math.min(width, 940) - 1 : width - (width < 720 ? 0 : width < 1024 ? 208 : 248) - 1)
         expect(await page.getByRole('heading', { level: 1 }).evaluate(element => getComputedStyle(element).fontSize)).toBe(width < 720 ? '28px' : '36px')
         if (width >= 720 && !account) {

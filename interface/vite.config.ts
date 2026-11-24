@@ -19,6 +19,8 @@ export default defineConfig(({ mode }) => ({
           loadEnv(mode, process.cwd(), "").API_PROXY_TARGET ||
           "http://127.0.0.1:3000",
         changeOrigin: true,
+        // Repassa o IP do navegador em X-Forwarded-For para o limite de login da API.
+        xfwd: true,
         // O design do PR #2 usa arrays; a API principal permanece paginada.
         rewrite: (path) => path.replace(/^\/api(?=\/|$)/, "/api/front/v1"),
       },

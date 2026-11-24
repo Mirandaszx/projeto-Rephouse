@@ -20,7 +20,9 @@ test('tema escuro mantém painéis acabados e estados vazios sem casinhas repeti
     await expect(page.getByRole('heading', { name: 'Comece pela primeira despesa.', exact: true })).toBeVisible()
     await expect(page.locator('.rep-metric')).toHaveCount(4)
     await expect(page.locator('.rep-overview-panel')).toHaveCount(2)
-    await expect(page.locator('.workspace-heading-actions').getByRole('link', { name: 'Meu perfil', exact: true })).toBeVisible()
+    // Desde 24/11/2026, no celular o acesso à conta é o menu do avatar no topo (o avatar não se repete).
+    if (width < 720) await expect(page.getByRole('button', { name: /Abrir menu da conta/ })).toBeVisible()
+    else await expect(page.locator('.workspace-heading-actions').getByRole('link', { name: 'Meu perfil', exact: true })).toBeVisible()
     await expect(page.locator('.workspace-heading-actions').getByRole('button', { name: '＋ Nova despesa', exact: true })).toHaveCount(0)
     await expect(page.locator('.workspace-empty svg')).toHaveCount(0)
     for (const target of await page.locator('.rep-overview-panel :is(h2, h3, p, a)').all()) {
@@ -77,9 +79,10 @@ test('orientação inicial abre o formulário e não esconde valores, falhas ou 
   await expect(page.getByRole('heading', { name: 'Comece pela primeira despesa.', exact: true })).toBeVisible()
   fixture.resident = true
   await page.reload()
-  await expect(page.getByRole('heading', { name: 'Os registros da casa ficam aqui.', exact: true })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Registrar primeira despesa', exact: true })).toHaveCount(0)
-  await expect(page.getByRole('link', { name: 'Ver moradores', exact: true })).toBeVisible()
+  // Desde 24/11/2026 o morador também cadastra contas: a orientação inicial é a mesma do administrador.
+  await expect(page.getByRole('heading', { name: 'Comece pela primeira despesa.', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Registrar primeira despesa', exact: true })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Organizar tarefas', exact: true })).toBeVisible()
 })
 
 test('filtros interrompem a transição sem atrasar dados, teclado ou movimento reduzido', async ({ page }) => {

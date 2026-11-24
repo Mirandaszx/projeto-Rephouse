@@ -47,7 +47,6 @@ export function useDialogMotion() {
       if (finished) return
       finished = true
       clearTimeout(timer)
-      element.removeEventListener('transitionend', ended)
       document.removeEventListener('keydown', keyboard, true)
       preference.removeEventListener('change', changed)
       if (element.open) element.close()
@@ -62,9 +61,6 @@ export function useDialogMotion() {
       }
       resolve()
     }
-    const ended = (event: TransitionEvent) => {
-      if (event.target === element && !event.pseudoElement && event.propertyName === 'opacity') finish()
-    }
     const keyboard = () => finish()
     const changed = () => { if (preference.matches) finish() }
     // Segurança para remoção de CSS, abas em segundo plano ou evento não entregue.
@@ -77,7 +73,16 @@ export function useDialogMotion() {
     // Materializa o estado atual para retomar suavemente mesmo durante a entrada.
     void getComputedStyle(element).opacity
     element.dataset.motionState = 'closing'
-    element.addEventListener('transitionend', ended)
+    // Espera a transição de saída em si, e não o evento transitionend: o da entrada pode
+    // chegar no quadro seguinte e fecharia o diálogo sem animar quem cancela logo após abrir.
+    void getComputedStyle(element).opacity
+    const exit = element.getAnimations().find(animation => {
+      const effect = animation.effect as KeyframeEffect | null
+      return effect?.target === element && !effect.pseudoElement
+        && 'transitionProperty' in animation && animation.transitionProperty === 'opacity'
+    })
+    // Cancelada (ex.: estilo removido), a saída fica com o limite de segurança acima.
+    exit?.finished.then(() => finish(), () => {})
     document.addEventListener('keydown', keyboard, true)
     preference.addEventListener('change', changed)
     return promise

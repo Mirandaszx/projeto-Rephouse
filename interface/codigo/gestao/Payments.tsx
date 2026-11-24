@@ -7,12 +7,13 @@ import type { Schemas } from './types'
 import { errorFeedback } from './types'
 
 const date = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo' })
-export default function Payments({ payments, token, canDownload = true }: { payments: Schemas['Pagamento'][]; token: string; canDownload?: boolean }) {
+/** compact: uma linha por pagamento ("Pago em … · R$ …"), usada nas contas já quitadas do histórico. */
+export default function Payments({ payments, token, canDownload = true, compact = false }: { payments: Schemas['Pagamento'][]; token: string; canDownload?: boolean; compact?: boolean }) {
   const [busy, setBusy] = useState('')
   const [error, setError] = useState<Feedback>('')
   const lock = useRef(false)
   return <div>
-    {!payments.length ? <p className="rep-management-note">Nenhum pagamento registrado.</p> : <ul className="rep-management-list" aria-label="Pagamentos registrados">{payments.map(payment => <li key={payment.id}><div className="rep-management-row"><div><strong>{brl.format(Number(payment.valor))}</strong><small>{date.format(new Date(payment.dataPagamento))} · Brasília</small></div>
+    {!payments.length ? <p className="rep-management-note">Nenhum pagamento registrado.</p> : <ul className={compact ? "payments-compact" : "rep-management-list"} aria-label="Pagamentos registrados">{payments.map(payment => <li key={payment.id}><div className="rep-management-row">{compact ? <small>Pago em {date.format(new Date(payment.dataPagamento))} · {brl.format(Number(payment.valor))}</small> : <div><strong>{brl.format(Number(payment.valor))}</strong><small>{date.format(new Date(payment.dataPagamento))} · Brasília</small></div>}
       {payment.comprovanteUrl && canDownload ? <GlisseButton variant="secondary" disabled={Boolean(busy)} aria-label={`Baixar comprovante de ${brl.format(Number(payment.valor))}`} onClick={() => {
         if (lock.current) return
         lock.current = true; setBusy(payment.id); setError('')
