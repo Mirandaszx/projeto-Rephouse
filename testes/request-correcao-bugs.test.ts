@@ -107,7 +107,15 @@ for (const kind of ['despesas', 'tarefas'] as const) {
         const key = randomUUID(), body = payload(c.anaMember.id)
         assert.equal((await c.request('POST', `/api/${kind}`, c.admin.token, body, key)).status, 201)
         assert.equal((await c.request('POST', '/api/republicas/transferir-admin', c.admin.token, { membroId: c.anaMember.id })).status, 200)
-        assert.equal((await c.request('POST', `/api/${kind}`, c.admin.token, body, key)).status, 403)
+        const replay = await c.request('POST', `/api/${kind}`, c.admin.token, body, key)
+        if (kind === 'tarefas') assert.equal(replay.status, 403)
+        else {
+          // Desde 24/11/2026 o morador também cadastra despesas: o ex-admin segue autorizado e recebe a mesma resposta.
+          assert.equal(replay.status, 201)
+          // Sem vínculo ativo com a casa, a chave antiga não contorna a autorização.
+          assert.equal((await c.request('PATCH', `/api/membros/${c.own.id}`, c.ana.token, { ativo: false })).status, 200)
+          assert.equal((await c.request('POST', `/api/${kind}`, c.admin.token, body, key)).status, 409)
+        }
         assert.equal((await c.request('POST', '/api/auth/logout', c.admin.token, {})).status, 204)
         assert.equal((await c.request('POST', `/api/${kind}`, c.admin.token, body, key)).status, 401)
         assert.equal(await c.db.operacaoCriacao.count(), 1)

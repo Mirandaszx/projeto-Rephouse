@@ -123,7 +123,7 @@ test('migração: jornada HTTP, privacidade, exclusão e concorrência', { skip:
       expense = created.body
       assert.deepEqual(expense.rateios.map(r => r.valorDevido),['50.00','50.00'])
       assert.equal((await request('GET',`/api/despesas/${expense.id}`,adminB.token)).status,404)
-      assert.equal((await request('POST','/api/despesas',morador.token,{titulo:'Invasão',categoria:'OUTROS',valorTotal:'1.00',vencimento:'2030-01-15',membroIds:[membro.id]})).status,403)
+      // Quem pode cadastrar e corrigir despesas é coberto em request-financeiro.test.ts (morador cadastra desde 24/11/2026).
     })
     const ownRateio = () => expense.rateios.find(r => r.membroId === membro.id)!
     await t.test('todas as famílias de rotas MASTER recusam NORMAL e ADMIN e não alteram o banco', async () => {
@@ -165,7 +165,8 @@ test('migração: jornada HTTP, privacidade, exclusão e concorrência', { skip:
       assert.equal(edited.status,200)
       assert.equal(edited.body.rateios[0]!.valorDevido,'100.00')
       assert.equal((await request<{statusCalculado:string}>('GET',path,adminB.token)).body.statusCalculado,'VENCIDA')
-      assert.equal((await request('PATCH',path,morador.token,{titulo:'Invasão'})).status,403)
+      // De outra casa: 404, como para o admin abaixo; não revela que a despesa existe.
+      assert.equal((await request('PATCH',path,morador.token,{titulo:'Invasão'})).status,404)
       assert.equal((await request('PATCH',path,admin.token,{valorTotal:'5.00'})).status,404)
       const rateio = edited.body.rateios[0]!
       assert.equal((await request('POST','/api/pagamentos',adminB.token,{rateioId:rateio.id,valor:'10.00'},randomUUID())).status,201)

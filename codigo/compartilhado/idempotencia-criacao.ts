@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { Prisma, type PrismaClient, type Usuario } from '../gerado/prisma/client.js'
-import { withActor, republicContext, requireAdmin, type Actor } from './context.js'
+import { withActor, republicContext, type Actor } from './context.js'
 import { AppError } from './http/app-error.js'
 import { jsonValue } from './http/validation.js'
 
@@ -36,8 +36,8 @@ export async function executarCriacao<T extends { id: string }>(db: PrismaClient
   authorize?: (tx: Prisma.TransactionClient, user: Usuario, republicaId: string) => Promise<void>): Promise<PublicJson<T>> {
   const operation = () => withActor(db, actor, async (tx, user) => {
     const house = await republicContext(tx, user, scope)
-    // Despesas continuam administrativas; tarefas podem ser criadas por moradores.
-    if (kind === 'DESPESA') requireAdmin(user, house)
+    // Despesas e tarefas podem ser criadas por qualquer morador ativo: republicContext já exige o vínculo
+    // (decisão de 24/11/2026 para o Modo simples). Corrigir uma despesa continua restrito no serviço.
     await authorize?.(tx, user, house.id)
     const hash = createHash('sha256').update(JSON.stringify([house.id, normalized])).digest('hex')
     if (key) {

@@ -15,14 +15,13 @@ type Notice = Schemas['Notificacao']
 const errorCode = (value: unknown) => (value as {error:{code:string}}).error.code
 
 describe('Tarefas compartilhadas e notificações por HTTP real', () => {
-  it('quando um morador cria, então deixa disponível ou assume para si, sem atribuir a outros nem criar despesas', async () => {
+  it('quando um morador cria, então deixa disponível ou assume para si, sem atribuir a outros', async () => {
     const c = await contextoCasa()
     try {
       const available = await c.request<Task>('POST','/api/tarefas',c.ana.token,{titulo:'Varrer a casa'})
       assert.equal(available.status,201); assert.equal(available.body.responsavelId,null); assert.equal(available.body.criadorId,c.ana.usuario.id)
       assert.equal((await c.request<Task>('POST','/api/tarefas',c.ana.token,{titulo:'Cuidar das plantas',responsavelId:c.anaMember.id})).status,201)
       assert.equal((await c.request('POST','/api/tarefas',c.ana.token,{titulo:'Atribuição indevida',responsavelId:c.brunoMember.id})).status,403)
-      assert.equal((await c.request('POST','/api/despesas',c.ana.token,{titulo:'Indevida',categoria:'Casa',valorTotal:'10.00',vencimento:'2099-01-01',membroIds:[c.anaMember.id]})).status,403)
       assert.equal(await c.db.tarefa.count(),2)
       assert.equal(await c.db.eventoNotificacao.count({where:{categoria:'TAREFAS'}}),2)
       assert.equal(await c.db.notificacao.count({where:{evento:{categoria:'TAREFAS'},membroId:c.anaMember.id}}),0)
@@ -169,6 +168,30 @@ describe('Tarefas compartilhadas e notificações por HTTP real', () => {
       assert.equal((await c.request<Page<Notice>>('GET','/api/notificacoes?categoria=DESPESAS',c.ana.token)).body.paginacao.totalItens,0)
       await processDueNotifications(c.db,today)
       assert.equal(await c.db.eventoNotificacao.count({where:{categoria:'DESPESAS'}}),1)
+    }finally{await c.close()}
+  })
+  it('quando a despesa já tem aviso, então corrige valor e participantes sem apagar o aviso, mas não retira quem foi avisado',async()=>{
+    const c=await contextoCasa()
+    try{
+      const today=civilDate()
+      const expense=await c.expense(c.admin,[c.anaMember.id,c.brunoMember.id],{vencimento:addDays(today,3)})
+      await processDueNotifications(c.db,today)
+      const notices=await c.db.eventoNotificacao.count({where:{categoria:'DESPESAS'}})
+      assert.ok(notices>0)
+      const path=`/api/despesas/${expense.id}`
+      const shares=()=>c.db.rateioDespesa.findMany({where:{despesaId:expense.id},orderBy:{membroId:'asc'}})
+      const corrected=await c.request('PATCH',path,c.admin.token,{valorTotal:'90.00'})
+      assert.equal(corrected.status,200)
+      assert.deepEqual((await shares()).map(s=>s.valorDevido.toFixed(2)),['45.00','45.00'])
+      const added=await c.request('PATCH',path,c.admin.token,{membroIds:[c.anaMember.id,c.brunoMember.id,c.own.id]})
+      assert.equal(added.status,200); assert.equal((await shares()).length,3)
+      const removedUnnotified=await c.request('PATCH',path,c.admin.token,{membroIds:[c.anaMember.id,c.brunoMember.id]})
+      assert.equal(removedUnnotified.status,200); assert.equal((await shares()).length,2)
+      const before=await shares()
+      const removedNotified=await c.request('PATCH',path,c.admin.token,{membroIds:[c.brunoMember.id]})
+      assert.equal(removedNotified.status,409); assert.equal(errorCode(removedNotified.body),'DUE_NOTICE_SENT')
+      assert.deepEqual(await shares(),before)
+      assert.equal(await c.db.eventoNotificacao.count({where:{categoria:'DESPESAS'}}),notices)
     }finally{await c.close()}
   })
   it('quando conecta dois servidores, então SSE transmite só mudanças próprias e sincroniza leitura entre abas',async()=>{

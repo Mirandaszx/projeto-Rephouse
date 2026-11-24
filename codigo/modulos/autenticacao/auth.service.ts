@@ -1,4 +1,5 @@
-import { verify } from 'argon2'
+import { randomBytes } from 'node:crypto'
+import { verify, hash, argon2id } from 'argon2'
 import { SignJWT, jwtVerify } from 'jose'
 import type { PrismaClient, Usuario } from '../../gerado/prisma/client.js'
 import { withActor, type Actor } from '../../compartilhado/context.js'
@@ -11,6 +12,15 @@ import { createEmailService, type EmailProof } from './email.service.js'
 import type { EmailOptions } from '../../infraestrutura/email/resend.js'
 import { notifyMembership } from '../notificacoes/notificacoes.service.js'
 import { fotoPublica, fotoSelect } from '../perfil/foto.service.js'
+
+// Hash descartável: conta inexistente ou sem senha custa o mesmo Argon2 que uma senha errada,
+// para o tempo de resposta não revelar quais e-mails têm conta.
+let hashFicticio: Promise<string> | undefined
+const conferirSemConta = async (senha: string) => {
+  hashFicticio ??= hash(randomBytes(32).toString('base64url'), { type: argon2id })
+  await verify(await hashFicticio, senha).catch(() => false)
+  return false
+}
 
 function publicUser(user: Usuario) {
   const { id, nome, email, tipoUsuario, ativo, criadoEm } = user
@@ -42,7 +52,8 @@ export function createAuthService(db: PrismaClient, secret: string, googleOption
     },
     async login(input: LoginInput) {
       const user = await repository.buscarPorEmail(db, input.email)
-      if (!user || !user.ativo || user.excluidoEm || !user.senhaHash || !await verify(user.senhaHash, input.senha).catch(() => false)) {
+      const senhaValida = user?.senhaHash ? await verify(user.senhaHash, input.senha).catch(() => false) : await conferirSemConta(input.senha)
+      if (!user || !user.ativo || user.excluidoEm || !senhaValida) {
         throw new AppError(401, 'INVALID_CREDENTIALS', 'E-mail ou senha inválidos.')
       }
       return { token: await token(user), usuario: publicUser(user) }

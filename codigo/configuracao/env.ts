@@ -9,6 +9,8 @@ const environmentSchema = z.object({
   }, 'Informe um fuso IANA válido.'),
   HOST: z.string().min(1).default('0.0.0.0'),
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
+  // Quantos proxies confiáveis ficam na frente da API (Vite ou Nginx = 1). Com 0, X-Forwarded-For é ignorado.
+  TRUST_PROXY: z.coerce.number().int().min(0).max(3).default(0),
   JWT_SECRET: z.string().min(32),
   GOOGLE_CLIENT_ID: z.preprocess(value => value === '' ? undefined : value, z.string().regex(/^[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/).optional()),
   RESEND_API_KEY: z.preprocess(value => value === '' ? undefined : value, z.string().regex(/^re_[A-Za-z0-9_-]+$/).optional()),
