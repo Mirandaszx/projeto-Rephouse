@@ -2,7 +2,7 @@ import ErrorNotice from '../interno/ErrorNotice'
 import { uncertainCreationMessage } from '../interno/feedback'
 import { errorFeedback } from '../interno/feedback'
 import type { Feedback } from '../interno/feedback'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { request, brl as money } from '../api'
 import CopyInvite from './CopyInvite'
@@ -11,7 +11,7 @@ import { GlisseButton } from '../rebuild/GlisseButton'
 import { SegmentedControl } from 'glisse'
 import { HaloDropzone } from '../rebuild/vendor/cult-halo-dropzone'
 import { AnimatedField, DateField } from '../rebuild/Fields'
-import { LogOut, ReceiptText, UserRoundPlus, Settings, Wallet, House as HouseIcon, KeyRound } from 'lucide-react'
+import { Check, ReceiptText, UserRoundPlus, House as HouseIcon, KeyRound } from 'lucide-react'
 import Tasks from './Tasks'
 import Overview, { type Expense, type Share } from './Overview'
 import AppearanceControl from '../aparencia/AppearanceControl'
@@ -38,6 +38,11 @@ import { useWorkspaceTransition } from '../interno/useWorkspaceTransition'
 import { useWorkspaceNavigation } from '../interno/useWorkspaceNavigation'
 import { WorkspacePage } from '../interno/WorkspacePage'
 import { allowsSurfaceMotion, useDialogMotion } from '../interno/useDialogMotion'
+import { MonthFilter } from '../gestao/MonthFilter'
+import { ChoiceSelect } from '../rebuild/ChoiceSelect'
+import { AccountMenu } from '../interno/AccountMenu'
+import { useModo } from '../aparencia/modo'
+import SimpleOverview from './SimpleOverview'
 import SuccessNotice, { type Notice } from '../interno/SuccessNotice'
 import NotificationsBell from '../notificacoes/NotificationsBell'
 import { useNotifications } from '../notificacoes/useNotifications'
@@ -50,6 +55,12 @@ export default function Republica() {
   const [token] = useState(() => sessionStorage.getItem('rephouse-token') || '')
   const [filter, setFilter] = useState<ExpenseFilter>('Todas')
   const [competence, setCompetence] = useState('')
+  const { modo, change: setModo } = useModo()
+  // A troca de modo feita aqui anima só o bloco novo e leva o foco até ele; trocas vindas de outra aba não.
+  const [modeEntering, setModeEntering] = useState(false)
+  const modeView = useRef<HTMLDivElement>(null)
+  const changeModo = useCallback((value: 'simples' | 'completo') => { setModeEntering(true); setModo(value) }, [setModo])
+  useEffect(() => { if (modeEntering) modeView.current?.focus({ preventScroll: true }) }, [modo, modeEntering])
   const [financialScope, setFinancialScope] = useState('CASA')
   const [newExpenseDue, setNewExpenseDue] = useState('')
   const [newExpenseTotal, setNewExpenseTotal] = useState('')
@@ -178,7 +189,7 @@ export default function Republica() {
   </main></div>
 
   const { user, house, dashboard, members, expenses } = home
-  if (accountRoute) return <div className="republica rep-internal rep-account-shell"><main className="rep-main" tabIndex={-1}>
+  if (accountRoute && !home.house) return <div className="republica rep-internal rep-account-shell"><main className="rep-main" tabIndex={-1}>
     <header className="rep-account-header"><WorkspaceBrand /><nav aria-label="Sua conta"><a href="/republica">Voltar à república</a><a href="/republica/perfil" aria-current={profile ? 'page' : undefined}>Meu perfil</a><a href="/republica/financeiro" aria-current={personal ? 'page' : undefined}>Meu financeiro</a><AppearanceControl compact manualOnly />{bell}<button className="rep-logout" disabled={busy} onClick={() => void logout()}>Sair</button></nav></header>
     {error && <div><ErrorNotice error={error} /><GlisseButton variant="secondary" disabled={loading} onClick={refresh}>Tentar novamente</GlisseButton></div>}
     {routePending ? !error && <p role="status">Carregando sua conta…</p> : <WorkspacePage key={currentPath} animate={navigation.animate} focus={navigation.focus}>
@@ -186,7 +197,7 @@ export default function Republica() {
     {profile ? <Profile account={user} token={token} onChanged={refresh} /> : <PersonalFinance token={token} currentHouseId={user.membro?.republicaId} />}
     </WorkspacePage>}
     {taskNotice}
-    {detailId&&<ExpenseDetails id={detailId} token={token} members={members} memberId={user.membro?.id} canManage={Boolean(house&&house.adminId===user.id)} onChanged={refresh} onClose={()=>setDetailId(null)}/>}
+    {detailId&&<ExpenseDetails id={detailId} token={token} members={members} memberId={user.membro?.id} userId={user.id} canManage={Boolean(house&&house.adminId===user.id)} onChanged={refresh} onClose={()=>setDetailId(null)}/>}
   </main></div>
   if (user.tipoUsuario === 'USUARIO_MASTER') return <Master token={token} onLogout={logout} />
   if (currentPath === '/admin') return <div className="republica rep-internal">
@@ -211,38 +222,44 @@ export default function Republica() {
   </main></div>
 
   const canCreate = user.tipoUsuario === 'USUARIO_ADMIN' && house.adminId === user.id
+  // Qualquer morador ativo cadastra contas (decisão de 24/11/2026); administrar a casa continua com o admin.
+  const canAddExpense = Boolean(user.membro)
   const financialPending = currentPath === '/republica/despesas' && home.queryKey !== financialKey
-  const role = house.adminId === user.id ? 'Administrador' : 'Morador'
-  const paid = (expense: Expense) => expense.rateios.every(share => remaining(share) === 0)
+  // Papéis em linguagem neutra (vale para qualquer pessoa).
+  const role = house.adminId === user.id ? 'Administra a casa' : 'Mora na casa'
   const visible = expenses
   const month = new Intl.DateTimeFormat('pt-BR', { month: 'long', timeZone: 'America/Sao_Paulo' }).format(new Date())
 
-  return <div className="republica rep-internal">
+  return <div className="republica rep-internal" data-modo={modo}>
     <a className="workspace-skip" href="#conteudo-interno">Ir para o conteúdo</a>
-    <RepublicNavigation user={user} house={house} token={token} activePath={page.path} role={role} busy={busy} onLogout={logout} />
+    <RepublicNavigation user={user} house={house} token={token} activePath={accountRoute ? currentPath : page.path} role={role} busy={busy} onLogout={logout} />
     <main className="rep-main rep-workspace" id="conteudo-interno" tabIndex={-1} aria-busy={loading || (routePending && !error)}>
-      <div className="rep-mobile-profile"><div className="rep-profile"><PhotoAvatar name={user.nome} userId={user.id} photo={user.foto} token={token} context={house.id} className="rep-avatar" /><div><strong>{user.nome}</strong><small>{role}</small></div></div><div className="rep-mobile-actions"><a className="rep-mobile-account-link" aria-label="Meu perfil" href="/republica/perfil"><PhotoAvatar name={user.nome} userId={user.id} photo={user.foto} token={token} context={house.id} /></a><a className="rep-mobile-account-link" aria-label="Meu financeiro" href="/republica/financeiro"><Wallet size={18} /></a><a className="rep-mobile-account-link" aria-label="Configurações da república" href="/republica/configuracoes"><Settings size={18} /></a><button className="rep-logout" disabled={busy} onClick={() => void logout()}><LogOut size={17} aria-hidden="true" />Sair</button></div></div>
+      {/* Topo do celular: nome da casa e um único avatar com o menu da conta. */}
+      <div className="rep-mobile-profile"><div className="rep-mobile-house"><strong>{house.nome}</strong><small>{role}</small></div><AccountMenu avatar={<PhotoAvatar name={user.nome} userId={user.id} photo={user.foto} token={token} context={house.id} />} name={user.nome} role={role} busy={busy} onLogout={() => void logout()}><button type="button" className="account-menu-mode" onClick={() => changeModo(modo === 'simples' ? 'completo' : 'simples')}>{modo === 'simples' ? 'Usar modo completo' : 'Usar modo simples'}</button></AccountMenu></div>
       {error && <div className="rep-error"><ErrorNotice error={error} /><GlisseButton variant="secondary" disabled={loading} onClick={refresh}>Tentar novamente</GlisseButton></div>}
       {loading && !routePending && <p role="status">Atualizando sua república…</p>}
       {routePending ? !error && <p className="workspace-route-loading" role="status">Carregando página…</p> : <WorkspacePage key={currentPath} animate={navigation.animate} focus={navigation.focus}>
-      <PageHeading context={house.nome + ' · ' + month} title={overview ? 'Oi, ' + user.nome.split(' ')[0] + '.' : page.label} description={overview ? 'Acompanhe as contas e as tarefas da república.' : people ? 'Conheça os moradores da sua república.' : tasks ? 'Distribua os afazeres e acompanhe o que já foi feito.' : settings ? 'Cuide dos dados, da administração e do seu vínculo com a casa.' : 'Acompanhe as contas da casa e registre seus pagamentos.'}>
+      <PageHeading context={accountRoute ? 'Sua conta' : house.nome + ' · ' + month} title={accountRoute ? (profile ? 'Meu perfil' : 'Meu financeiro') : overview ? 'Oi, ' + user.nome.split(' ')[0] + '.' : page.label} description={accountRoute ? (profile ? 'Cuide dos seus dados e do acesso à conta.' : 'Seu histórico acompanha você em cada casa.') : overview ? (modo === 'simples' ? 'Aqui está o essencial da sua casa.' : 'Acompanhe as contas e as tarefas da república.') : people ? 'Conheça os moradores da sua república.' : tasks ? 'Distribua os afazeres e acompanhe o que já foi feito.' : settings ? 'Cuide dos dados, da administração e do seu vínculo com a casa.' : 'Acompanhe as contas da casa e registre seus pagamentos.'}>
         <AppearanceControl compact manualOnly />
         {bell}
-        {overview ? <a className="workspace-profile-link" href="/republica/perfil" aria-label="Meu perfil" title="Meu perfil"><PhotoAvatar name={user.nome} userId={user.id} photo={user.foto} token={token} context={house.id} /></a>
-          : !people && !tasks && !settings && canCreate && <GlisseButton disabled={busy || loading || Boolean(error)} onClick={() => open(null)}>＋ Nova despesa</GlisseButton>}
+        {overview && !accountRoute ? <a className="workspace-profile-link" href="/republica/perfil" aria-label="Meu perfil" title="Meu perfil"><PhotoAvatar name={user.nome} userId={user.id} photo={user.foto} token={token} context={house.id} /></a>
+          : !people && !tasks && !settings && !accountRoute && canAddExpense && <GlisseButton disabled={busy || loading || Boolean(error)} onClick={() => open(null)}>＋ Nova despesa</GlisseButton>}
       </PageHeading>
-      {settings ? <HouseSettings token={token} house={house} members={members} canManage={canCreate} onChanged={refresh} /> : overview ? dashboard && <Overview token={token} revision={revision} memberId={user.membro?.id} members={members} expenses={expenses} dashboard={dashboard} disabled={busy || loading || Boolean(error)} onPay={open} onCreateExpense={canCreate ? () => open(null) : undefined} onExpired={expired} /> : tasks ? <Tasks token={token} members={members} memberId={user.membro?.id} userId={user.id} sharedEnabled={notifications.enabled} canManage={canCreate} onExpired={expired} /> : people ? <><Residents token={token} members={members} adminId={house.adminId} canManage={canCreate} onChanged={refresh} />{house.codigoEntrada && <section className="rep-invite" aria-labelledby="invite-title"><div><h2 id="invite-title"><UserRoundPlus size={19} aria-hidden="true" />Convide um morador</h2><p>Compartilhe o código com quem vai morar com você.</p></div><CopyInvite code={house.codigoEntrada} /></section>}</> : <section className="rep-expenses" id="despesas">
+      {accountRoute ? (profile ? <Profile account={user} token={token} onChanged={refresh} /> : <PersonalFinance token={token} currentHouseId={user.membro?.republicaId} />) : settings ? <HouseSettings token={token} house={house} members={members} canManage={canCreate} onChanged={refresh} /> : overview ? dashboard && <div key={modo} ref={modeView} className="mode-view" tabIndex={-1} aria-label={modo === 'simples' ? 'Modo simples' : 'Modo completo'} data-entering={modeEntering ? '' : undefined} onTransitionEnd={event => { if (event.target === event.currentTarget) setModeEntering(false) }}>{modo === 'simples'
+        ? <SimpleOverview memberId={user.membro?.id} expenses={expenses} owed={Math.round(Number(dashboard.financeiroIndividualGeral?.saldoPendente ?? '0') * 100)} disabled={busy || loading || Boolean(error)} onPay={open} onCreateExpense={canAddExpense ? () => open(null) : undefined} onFullMode={() => changeModo('completo')} />
+        : <><button type="button" className="mode-switch-link" onClick={() => changeModo('simples')}>Usar modo simples</button><Overview token={token} revision={revision} memberId={user.membro?.id} members={members} expenses={expenses} dashboard={dashboard} disabled={busy || loading || Boolean(error)} onPay={open} onCreateExpense={canAddExpense ? () => open(null) : undefined} onExpired={expired} /></>}</div> : tasks ? <Tasks token={token} members={members} memberId={user.membro?.id} userId={user.id} sharedEnabled={notifications.enabled} canManage={canCreate} onExpired={expired} /> : people ? <><Residents token={token} members={members} adminId={house.adminId} canManage={canCreate} onChanged={refresh} />{house.codigoEntrada && <section className="rep-invite" aria-labelledby="invite-title"><div><h2 id="invite-title"><UserRoundPlus size={19} aria-hidden="true" />Convide um morador</h2><p>Compartilhe o código com quem vai morar com você.</p></div><CopyInvite code={house.codigoEntrada} /></section>}</> : <section className="rep-expenses" id="despesas">
         <SectionHeading title="Todas as despesas" description={`${visible.length} ${visible.length === 1 ? 'registro' : 'registros'} neste filtro`}><ExpenseFilters value={filter} onChange={setFilter} /></SectionHeading>
-        <div className="finance-controls"><label>Mês do vencimento<input type="month" value={competence} onChange={event => setCompetence(event.target.value)} /></label>{competence && <GlisseButton variant="secondary" onClick={() => setCompetence('')}>Todos os meses</GlisseButton>}<label>Valores e filtros<select value={financialScope} onChange={event => setFinancialScope(event.target.value)}><option value="CASA">Contas da casa</option><option value="PESSOAL">Minha parte</option></select></label></div>
-        <div ref={results} className="workspace-results">{financialPending ? <p role="status">Carregando despesas deste filtro…</p> : visible.length === 0 ? <EmptyState title={filter !== 'Todas' || competence || financialScope !== 'CASA' ? 'Nenhuma despesa neste filtro.' : 'Nenhuma despesa cadastrada na casa.'} /> : <><div className="workspace-expense-columns" aria-hidden="true"><span>Despesa</span><span>Vencimento</span><span>Valor e sua parte</span><span>Ação</span></div><ul>{visible.map(expense => {
+        <div className="finance-controls"><MonthFilter label="Mês do vencimento" value={competence} onChange={setCompetence} />{competence && <GlisseButton variant="secondary" onClick={() => setCompetence('')}>Todos os meses</GlisseButton>}<ChoiceSelect label="Valores e filtros" value={financialScope} onChange={setFinancialScope} items={[{ value: 'CASA', label: 'Contas da casa' }, { value: 'PESSOAL', label: 'Minha parte' }]} /></div>
+        <div ref={results} className="workspace-results">{financialPending ? <p role="status">Carregando despesas deste filtro…</p> : visible.length === 0 ? <EmptyState title={filter !== 'Todas' || competence || financialScope !== 'CASA' ? 'Nenhuma despesa neste filtro.' : 'Nenhuma despesa cadastrada na casa.'} /> : <><div className="workspace-expense-columns" aria-hidden="true"><span>Despesa</span><span>Vencimento</span><span>Valor</span><span>Sua parte</span></div><ul>{visible.map(expense => {
           const share = expense.rateios.find(item => item.membroId === user.membro?.id)
           const state = financialState(expense.vencimento, expense.rateios.reduce((total, item) => total + remaining(item), 0), expense.rateios.reduce((total, item) => total + Number(item.valorPago), 0), expense.dataReferencia, expense.situacaoVencimento)
-          const ownState = share ? financialState(expense.vencimento, remaining(share), Number(share.valorPago), expense.dataReferencia, share.situacaoVencimento) : null
           return <li className="rh-row-enter" key={expense.id}>
             <div className="rep-expense-name"><span aria-hidden="true"><ReceiptText size={19} /></span><div><button type="button" className="rep-expense-detail-link" aria-label={`Detalhes de ${expense.titulo}`} onClick={() => setDetailId(expense.id)}>{expense.titulo}</button><small>{expense.categoria}{expense.recorrencia ? ' · Recorrente' : ''}</small></div></div>
             <div className="workspace-expense-due"><time dateTime={expense.vencimento.slice(0, 10)}>{expense.vencimento.slice(0, 10).split('-').reverse().join('/')}</time><Badge tone={state.tone}>{state.label}</Badge></div>
-            <div className="rep-amount"><strong>{money.format(Number(expense.valorTotal))}</strong><small>{share ? 'Seu saldo: ' + money.format(remaining(share) / 100) : 'Fora do seu rateio'}</small>{ownState && <small>Sua parte: {ownState.label}{share && Number(share.valorPago) > 0 && remaining(share) > 0 ? ' · Parcial' : ''}</small>}</div>
-            {share && remaining(share) > 0 ? <GlisseButton variant="secondary" disabled={busy || loading || Boolean(error)} onClick={() => open(expense, share)}>Registrar pagamento</GlisseButton> : <span className="rep-paid">{paid(expense) ? 'Paga' : share ? 'Sua parte paga' : 'Pendente'}</span>}
+            <div className="rep-amount"><strong>{money.format(Number(expense.valorTotal))}</strong></div>
+            {/* Uma só situação por linha (o selo do vencimento); aqui, só o que cabe a você. */}
+            {share && remaining(share) > 0 ? <div className="rep-share-due"><small>{Number(share.valorPago) > 0 ? 'Parcial · faltam ' : ''}{money.format(remaining(share) / 100)}</small><GlisseButton variant="secondary" disabled={busy || loading || Boolean(error)} onClick={() => open(expense, share)}>Registrar pagamento</GlisseButton></div>
+              : <span className="rep-share-done">{share ? <><Check size={16} aria-hidden="true" />Sua parte paga</> : 'Fora da divisão'}</span>}
           </li>
         })}</ul></>}</div>
         <RecurringExpenses token={token} members={members} revision={revision} canManage={canCreate} onChanged={refresh} onCreate={() => open(null)} />
@@ -251,7 +268,7 @@ export default function Republica() {
       {taskNotice}
       <div className="rep-status" role="status">{notice && <SuccessNotice notice={notice} onDismiss={dismissNotice} />}</div>
     </main>
-    {detailId && <ExpenseDetails id={detailId} token={token} members={members} memberId={user.membro?.id} canManage={canCreate} onChanged={refresh} onClose={() => setDetailId(null)} />}
+    {detailId && <ExpenseDetails id={detailId} token={token} members={members} memberId={user.membro?.id} userId={user.id} canManage={canCreate} onChanged={refresh} onClose={() => setDetailId(null)} />}
     <dialog ref={dialog} className="rep-dialog" aria-labelledby="rep-dialog-title" onCancel={event => { event.preventDefault(); if (!submitting.current) void closeDialog() }}>
       <form key={editing?.share.id ?? 'new-' + receiptRevision} onSubmit={save} onChange={() => { paymentKey.current = crypto.randomUUID() }}>
         <h2 id="rep-dialog-title">{editing ? 'Registrar pagamento' : 'Nova despesa'}</h2>

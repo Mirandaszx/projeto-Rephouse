@@ -55,7 +55,7 @@ export default function ProfilePhoto({ account, token, onChanged }: { account: A
   return <section ref={section} className="rep-management-card profile-photo-section" aria-labelledby="profile-photo-title">
     <PhotoAvatar name={account.nome} userId={account.id} photo={account.foto} token={token} context={account.membro?.republicaId} className="profile-photo-large" />
     <div className="profile-photo-controls"><h2 id="profile-photo-title">Foto de perfil</h2><p>Visível aos moradores da sua república.</p>
-      <p id="photo-formats" className="rep-management-note">JPEG, PNG ou WebP sem animação. Até 5 MiB e 25 MP.</p>
+      <p id="photo-formats" className="rep-management-note">Foto de até 5 MB, em JPG, PNG ou WebP.</p>
       {!supported && <p className="rep-management-note">Envio de foto indisponível nesta versão da API.</p>}
       <div className="rep-management-actions"><GlisseButton disabled={reading || !supported} aria-describedby="photo-formats" onClick={event => { opener.current = event.currentTarget; input.current?.click() }}>{reading ? 'Abrindo foto…' : account.foto ? 'Trocar foto' : 'Adicionar foto'}</GlisseButton>
         {account.foto && <GlisseButton variant="secondary" disabled={reading} onClick={event => { opener.current = event.currentTarget; removed.current = false; setRemoving(true) }}>Remover foto</GlisseButton>}</div>

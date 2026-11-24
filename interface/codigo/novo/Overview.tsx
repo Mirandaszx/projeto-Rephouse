@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { ArrowUpRight, CheckCheck, ClipboardCheck, Clock3, ReceiptText, Wallet } from 'lucide-react'
+import { ArrowUpRight, CheckCheck, ClipboardCheck, Clock3, ReceiptText, UserRound, Wallet } from 'lucide-react'
 import { request, brl as money } from '../api'
 import { GlisseButton } from '../rebuild/GlisseButton'
 import { Badge, EmptyState, PersonMark, SectionHeading } from '../interno/WorkspaceUI'
 import { brasilDay, financialState } from '../interno/presentation'
+import { MonthlyExpenses, MyMonth } from './OverviewCharts'
 import './overview.css'
 
 export type Share = { id: string; membroId: string; valorDevido: string; valorPago: string; situacaoVencimento?: string; valorRestante?: string }
@@ -58,15 +59,17 @@ export default function Overview({ token, revision, memberId, members, expenses,
 
   return <>
     <section className="rep-metrics" aria-label="Resumo da república">
-      <div className="rep-metric rep-metric-personal"><span className="rep-metric-label"><Wallet size={20} aria-hidden="true" />Sua parte a pagar</span><strong>{money.format(personal / 100)}</strong><div className="rep-personal-foot"><small>{openShares} {openShares === 1 ? 'rateio' : 'rateios'} em aberto</small><a href="/republica/financeiro">Meu financeiro <ArrowUpRight size={17} aria-hidden="true" /></a></div></div>
+      <div className="rep-metric rep-metric-personal"><span className="rep-metric-label"><Wallet size={20} aria-hidden="true" />Sua parte a pagar</span>{/* Parte zerada não é alerta: mostra que está tudo certo, sem um R$ 0,00 em destaque. */}
+        {personal > 0 ? <strong>{money.format(personal / 100)}</strong> : <strong className="rep-metric-settled"><CheckCheck size={26} aria-hidden="true" />Você está em dia</strong>}<div className="rep-personal-foot"><small>{personal > 0 ? `${openShares} ${openShares === 1 ? 'conta' : 'contas'} em aberto` : 'Nenhuma conta sua em aberto'}</small><a href="/republica/financeiro">Meu financeiro <ArrowUpRight size={17} aria-hidden="true" /></a></div></div>
       <div className="rep-metric-strip">
       <div className="rep-metric"><span className="rep-metric-label"><ReceiptText size={18} aria-hidden="true" />Em aberto na casa</span><strong>{money.format(Number(dashboard.totalPendente))}</strong><small>Pendências da república</small></div>
       <div className="rep-metric"><span className="rep-metric-label"><CheckCheck size={18} aria-hidden="true" />Pago neste mês</span><strong>{money.format(Number(dashboard.totalPagoNoMes))}</strong><small>Pagamentos da casa</small></div>
       <div className="rep-metric"><span className="rep-metric-label"><ClipboardCheck size={18} aria-hidden="true" />Tarefas abertas</span><strong>{dashboard.tarefasAbertas}</strong><a href="/republica/tarefas">Acompanhar tarefas <ArrowUpRight size={14} aria-hidden="true" /></a></div>
       </div>
     </section>
-    {dashboard.financeiroIndividual && <div className="finance-period-summary" aria-label="Suas contas do mês"><span>Vencimento em {dashboard.financeiroIndividual.competencia?.split('-').reverse().join('/')}</span><span>Sua parte: {money.format(Number(dashboard.financeiroIndividual.totalDevido))}</span><span>Pago dessas contas: {money.format(Number(dashboard.financeiroIndividual.totalPago))}</span><span>Saldo do mês: {money.format(Number(dashboard.financeiroIndividual.saldoPendente))}</span></div>}
-    {mine.length > 0 && <section className="finance-pending" aria-label="Minhas pendências"><SectionHeading title="Minhas pendências" description="Suas parcelas em aberto nesta república."><a href="/republica/financeiro">Ver meu histórico <ArrowUpRight size={15} aria-hidden="true" /></a></SectionHeading>{mine.map(({ expense, share }) => { const state = financialState(expense.vencimento, balance(share), Number(share.valorPago), expense.dataReferencia ?? dashboard.dataReferencia ?? today, share.situacaoVencimento ?? expense.situacaoVencimento); return <div className="finance-pending-row" key={share.id}><div><strong>{expense.titulo}</strong><small>Vence em {date(expense.vencimento)}</small><div className="finance-pending-statuses"><Badge tone={state.tone}>{state.label}</Badge>{Number(share.valorPago) > 0 && <Badge tone="warning">Pagamento parcial</Badge>}</div></div><strong>{money.format(Number(share.valorRestante ?? balance(share) / 100))}</strong><GlisseButton variant="secondary" disabled={disabled} onClick={() => onPay(expense, share)}>Registrar pagamento</GlisseButton></div>})}</section>}
+        {mine.length > 0 && <section className="finance-pending" aria-label="Minhas pendências"><SectionHeading title="Minhas pendências" description="Suas parcelas em aberto nesta república."><a href="/republica/financeiro">Ver meu histórico <ArrowUpRight size={15} aria-hidden="true" /></a></SectionHeading>{mine.map(({ expense, share }) => { const state = financialState(expense.vencimento, balance(share), Number(share.valorPago), expense.dataReferencia ?? dashboard.dataReferencia ?? today, share.situacaoVencimento ?? expense.situacaoVencimento); return <div className="finance-pending-row" key={share.id}><div><strong>{expense.titulo}</strong><small>Vence em {date(expense.vencimento)}</small><div className="finance-pending-statuses"><Badge tone={state.tone}>{state.label}</Badge>{Number(share.valorPago) > 0 && <Badge tone="warning">Pagamento parcial</Badge>}</div></div><strong>{money.format(Number(share.valorRestante ?? balance(share) / 100))}</strong><GlisseButton variant="secondary" disabled={disabled} onClick={() => onPay(expense, share)}>Registrar pagamento</GlisseButton></div>})}</section>}
+    {/* Gráficos da casa e do seu mês (ideia do frontend do colega, no estilo RepHouse). */}
+    {!emptyHouse && <div className="rep-overview-charts"><MonthlyExpenses expenses={expenses} today={dashboard.dataReferencia ?? today} />{dashboard.financeiroIndividual && <MyMonth summary={dashboard.financeiroIndividual} />}</div>}
     <div className="rep-overview-grid">
       <section className="rep-overview-panel" aria-labelledby="recent-expenses-title">
         <SectionHeading id="recent-expenses-title" title="Despesas recentes" description={mine.length ? 'Outros registros da casa.' : 'Os últimos registros da casa.'}><a href="/republica/despesas" aria-label="Ver todas as despesas">Ver todas <ArrowUpRight size={15} aria-hidden="true" /></a></SectionHeading>
@@ -75,15 +78,16 @@ export default function Overview({ token, revision, memberId, members, expenses,
           const paid = expense.rateios.every(item => balance(item) === 0)
           return <li key={expense.id}>
             <div className="rep-recent-name"><strong>{expense.titulo}</strong><small>{expense.categoria} · Vence em {date(expense.vencimento)}</small></div>
-            <div className="rep-recent-amount"><strong>{money.format(Number(expense.valorTotal))}</strong><small>{share ? 'Sua parte: ' + money.format(balance(share) / 100) : 'Fora do seu rateio'}</small></div>
-            <div className="rep-recent-action">{share && balance(share) > 0 ? <GlisseButton variant="secondary" disabled={disabled} onClick={() => onPay(expense, share)}>Registrar pagamento</GlisseButton> : <Badge tone={paid || share ? 'success' : 'warning'}>{paid ? 'Paga' : share ? 'Sua parte paga' : 'Pendente'}</Badge>}</div>
+            <div className="rep-recent-amount"><strong>{money.format(Number(expense.valorTotal))}</strong>{share && balance(share) > 0 && <small>Sua parte: {money.format(balance(share) / 100)}</small>}</div>
+            <div className="rep-recent-action">{share && balance(share) > 0 ? <GlisseButton variant="secondary" disabled={disabled} onClick={() => onPay(expense, share)}>Registrar pagamento</GlisseButton> : <span className="rep-share-done">{share ? <><CheckCheck size={16} aria-hidden="true" />Sua parte paga</> : paid ? 'Paga' : 'Fora da divisão'}</span>}</div>
           </li>
         })}</ul>}
       </section>
       <section className="rep-overview-panel" aria-labelledby="pending-tasks-title">
         <SectionHeading id="pending-tasks-title" title="Tarefas pendentes" description="Próximos afazeres da casa."><a href="/republica/tarefas" aria-label="Ver todas as tarefas">Ver todas <ArrowUpRight size={15} aria-hidden="true" /></a></SectionHeading>
         {error ? <div className="rep-panel-empty"><p role="alert">{error}</p><GlisseButton variant="secondary" onClick={() => { setError(''); setTasks(null); setAttempt(value => value + 1) }}>Tentar carregar tarefas</GlisseButton></div> : !pending ? <p className="rep-panel-loading" role="status">Carregando tarefas…</p> : !pending.length ? <EmptyState title="Tudo em dia nas tarefas." description="As próximas tarefas abertas aparecerão aqui." /> : <ul className="rep-pending-tasks">{pending.map(task => <li key={task.id}>
-          <PersonMark name={members.find(member => member.id === task.responsavelId)?.usuario.nome ?? '?'} userId={members.find(member => member.id === task.responsavelId)?.usuario.id} photo={members.find(member => member.id === task.responsavelId)?.usuario.foto} context={members.find(member => member.id === task.responsavelId)?.republicaId} token={token} /><div><strong>{task.titulo}</strong><div className="rep-pending-task-meta"><small>{task.responsavelId === memberId ? 'Você' : members.find(member => member.id === task.responsavelId)?.usuario.nome ?? 'Responsável indisponível'}</small><span><Clock3 size={14} aria-hidden="true" />{task.prazo ? date(task.prazo) : 'Sem prazo definido'}</span>{task.prazo && task.prazo.slice(0, 10) < today && <Badge tone="danger">Em atraso</Badge>}</div></div>
+          {(owner => owner ? <PersonMark name={owner.usuario.nome} userId={owner.usuario.id} photo={owner.usuario.foto} context={owner.republicaId} token={token} />
+            : <span className="person-mark-empty" aria-hidden="true"><UserRound size={18} /></span>)(members.find(member => member.id === task.responsavelId))}<div><strong>{task.titulo}</strong><div className="rep-pending-task-meta"><small>{task.responsavelId === memberId ? 'Você' : members.find(member => member.id === task.responsavelId)?.usuario.nome ?? (task.responsavelId ? 'Ex-morador' : 'Sem responsável')}</small><span><Clock3 size={14} aria-hidden="true" />{task.prazo ? date(task.prazo) : 'Sem prazo definido'}</span>{task.prazo && task.prazo.slice(0, 10) < today && <Badge tone="danger">Em atraso</Badge>}</div></div>
         </li>)}</ul>}
       </section>
     </div>

@@ -47,3 +47,8 @@
   .rep-internal .finance-filter-group{width:100%}
 }
 @media(max-width:719px){.rep-internal .finance-controls>*{max-width:100%}.rep-internal .finance-recurring{padding:14px}.rep-internal .finance-actions{align-items:stretch}.rep-internal .finance-actions button{white-space:normal}}
+/* Filtro de mês vazio: esconde as máscaras do navegador e mostra "Todos os meses" até receber foco. */
+.rep-internal .month-filter{position:relative;min-width:0}
+.rep-internal .month-filter[data-empty] input:not(:focus)::-webkit-datetime-edit{color:transparent}
+.rep-internal .month-filter-empty{position:absolute;inset-inline-start:13px;inset-block-end:22px;translate:0 50%;pointer-events:none;color:var(--app-text)}
+.rep-internal .month-filter:focus-within .month-filter-empty{display:none}

@@ -10,6 +10,8 @@ import { balance, civilDate, errorFeedback } from './types'
 import { Badge, EmptyState, SectionHeading } from '../interno/WorkspaceUI'
 import { financialState } from '../interno/presentation'
 import './financial.css'
+import { MonthFilter } from './MonthFilter'
+import { ChoiceSelect } from '../rebuild/ChoiceSelect'
 
 export default function PersonalFinance({ token, currentHouseId }: { token: string; currentHouseId?: string }) {
   const [items, setItems] = useState<PersonalShare[] | null>(null)
@@ -32,6 +34,9 @@ export default function PersonalFinance({ token, currentHouseId }: { token: stri
     return () => { active = false }
   }, [token, revision, month, situation, filterKey])
   const visibleItems = loadedFilter === filterKey ? items : null
+  // Em aberto primeiro (vencimento mais próximo), depois as quitadas (mais recentes primeiro).
+  const ordered = (shares: PersonalShare[]) => [...shares.filter(share => balance(share) > 0).sort((a, b) => a.despesa.vencimento.localeCompare(b.despesa.vencimento)),
+    ...shares.filter(share => balance(share) === 0).sort((a, b) => b.despesa.vencimento.localeCompare(a.despesa.vencimento))]
   // Agrupa somente a coleção retornada, preservando os IDs e o histórico original.
   const houses = new Map<string, { name: string; items: PersonalShare[] }>()
   for (const share of visibleItems ?? []) {
@@ -41,15 +46,17 @@ export default function PersonalFinance({ token, currentHouseId }: { token: stri
     houses.set(house.id, group)
   }
   return <div className="rep-management">
-    <div className="finance-controls"><label>Mês do vencimento<input type="month" value={month} onChange={event => setMonth(event.target.value)} /></label>{month && <GlisseButton variant="secondary" onClick={() => setMonth('')}>Todos os meses</GlisseButton>}<label>Situação das suas parcelas<select value={situation} onChange={event => setSituation(event.target.value)}><option value="TODAS">Todas</option><option value="PENDENTES">Pendentes</option><option value="PROXIMAS">Próximas do vencimento</option><option value="ATRASADAS">Atrasadas</option><option value="PAGAS">Pagas</option></select></label></div>
+    <div className="finance-controls"><MonthFilter label="Mês do vencimento" value={month} onChange={setMonth} />{month && <GlisseButton variant="secondary" onClick={() => setMonth('')}>Todos os meses</GlisseButton>}<ChoiceSelect label="Situação das suas parcelas" value={situation} onChange={setSituation} items={[{ value: 'TODAS', label: 'Todas' }, { value: 'PENDENTES', label: 'Pendentes' }, { value: 'PROXIMAS', label: 'Próximas do vencimento' }, { value: 'ATRASADAS', label: 'Atrasadas' }, { value: 'PAGAS', label: 'Pagas' }]} /></div>
     <p>{month ? `Contas com vencimento em ${month.split('-').reverse().join('/')}.` : 'Contas de todos os meses.'} Os pagamentos dessas contas contam mesmo quando feitos em outro mês.</p>
     {summary && loadedFilter === filterKey && <section className="workspace-finance-summary" aria-label="Resumo do seu financeiro"><div><span>{month ? 'Sua parte nas contas do mês' : 'Sua parte nas contas'}</span><strong>{brl.format(Number(summary.totalDevido))}</strong></div><div><span>Pago dessas contas</span><strong>{brl.format(Number(summary.totalPago))}</strong></div><div><span>{month ? 'Saldo dessas contas' : 'Seu saldo em aberto'}</span><strong>{brl.format(Number(summary.saldoPendente))}</strong></div></section>}
     <section className="rep-management-card workspace-finance-history"><SectionHeading title="Seu histórico financeiro" description="Suas partes, pagamentos e comprovantes de cada república." />
       {error && <><ErrorNotice error={error} /><GlisseButton variant="secondary" onClick={() => setRevision(value => value + 1)}>Tentar carregar financeiro</GlisseButton></>}
       {!visibleItems && !error && <p role="status">Carregando seu financeiro…</p>}
       {visibleItems?.length === 0 && <EmptyState title="Nenhuma despesa no seu histórico." />}
-      {Array.from(houses, ([id, group]) => <section className="workspace-house-history" key={id} aria-label={`Histórico de ${group.name}`}><div className="workspace-house-history-heading"><h3>{group.name}</h3><Badge tone={id === currentHouseId ? 'success' : 'neutral'}>{id === currentHouseId ? 'República atual' : 'Vínculo anterior'}</Badge></div><ul className="rep-management-list">{group.items.map(share => {
+      {Array.from(houses, ([id, group]) => <section className="workspace-house-history" key={id} aria-label={`Histórico de ${group.name}`}><div className="workspace-house-history-heading"><h3>{group.name}</h3><Badge tone={id === currentHouseId ? 'success' : 'neutral'}>{id === currentHouseId ? 'República atual' : 'Vínculo anterior'}</Badge></div><ul className="rep-management-list">{ordered(group.items).map(share => {
         const state = financialState(share.despesa.vencimento, balance(share), Number(share.valorPago), share.dataReferencia, share.situacaoVencimento)
+        // Conta quitada: uma linha com valor e situação, e o pagamento (com comprovante) logo abaixo.
+        if (balance(share) === 0) return <li key={share.id} className="finance-paid-row"><div className="rep-management-row"><div><h4>{share.despesa.titulo}</h4><small>{share.despesa.categoria} · Venceu em {civilDate(share.despesa.vencimento)}</small></div><div className="finance-paid-amount"><strong>{brl.format(Number(share.valorDevido))}</strong><Badge tone={state.tone}>{state.label}</Badge></div></div><Payments payments={share.pagamentos} token={token} compact /></li>
         return <li key={share.id}><div className="rep-management-row"><div><h4>{share.despesa.titulo}</h4><small>{share.despesa.categoria} · Vence em {civilDate(share.despesa.vencimento)}</small></div><Badge tone={state.tone}>{state.label}</Badge></div>
         <div className="rep-management-summary"><span>Sua parte: <strong>{brl.format(Number(share.valorDevido))}</strong></span><span>Pago: <strong>{brl.format(Number(share.valorPago))}</strong></span><span>Saldo: <strong>{brl.format(Number(share.valorRestante ?? balance(share)))}</strong></span>{share.pagamentoParcial && <span>Pagamento parcial</span>}</div>
         <Payments payments={share.pagamentos} token={token} />

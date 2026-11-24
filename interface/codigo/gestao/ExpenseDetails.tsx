@@ -11,8 +11,8 @@ import { RecurrenceFields } from './RecurringExpenses'
 import { brasilDay, financialState } from '../interno/presentation'
 import MemberPicker from '../rebuild/MemberPicker'
 
-type Props = { id: string; token: string; members: Member[]; memberId?: string; canManage: boolean; onChanged: () => void; onClose: () => void }
-export default function ExpenseDetails({ id, token, members, memberId, canManage, onChanged, onClose }: Props) {
+type Props = { id: string; token: string; members: Member[]; memberId?: string; userId?: string; canManage: boolean; onChanged: () => void; onClose: () => void }
+export default function ExpenseDetails({ id, token, members, memberId, userId, canManage, onChanged, onClose }: Props) {
   const [expense, setExpense] = useState<ExpenseDetail | null>(null)
   const [error, setError] = useState<Feedback>('')
   const [editing, setEditing] = useState(false)
@@ -53,7 +53,8 @@ export default function ExpenseDetails({ id, token, members, memberId, canManage
       {!expense.recorrencia && !locked && <RecurrenceFields today={expense.dataReferencia ?? brasilDay()} due={expense.vencimento.slice(0,10)} origin />}
     </> : <>
       <div><h3>{expense.titulo}</h3><p>{expense.categoria} · Vence em {civilDate(expense.vencimento)}{expense.recorrencia ? ' · Recorrente' : ''}</p><p><strong>{brl.format(Number(expense.valorTotal))}</strong> · {financialState(expense.vencimento, expense.status === 'PAGA' ? 0 : 1, 0, expense.dataReferencia, expense.situacaoVencimento).label}</p>{expense.pagamentoParcial && <p>Há pagamentos parciais nesta conta.</p>}</div>
-      {canManage && <GlisseButton variant="secondary" onClick={() => { setTotal(expense.valorTotal); setEditing(true) }}>Editar despesa</GlisseButton>}
+      {/* Edita quem cadastrou a conta ou o administrador. */}
+      {(canManage || (userId !== undefined && expense.criadaPorId === userId)) && <GlisseButton variant="secondary" onClick={() => { setTotal(expense.valorTotal); setEditing(true) }}>Editar despesa</GlisseButton>}
       <div><h3>Rateios e pagamentos</h3>{expense.rateios.map(share => <section key={share.id} className="rep-management-card"><h4>{members.find(member => member.id === share.membroId)?.usuario.nome ?? 'Morador com histórico'}</h4><p>Parte: {brl.format(Number(share.valorDevido))} · Pago: {brl.format(Number(share.valorPago))} · Saldo: {brl.format(balance(share))}</p><Payments payments={share.pagamentos ?? []} token={token} canDownload={canManage || share.membroId === memberId} /></section>)}</div>
     </>}
   </ActionDialog>

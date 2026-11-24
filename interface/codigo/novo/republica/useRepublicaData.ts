@@ -31,9 +31,15 @@ export function useRepublicaData({ token, currentPath, accountRoute, filter, com
       try {
         const user = await request<Account>('/me', token)
         if (!active) return
-        if (accountRoute || !user.membro || user.tipoUsuario === 'USUARIO_MASTER') {
+        if (!user.membro || user.tipoUsuario === 'USUARIO_MASTER') {
           setHome({ path: currentPath, user, house: null, dashboard: null, members: [], expenses: [] })
           setError('')
+          return
+        }
+        if (accountRoute) {
+          // Perfil e financeiro pessoal ficam dentro da casa (com a barra lateral) para quem mora em uma.
+          const [house, members] = await Promise.all([request<House>('/republicas/atual', token), request<Member[]>('/membros', token)])
+          if (active) { setHome({ path: currentPath, user, house, dashboard: null, members, expenses: [] }); setError('') }
           return
         }
         const query = new URLSearchParams()

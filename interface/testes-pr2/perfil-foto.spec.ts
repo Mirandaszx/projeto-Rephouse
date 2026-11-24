@@ -30,8 +30,9 @@ test.beforeAll(async({request})=>{
 test('perfil apresenta dados reais; enquadramento e zoom salvam a foto somente após confirmação',async({page,request})=>{
   await enter(page)
   await expect(page.getByText(accounts['perfil-admin'].email,{exact:true})).toBeVisible()
-  await expect(page.getByText('Casa Perfil',{exact:true})).toBeVisible()
-  await expect(page.getByText('Confirmação por e-mail não registrada',{exact:true})).toBeVisible()
+  // O nome da casa também aparece na barra lateral desde 24/11/2026; aqui interessa o do conteúdo do perfil.
+  await expect(page.locator('.workspace-page').getByText('Casa Perfil',{exact:true})).toBeVisible()
+  await expect(page.getByText('E-mail ainda não confirmado',{exact:true})).toBeVisible()
   const dialog=await choose(page,await photo())
   const zoom=dialog.getByRole('slider',{name:'Zoom da foto'})
   await zoom.focus();await zoom.press('ArrowRight');await expect(zoom).toHaveValue('1.05')
@@ -176,5 +177,5 @@ test('API anterior não oferece upload indisponível nem inventa ausência de co
   await expect(page.getByRole('button',{name:'Adicionar foto',exact:true})).toBeDisabled()
   await expect(page.getByText('Envio de foto indisponível nesta versão da API.',{exact:true})).toBeVisible()
   await expect(page.getByText('Informação de confirmação indisponível',{exact:true})).toBeVisible()
-  await expect(page.getByText('Confirmação por e-mail não registrada',{exact:true})).toHaveCount(0)
+  await expect(page.getByText('E-mail ainda não confirmado',{exact:true})).toHaveCount(0)
 })

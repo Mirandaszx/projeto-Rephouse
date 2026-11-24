@@ -16,30 +16,35 @@ test('visão geral troca a criação por perfil acessível ao lado do sino nos d
     await page.setViewportSize({ width, height: 900 })
     await page.goto('/republica')
     const actions = page.locator('.workspace-heading-actions')
-    const profile = actions.getByRole('link', { name: 'Meu perfil', exact: true })
+    // Redesign de 24/11/2026: no celular (< 720 px) o avatar não se repete no cabeçalho; o acesso à conta
+    // é o botão do menu no topo, que cumpre os mesmos critérios de tamanho, contraste e foco.
+    const mobile = width < 720
+    const profile = mobile ? page.getByRole('button', { name: /Abrir menu da conta/ }) : actions.getByRole('link', { name: 'Meu perfil', exact: true })
     const bell = actions.getByRole('button', { name: /Notificações/i })
     await expect(profile).toBeVisible(); await expect(bell).toBeVisible()
     await expect(actions.getByRole('button', { name: '＋ Nova despesa', exact: true })).toHaveCount(0)
-    await expect(profile).toHaveAttribute('href', '/republica/perfil')
+    if (!mobile) await expect(profile).toHaveAttribute('href', '/republica/perfil')
     const profileBounds = (await profile.boundingBox())!, bellBounds = (await bell.boundingBox())!
     expect(profileBounds.width).toBeGreaterThanOrEqual(44); expect(profileBounds.height).toBeGreaterThanOrEqual(44)
-    expect(profileBounds.x - bellBounds.x - bellBounds.width).toBeGreaterThanOrEqual(12)
+    if (!mobile) expect(profileBounds.x - bellBounds.x - bellBounds.width).toBeGreaterThanOrEqual(12)
     expect(await contrast(profile)).toBeGreaterThanOrEqual(4.5)
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await profile.focus(); await expect(profile).toBeFocused()
     expect(await profile.evaluate(element => getComputedStyle(element).outlineStyle)).not.toBe('none')
     await page.screenshot({ path: `${folder}/perfil-${colorScheme}-${width}.png`, fullPage: true })
     await page.keyboard.press('Enter')
+    // No celular, Enter abre o menu e o perfil fica a um toque.
+    if (mobile) await page.getByRole('navigation', { name: 'Sua conta' }).getByRole('link', { name: 'Meu perfil', exact: true }).click()
     await expect(page).toHaveURL(/\/republica\/perfil$/)
     await expect(page.getByRole('heading', { name: 'Meu perfil', exact: true })).toBeVisible()
   }
 })
 
-test('morador também acessa o próprio perfil, enquanto criar despesa permanece administrativo', async ({ page }) => {
+test('morador também acessa o próprio perfil e, desde 24/11/2026, também cadastra despesas', async ({ page }) => {
   await prepare(page, { resident: true })
   await page.goto('/republica')
   await page.locator('.workspace-heading-actions').getByRole('link', { name: 'Meu perfil', exact: true }).click()
   await expect(page).toHaveURL(/\/republica\/perfil$/)
   await page.goto('/republica/despesas')
-  await expect(page.getByRole('button', { name: '＋ Nova despesa', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: '＋ Nova despesa', exact: true })).toBeVisible()
 })
