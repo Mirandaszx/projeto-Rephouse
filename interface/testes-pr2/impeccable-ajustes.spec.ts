@@ -89,7 +89,9 @@ for (const [due, state, label] of [
   await page.goto('/republica')
   const pending = page.getByRole('region', { name: 'Minhas pendências', exact: true })
   await expect(pending.getByText(label, { exact: true })).toBeVisible()
-  await expect(pending.getByText('Pagamento parcial', { exact: true })).toBeVisible()
+  // Desde 25/11/2026 o parcial é texto, e a pendência tem um selo só (o do vencimento).
+  await expect(pending).toContainText('Pagamento parcial')
+  await expect(pending.locator('.workspace-badge')).toHaveCount(1)
   await expect(pending).toContainText('80,00')
 })
 
@@ -110,5 +112,7 @@ test('aviso sem situação pronta usa a data civil do servidor, mesmo com relóg
   await page.goto('/republica')
   const pending = page.getByRole('region', { name: 'Minhas pendências', exact: true })
   await expect(pending.getByText('Vence em breve', { exact: true })).toBeVisible()
-  await expect(pending.getByText('Pagamento parcial', { exact: true })).toBeVisible()
+  // Desde 25/11/2026 o parcial é texto, e a pendência tem um selo só (o do vencimento).
+  await expect(pending).toContainText('Pagamento parcial')
+  await expect(pending.locator('.workspace-badge')).toHaveCount(1)
 })

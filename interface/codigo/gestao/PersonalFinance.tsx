@@ -12,6 +12,7 @@ import { financialState } from '../interno/presentation'
 import './financial.css'
 import { MonthFilter } from './MonthFilter'
 import { ChoiceSelect } from '../rebuild/ChoiceSelect'
+import { ListSkeleton } from '../interno/LoadingSkeleton'
 
 export default function PersonalFinance({ token, currentHouseId }: { token: string; currentHouseId?: string }) {
   const [items, setItems] = useState<PersonalShare[] | null>(null)
@@ -51,7 +52,7 @@ export default function PersonalFinance({ token, currentHouseId }: { token: stri
     {summary && loadedFilter === filterKey && <section className="workspace-finance-summary" aria-label="Resumo do seu financeiro"><div><span>{month ? 'Sua parte nas contas do mês' : 'Sua parte nas contas'}</span><strong>{brl.format(Number(summary.totalDevido))}</strong></div><div><span>Pago dessas contas</span><strong>{brl.format(Number(summary.totalPago))}</strong></div><div><span>{month ? 'Saldo dessas contas' : 'Seu saldo em aberto'}</span><strong>{brl.format(Number(summary.saldoPendente))}</strong></div></section>}
     <section className="rep-management-card workspace-finance-history"><SectionHeading title="Seu histórico financeiro" description="Suas partes, pagamentos e comprovantes de cada república." />
       {error && <><ErrorNotice error={error} /><GlisseButton variant="secondary" onClick={() => setRevision(value => value + 1)}>Tentar carregar financeiro</GlisseButton></>}
-      {!visibleItems && !error && <p role="status">Carregando seu financeiro…</p>}
+      {!visibleItems && !error && <ListSkeleton label="Carregando seu financeiro…" />}
       {visibleItems?.length === 0 && <EmptyState title="Nenhuma despesa no seu histórico." />}
       {Array.from(houses, ([id, group]) => <section className="workspace-house-history" key={id} aria-label={`Histórico de ${group.name}`}><div className="workspace-house-history-heading"><h3>{group.name}</h3><Badge tone={id === currentHouseId ? 'success' : 'neutral'}>{id === currentHouseId ? 'República atual' : 'Vínculo anterior'}</Badge></div><ul className="rep-management-list">{ordered(group.items).map(share => {
         const state = financialState(share.despesa.vencimento, balance(share), Number(share.valorPago), share.dataReferencia, share.situacaoVencimento)

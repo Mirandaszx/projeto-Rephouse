@@ -7,6 +7,7 @@ import { errorFeedback, type Feedback } from '../interno/feedback'
 import { GlisseButton } from '../rebuild/GlisseButton'
 import type { NotificationsState } from './useNotifications'
 import './notifications.css'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../rebuild/vendor/shadcn-tooltip'
 
 type Category = 'TODAS'|'TAREFAS'|'DESPESAS'
 type Notice = Schemas['Notificacao']
@@ -60,9 +61,9 @@ export default function NotificationsBell({token,state,onOpen}:{token:string;sta
   const categoryCount = (value:Category) => value==='TODAS'?state.counts.total:value==='TAREFAS'?state.counts.tarefas:state.counts.despesas
   const count = categoryCount(selectedCategory)
   return <div className="notifications-anchor">
-    <button type="button" ref={trigger} className="notifications-trigger" data-connection={state.status} aria-label={`Notificações${state.counts.total?`, ${state.counts.total} não lidas`:''}`} aria-haspopup="dialog" aria-expanded={open} onClick={event=>{if(panel.current)panel.current.dataset.keyboard=String(event.detail===0);setOpen(true);void state.refresh().catch(()=>{})}}>
+    <Tooltip><TooltipTrigger ref={trigger} render={<button type="button" className="notifications-trigger" data-connection={state.status} aria-label={`Notificações${state.counts.total?`, ${state.counts.total} não lidas`:''}`} aria-haspopup="dialog" aria-expanded={open} onClick={event=>{if(panel.current)panel.current.dataset.keyboard=String(event.detail===0);setOpen(true);void state.refresh().catch(()=>{})}} />}>
       <Bell size={20} aria-hidden="true" />{state.counts.total>0&&<span className="notifications-counter" aria-hidden="true">{state.counts.total>99?'99+':state.counts.total}</span>}
-    </button>
+    </TooltipTrigger><TooltipContent>Notificações</TooltipContent></Tooltip>
     <dialog className="notifications-panel" ref={panel} aria-labelledby="notifications-title" onCancel={event=>{event.preventDefault();close()}} onClick={event=>{if(event.target===panel.current){const bounds=panel.current.getBoundingClientRect();if(event.clientX<bounds.left||event.clientX>bounds.right||event.clientY<bounds.top||event.clientY>bounds.bottom)close()}}}>
       <header><h2 id="notifications-title">Notificações</h2><button type="button" data-close aria-label="Fechar notificações" disabled={busy} onClick={close}><X size={20}/></button></header>
       <div className="notifications-tabs" role="tablist" aria-label="Categorias de notificações" onKeyDown={event=>{if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();const index=(categories.indexOf(selectedCategory)+(event.key==='ArrowRight'?1:-1)+categories.length)%categories.length;setCategory(categories[index]!);setPage(1);event.currentTarget.querySelectorAll<HTMLButtonElement>('[role=tab]')[index]?.focus()}}}>

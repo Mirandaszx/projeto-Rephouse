@@ -1,6 +1,6 @@
 import ErrorNotice from '../interno/ErrorNotice'
 import type { Feedback } from '../interno/feedback'
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { apiRequest, brl, request } from '../api'
 import { GlisseButton } from '../rebuild/GlisseButton'
 import MemberPicker from '../rebuild/MemberPicker'
@@ -8,6 +8,8 @@ import ActionDialog from './ActionDialog'
 import { errorFeedback, type Member, type Schemas } from './types'
 import './financial.css'
 import { Badge } from '../interno/WorkspaceUI'
+import { ChevronDown } from 'lucide-react'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../rebuild/vendor/shadcn-collapsible'
 
 type Recurring = Schemas['Recorrencia']
 const nextMonth = (month: string) => {
@@ -40,7 +42,7 @@ export default function RecurringExpenses({ token, members, revision, canManage,
   const [items, setItems] = useState<Recurring[] | null>(null)
   const [error, setError] = useState<Feedback>('')
   const [attempt, setAttempt] = useState(0)
-  const details = useRef<HTMLDetailsElement>(null)
+  const [expanded, setExpanded] = useState(false)
   const [editing, setEditing] = useState<Recurring | null>(null)
   const [total, setTotal] = useState('')
   const [selected, setSelected] = useState<Recurring | null>(null)
@@ -75,10 +77,10 @@ export default function RecurringExpenses({ token, members, revision, canManage,
   const checking = !error && (!items || items.some(item => !periods[item.id] && !periodErrors[item.id]))
   const occurrences = selected ? periods[selected.id] : undefined
   return <section className="finance-recurring" aria-label="Contas recorrentes">
-    {attention > 0 && <div className="finance-recurring-attention" role="status"><p><strong>{attention === 1 ? 'Uma recorrência precisa de revisão.' : `${attention} recorrências precisam de revisão.`}</strong> Confira pausas e meses não gerados antes de cadastrar cobranças.</p><GlisseButton variant="secondary" onClick={() => { if (details.current) details.current.open = true }}>Conferir recorrências</GlisseButton></div>}
+    {attention > 0 && <div className="finance-recurring-attention" role="status"><p><strong>{attention === 1 ? 'Uma recorrência precisa de revisão.' : `${attention} recorrências precisam de revisão.`}</strong> Confira pausas e meses não gerados antes de cadastrar cobranças.</p><GlisseButton variant="secondary" onClick={() => setExpanded(true)}>Conferir recorrências</GlisseButton></div>}
     {error && <><ErrorNotice error={error} /><GlisseButton variant="secondary" onClick={() => { setError(''); setAttempt(value => value + 1) }}>Tentar carregar recorrências</GlisseButton></>}
     {Object.keys(periodErrors).length > 0 && <div><p role="alert">Não foi possível conferir todos os meses das recorrências.</p><GlisseButton variant="secondary" onClick={() => setAttempt(value => value + 1)}>Tentar conferir meses</GlisseButton></div>}
-    <details ref={details}><summary>Contas recorrentes{attention > 0 && <Badge tone="warning">{attention} para revisar</Badge>}</summary>
+    <Collapsible open={expanded} onOpenChange={setExpanded}><CollapsibleTrigger className="finance-recurring-trigger"><ChevronDown size={18} aria-hidden="true" />Contas recorrentes{attention > 0 && <Badge tone="warning">{attention} para revisar</Badge>}</CollapsibleTrigger><CollapsibleContent keepMounted className="finance-recurring-panel">
     <p>Configurações mensais e meses que precisam de revisão.</p>
     {checking && <p role="status">Conferindo recorrências e meses…</p>}
     {items?.length === 0 && <p>Nenhuma recorrência configurada. Use “Repetir mensalmente” ao cadastrar uma despesa.</p>}
@@ -96,5 +98,5 @@ export default function RecurringExpenses({ token, members, revision, canManage,
       <MemberPicker members={members} initialSelected={editing.configuracoes[0].membroIds} total={total} /><label className="finance-check"><input name="ativa" type="checkbox" defaultChecked={editing.ativa} />Manter ativa e retomar a geração após a revisão</label>
       <RecurrenceEndField earliest={`${editing.inicio}-01`} value={editing.fim} />
     </ActionDialog>}
-  </details></section>
+  </CollapsibleContent></Collapsible></section>
 }

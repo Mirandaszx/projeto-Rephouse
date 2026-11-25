@@ -53,9 +53,10 @@ test('morador vê mais de 20 tarefas e conclui a própria tarefa na API real', a
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message))
   await login(page, 'ana')
   await page.getByRole('link', { name: 'Tarefas', exact: true }).first().click()
-  await expect(page.getByRole('checkbox')).toHaveCount(25)
-  await page.getByText('Rotina 25', { exact: true }).click()
-  await expect(page.getByRole('checkbox', { name: 'Rotina 25', exact: true })).toBeChecked()
+  // Desde 24/11/2026 concluir é um botão (a caixa só seleciona tarefas livres).
+  await expect(page.getByRole('button', { name: /^Concluir tarefa Rotina / })).toHaveCount(25)
+  await page.getByRole('button', { name: 'Concluir tarefa Rotina 25', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Reabrir tarefa Rotina 25', exact: true })).toBeVisible()
   await expect(page.getByRole('status').filter({ hasText: 'Tarefa concluída.' })).toBeVisible()
   const tasks = await call<{ dados: Schemas['Tarefa'][] }>(request, '/tarefas?limite=100', memberToken)
   expect(tasks.dados.find(task => task.titulo === 'Rotina 25')?.status).toBe('CONCLUIDA')

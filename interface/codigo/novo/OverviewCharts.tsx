@@ -1,5 +1,5 @@
 import { brl as money } from '../api'
-import { SectionHeading } from '../interno/WorkspaceUI'
+import { EmptyState, SectionHeading } from '../interno/WorkspaceUI'
 import type { Expense } from './Overview'
 
 const compact = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1 })
@@ -16,11 +16,12 @@ export function MonthlyExpenses({ expenses, today }: { expenses: Expense[]; toda
   const current = today.slice(0, 7)
   return <section className="rep-overview-panel rep-chart-card" aria-labelledby="monthly-expenses-title">
     <SectionHeading id="monthly-expenses-title" title="Despesas da casa por mês" description="Soma das contas pelo mês de vencimento." />
-    <ol className="rep-bars">{months.map((key, index) => <li key={key} data-current={key === current || undefined}>
-      <span className="rep-bar-value">{totals[index] ? compact.format(totals[index]! / 100) : 'R$ 0'}</span>
+    {/* Sem nenhuma conta, barras vazias pareceriam dados: uma frase diz o que acontece. */}
+    {totals.every(total => total === 0) ? <EmptyState title="Nenhuma conta venceu nesses meses." /> : <ol className="rep-bars">{months.map((key, index) => <li key={key} data-current={key === current || undefined}>
+      <span className="rep-bar-value">{totals[index] ? compact.format(totals[index]! / 100) : '—'}</span>
       <span className="rep-bar-track" aria-hidden="true"><span className="rep-bar" style={{ blockSize: `${totals[index] ? Math.max(totals[index]! / highest * 100, 4) : 0}%` }} /></span>
       <span className="rep-bar-month"><span aria-hidden="true">{monthName(key, 'short')}</span><span className="visually-hidden">{monthName(key, 'long')}: {money.format(totals[index]! / 100)}</span></span>
-    </li>)}</ol>
+    </li>)}</ol>}
   </section>
 }
 

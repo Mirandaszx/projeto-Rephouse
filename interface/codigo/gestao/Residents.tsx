@@ -2,10 +2,11 @@ import ErrorNotice from '../interno/ErrorNotice'
 import type { Feedback } from '../interno/feedback'
 import { useEffect, useState } from 'react'
 import { apiRequest, request } from '../api'
-import ActionDialog from './ActionDialog'
 import type { Member } from './types'
 import { errorFeedback } from './types'
 import { Badge, EmptyState, PersonMark, SectionHeading } from '../interno/WorkspaceUI'
+import ConfirmDialog from './ConfirmDialog'
+import { ListSkeleton } from '../interno/LoadingSkeleton'
 
 export default function Residents({ token, members, adminId, canManage, onChanged }: { token: string; members: Member[]; adminId: string; canManage: boolean; onChanged: () => void }) {
   const [all, setAll] = useState<Member[] | null>(null)
@@ -23,12 +24,12 @@ export default function Residents({ token, members, adminId, canManage, onChange
   return <section className="rep-management-card workspace-residents" aria-labelledby="residents-title"><SectionHeading id="residents-title" title="Pessoas da casa" description={`${displayed?.length ?? '…'} moradores nesta lista`} />
     {canManage && <label className="rep-members-control"><input type="checkbox" checked={showInactive} onChange={event => { setShowInactive(event.target.checked); setError('') }} />Incluir moradores inativos</label>}
     {error && <ErrorNotice error={error} />}
-    {!displayed ? <p role="status">Carregando moradores…</p> : !displayed.length ? <EmptyState title="Nenhum morador nesta lista." /> : <ul className="rep-management-list">{displayed.map(member => <li key={member.id}><div className="rep-management-row"><div className="workspace-resident-person"><PersonMark name={member.usuario.nome} userId={member.usuario.id} photo={member.ativo ? member.usuario.foto : null} token={token} context={member.republicaId} /><div><strong>{member.usuario.nome}</strong><small>{!member.ativo ? 'Não mora mais na casa' : member.usuario.id === adminId ? 'Administra a casa' : 'Mora na casa'}</small></div></div><div className="rep-management-actions">{/* Selo só para a exceção (vínculo inativo); a lista padrão já mostra quem mora na casa. */}{!member.ativo && <Badge tone="neutral">Vínculo inativo</Badge>}
+    {!displayed ? <ListSkeleton label="Carregando moradores…" /> : !displayed.length ? <EmptyState title="Nenhum morador nesta lista." /> : <ul className="rep-management-list">{displayed.map(member => <li key={member.id}><div className="rep-management-row"><div className="workspace-resident-person"><PersonMark name={member.usuario.nome} userId={member.usuario.id} photo={member.ativo ? member.usuario.foto : null} token={token} context={member.republicaId} /><div><strong>{member.usuario.nome}</strong><small>{!member.ativo ? 'Não mora mais na casa' : member.usuario.id === adminId ? 'Administra a casa' : 'Mora na casa'}</small></div></div><div className="rep-management-actions">{/* Selo só para a exceção (vínculo inativo); a lista padrão já mostra quem mora na casa. */}{!member.ativo && <Badge tone="neutral">Vínculo inativo</Badge>}
       {canManage && member.ativo && member.usuario.id !== adminId && <button type="button" className="rep-unlink" aria-label={`Desativar vínculo de ${member.usuario.nome}`} onClick={() => setDeactivating(member)}>Desativar vínculo</button>}
     </div></div></li>)}</ul>}
-    {deactivating && <ActionDialog title="Desativar vínculo" confirm="Confirmar desativação" danger onClose={() => setDeactivating(null)} onSubmit={async () => {
+    {deactivating && <ConfirmDialog title="Desativar vínculo" confirm="Confirmar desativação" onClose={() => setDeactivating(null)} onConfirm={async () => {
       await apiRequest('PATCH', `/membros/${deactivating.id}`, token, { ativo: false })
       setRevision(value => value + 1); onChanged()
-    }}><p>{deactivating.usuario.nome} deixará de ser morador ativo desta república. A conta e o histórico serão preservados.</p></ActionDialog>}
+    }}><p>{deactivating.usuario.nome} deixará de ser morador ativo desta república. A conta e o histórico serão preservados.</p></ConfirmDialog>}
   </section>
 }

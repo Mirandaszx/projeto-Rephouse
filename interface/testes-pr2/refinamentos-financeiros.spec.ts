@@ -3,6 +3,7 @@ import { mkdir, readFile } from 'node:fs/promises'
 import { prepare } from './auxiliares/modernizacao-fixture'
 import type { components } from '../../integracao/api'
 import { contrast } from './auxiliares/contraste'
+import { filtroDeMes } from './auxiliares/mes'
 
 // Instancia HTTP isolada por arquivo; os controles reais permanecem habilitados.
 test.use({ extraHTTPHeaders: { 'x-interface-test-run': process.env.REPHOUSE_INTERFACE_TEST_RUN ?? '', 'x-interface-suite': 'refinamentos-financeiros.spec.ts' } })
@@ -90,16 +91,23 @@ test('cinco filtros continuam acessíveis no celular sem barra ou botões latera
   await prepare(page)
   await page.setViewportSize({ width: 320, height: 844 })
   await page.goto('/republica/despesas')
-  await expect(page.getByLabel('Mês do vencimento', { exact: true })).toBeVisible()
+  // Desde 25/11/2026 os filtros do celular ficam num painel que sobe de baixo (shadcn Drawer).
   await expect(page.getByText('Deslize ou use as setas para ver todos os filtros.', { exact: true })).toHaveCount(0)
   await expect(page.getByRole('button', { name: /Mostrar (mais filtros|filtros anteriores)/ })).toHaveCount(0)
-  const scroller = page.locator('.finance-filters')
-  expect(await scroller.evaluate(element => getComputedStyle(element).scrollbarWidth)).toBe('none')
-  await page.getByRole('radio', { name: 'Todas', exact: true }).focus()
-  for (let index = 0; index < 4; index++) await page.keyboard.press('ArrowRight')
-  await expect.poll(() => scroller.evaluate(element => element.scrollLeft)).toBeGreaterThan(0)
-  await page.getByRole('radio', { name: 'Pagas', exact: true }).click()
-  await expect(page.getByRole('radio', { name: 'Pagas', exact: true })).toBeChecked()
+  await page.getByRole('button', { name: /^Filtrar despesas: Todas/ }).click()
+  const drawer = page.getByRole('dialog', { name: 'Filtrar despesas', exact: true })
+  await expect(filtroDeMes(page)).toBeVisible()
+  // Os cinco filtros aparecem inteiros na lista e podem ser escolhidos pelo teclado.
+  const situation = drawer.getByRole('combobox', { name: 'Situação', exact: true })
+  await situation.focus(); await page.keyboard.press('Enter')
+  const options = page.getByRole('option')
+  await expect(options).toHaveText(['Todas', 'Pendentes', 'Próximas', 'Atrasadas', 'Pagas'])
+  for (const option of await options.all()) await expect(option).toBeInViewport()
+  for (let index = 0; index < 4; index++) await page.keyboard.press('ArrowDown')
+  await page.keyboard.press('Enter')
+  await expect(situation).toHaveText(/Pagas/)
+  await drawer.getByRole('button', { name: 'Ver despesas', exact: true }).click()
+  await expect(page.getByRole('button', { name: /^Filtrar despesas: Pagas/ })).toBeVisible()
   await expect(page.getByText('Nenhuma despesa neste filtro.', { exact: true })).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true)
 })
@@ -122,7 +130,8 @@ test('revisões de recorrência são avisadas mesmo com a seção recolhida, com
   const recurringSection = page.getByRole('region', { name: 'Contas recorrentes', exact: true })
   await expect(recurringSection.getByText('2 recorrências precisam de revisão.', { exact: true })).toBeVisible()
   expect(maximum).toBeLessThanOrEqual(4)
-  await expect(recurringSection.locator('details')).not.toHaveAttribute('open')
+  // Desde 25/11/2026 a seção é um Collapsible (shadcn): fechada, o botão diz que não está expandido.
+  await expect(recurringSection.getByRole('button', { name: /^Contas recorrentes/ })).toHaveAttribute('aria-expanded', 'false')
   await recurringSection.getByRole('button', { name: 'Conferir recorrências', exact: true }).click()
   const row = recurringSection.locator('article').filter({ hasText: 'Conta mensal 0' })
   await row.getByRole('button', { name: 'Ver meses', exact: true }).click()

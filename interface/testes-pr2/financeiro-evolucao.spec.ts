@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 import { readFile, mkdir } from 'node:fs/promises'
 import type { components } from '../../integracao/api'
+import { escolherMes } from './auxiliares/mes'
 type Schemas = components['schemas']
 type Session = { token: string; id: string }
 const api = 'http://127.0.0.1:3405/api'
@@ -71,7 +72,7 @@ test('pagamento parcial aparece no resumo mensal e filtros da própria parcela',
   await page.getByRole('radio',{name:'Pendentes',exact:true}).click()
   await expect(row).toBeVisible()
   await page.getByRole('link',{name:'Meu financeiro',exact:true}).first().click()
-  await page.getByLabel('Mês do vencimento',{exact:true}).fill(reference.slice(0,7))
+  await escolherMes(page,reference.slice(0,7))
   const summary=page.getByRole('region',{name:'Resumo do seu financeiro'})
   await expect(summary).toContainText('60,00');await expect(summary).toContainText('25,00');await expect(summary).toContainText('35,00')
   const response=await request.get(api+`/me/financeiro/resumo?competencia=${reference.slice(0,7)}`,{headers:headers()})
@@ -108,7 +109,7 @@ test('data opcional de término tem rótulo, ajuda e foco e cabe no celular nos 
 })
 test('edição da recorrência vale no futuro e desativação preserva a conta parcial',async({page,request})=>{
   await enter(page,'/republica/despesas')
-  await page.locator('summary').filter({hasText:'Contas recorrentes'}).click()
+  await page.getByRole('button',{name:/^Contas recorrentes/}).click()
   await page.getByRole('button',{name:'Editar recorrência',exact:true}).click()
   const dialog=page.getByRole('dialog',{name:'Editar recorrência mensal'})
   await expect(dialog.getByLabel('Repetir até (opcional)', { exact: true })).toHaveValue(endDate)
@@ -167,7 +168,7 @@ test('falha no resumo permite nova tentativa e mudança de mês não exibe totai
   let release!:()=>void
   const gate=new Promise<void>(resolve=>{release=resolve})
   await page.route('**/api/me/financeiro/resumo?competencia=2000-01',async route=>{await gate;await route.continue()})
-  await page.getByLabel('Mês do vencimento',{exact:true}).fill('2000-01')
+  await escolherMes(page,'2000-01')
   await expect(page.getByRole('region',{name:'Resumo do seu financeiro'})).not.toBeVisible()
   release()
   await expect(page.getByRole('region',{name:'Resumo do seu financeiro'})).toContainText('0,00')

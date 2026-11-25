@@ -90,12 +90,15 @@
 
 /* Gráficos da visão geral: barras simples e uma barra de progresso, com os valores sempre visíveis. */
 .rep-overview-charts { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 24px; margin-block: 24px; }
+/* Sem o cartão "Seu mês", o gráfico ocupa a linha toda em vez de deixar um buraco. */
+.rep-overview-charts > :only-child { grid-column: 1 / -1; }
 .rep-chart-card { display: grid; align-content: start; gap: 16px; }
 .rep-bars { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); align-items: end; gap: 12px; min-block-size: 190px; margin: 0; padding: 0; list-style: none; }
 .rep-bars li { display: grid; grid-template-rows: auto 140px auto; justify-items: center; gap: 8px; min-width: 0; }
 .rep-bar-value { color: var(--app-muted); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.rep-bar-track { display: flex; align-items: end; inline-size: 100%; max-inline-size: 48px; block-size: 140px; border-radius: 8px; background: var(--app-raised, #eef3ee); }
-.rep-bar { display: block; inline-size: 100%; border-radius: 8px; background: #a9c9b6; }
+/* Sem trilho de fundo: só a linha de base, para mês sem conta não parecer uma barra cheia. */
+.rep-bar-track { display: flex; align-items: end; inline-size: 100%; max-inline-size: 48px; block-size: 140px; border-block-end: 2px solid var(--app-border); }
+.rep-bar { display: block; inline-size: 100%; border-radius: 8px 8px 0 0; background: #a9c9b6; }
 .rep-bars li[data-current] .rep-bar { background: var(--app-accent, #205448); }
 .rep-bars li[data-current] .rep-bar-value { color: var(--app-text); font-weight: 600; }
 .rep-bar-month { color: var(--app-muted); font-size: 14px; text-transform: capitalize; }

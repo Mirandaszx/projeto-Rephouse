@@ -101,10 +101,11 @@ test('administrador edita casa, desativa vínculo e consulta inativos sem exclui
   expect((await send<Schemas['Republica']>(request, 'GET', '/republicas/atual', 'admin')).endereco).toBe('Rua das Flores, 10')
   await page.goto('/republica/moradores')
   await page.getByRole('button', { name: 'Desativar vínculo de Gestão removido', exact: true }).click()
-  await page.getByRole('dialog').getByRole('button', { name: 'Cancelar', exact: true }).click()
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Cancelar', exact: true }).click()
   expect((await persisted('SELECT ativo FROM membros_republica WHERE id=$1', [removed.id]))[0].ativo).toBe(true)
   await page.getByRole('button', { name: 'Desativar vínculo de Gestão removido', exact: true }).click()
-  await page.getByRole('dialog').getByRole('button', { name: 'Confirmar desativação', exact: true }).click()
+  // Confirmação de ação que não se desfaz: AlertDialog desde 25/11/2026.
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Confirmar desativação', exact: true }).click()
   const residents = page.getByRole('region', { name: 'Pessoas da casa', exact: true })
   await expect(residents.getByText('Gestão removido', { exact: true })).toHaveCount(0)
   await page.getByRole('checkbox', { name: 'Incluir moradores inativos' }).check()
@@ -147,7 +148,7 @@ test('administrador edita tarefa; morador não recebe controles de gestão ou da
   await dialog.getByLabel('Prazo opcional', { exact: true }).fill('2030-05-14')
   await dialog.getByLabel('Descrição opcional', { exact: true }).fill('Separar alimentos por validade.')
   await dialog.getByRole('button', { name: 'Salvar tarefa', exact: true }).click()
-  await expect(page.getByRole('checkbox', { name: 'Organizar despensa', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Concluir tarefa Organizar despensa', exact: true })).toBeVisible()
   expect((await persisted('SELECT titulo, prazo::text, responsavel_id FROM tarefas WHERE id=$1', [task.id]))[0]).toMatchObject({ titulo: 'Organizar despensa', prazo: '2030-05-14', responsavel_id: ownerMemberId })
   await enter(page, 'morador', '/republica/tarefas')
   await expect(page.getByRole('button', { name: /^Editar tarefa / })).toHaveCount(0)
@@ -218,7 +219,7 @@ test('saída encerra somente vínculo e mantém acesso ao perfil e histórico se
   await enter(page, 'admin', '/republica/configuracoes')
   await page.getByRole('button', { name: 'Sair da república', exact: true }).click()
   const response = page.waitForResponse(result => result.url().endsWith('/api/republicas/sair'))
-  await page.getByRole('dialog').getByRole('button', { name: 'Confirmar saída', exact: true }).click()
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Confirmar saída', exact: true }).click()
   expect((await response).status()).toBe(204)
   await expect(page.getByRole('button', { name: 'Entrar na república', exact: true })).toBeVisible()
   expect((await send<Schemas['MinhaConta']>(request, 'GET', '/me', 'admin')).membro).toBeNull()
@@ -268,10 +269,11 @@ test('novas páginas e modais cabem nos temas claro e escuro; envio duplicado é
         if (path.endsWith('/financeiro')) await expect(page.getByRole('heading', { name: 'Despesa revisada', exact: true })).toBeVisible()
         if (path.endsWith('/configuracoes')) {
           await page.getByRole('button', { name: 'Sair da república', exact: true }).click()
-          await expect(page.getByRole('dialog')).toBeVisible()
+          // Confirmação de ação que não se desfaz: AlertDialog desde 25/11/2026.
+          await expect(page.getByRole('alertdialog')).toBeVisible()
           expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
           await page.keyboard.press('Escape')
-          await expect(page.getByRole('dialog')).toHaveCount(0)
+          await expect(page.getByRole('alertdialog')).toHaveCount(0)
         }
         await page.screenshot({ path: `${captures}/${path.split('/').pop()}-${theme}-${width}.png`, fullPage: true })
       }

@@ -6,6 +6,7 @@ import { ptBR } from 'react-day-picker/locale'
 import { LabelInput } from './vendor/spell-label-input'
 import { Calendar } from './vendor/shadcn-calendar'
 import './fields.css'
+import { Tooltip, TooltipContent, TooltipTrigger } from './vendor/shadcn-tooltip'
 
 export function AnimatedField({ label, ...props }: InputHTMLAttributes<HTMLInputElement> & { label: string }) {
   return <LabelInput {...props} label={label} labelPlacement="outside" containerClassName="rep-animated-field" ringColor="green" />
@@ -21,7 +22,7 @@ export function DateField({ name, label, required, onValueChange }: { name: stri
     <label>{label}<input ref={input} type="date" name={name} required={required} value={value}
       onChange={event => { setValue(event.target.value); onValueChange?.(event.target.value) }} /></label>
     <Popover.Root open={open} onOpenChange={setOpen}>
-      <Popover.Trigger type="button" aria-label={'Abrir calendário de ' + label}><CalendarDays size={18} /></Popover.Trigger>
+      <Tooltip><TooltipTrigger render={<Popover.Trigger type="button" aria-label={'Abrir calendário de ' + label} />}><CalendarDays size={18} /></TooltipTrigger><TooltipContent container={anchor?.closest('dialog') ?? undefined}>Abrir calendário</TooltipContent></Tooltip>
       <Popover.Portal container={anchor?.closest('dialog') ?? undefined}>
         <Popover.Positioner sideOffset={6} className="rep-calendar-positioner">
           <Popover.Popup className="rep-calendar-popup" aria-label={'Calendário de ' + label}>

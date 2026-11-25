@@ -5,6 +5,7 @@ import './index.css'
 import './aparencia/appearance'
 import './aparencia/appearance.css'
 import { workspacePaths } from './interno/routes'
+import { PageSkeleton } from './interno/LoadingSkeleton'
 
 const App = lazy(() => import('./App'))
 const DesignSystem = lazy(() => import('./DesignSystem'))
@@ -36,6 +37,6 @@ if (redirect) {
   window.location.replace(redirect + window.location.search + window.location.hash)
 } else createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Suspense fallback={<p role="status">Carregando RepHouse…</p>}>{screen}</Suspense>
+    <Suspense fallback={<PageSkeleton label="Carregando RepHouse…" className="rep-skeleton-boot" />}>{screen}</Suspense>
   </StrictMode>,
 )

@@ -7,11 +7,10 @@ import { errorFeedback } from './types'
 import { useDialogMotion } from '../interno/useDialogMotion'
 import './management.css'
 
-type Props = { title: string; confirm: string; children: ReactNode; onClose: () => void; onSubmit: (data: FormData) => Promise<void>; danger?: boolean }
+type Props = { title: string; confirm: string; children: ReactNode; onClose: () => void; onSubmit: (data: FormData) => Promise<void>; danger?: boolean; readOnly?: boolean }
 
-export default function ActionDialog({ title, confirm, children, onClose, onSubmit, danger = false }: Props) {
+export default function ActionDialog({ title, confirm, children, onClose, onSubmit, danger = false, readOnly = false }: Props) {
   const { dialog, open, close, isClosing } = useDialogMotion()
-  const cancel = useRef<HTMLButtonElement>(null)
   const lock = useRef(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<Feedback>('')
@@ -19,7 +18,8 @@ export default function ActionDialog({ title, confirm, children, onClose, onSubm
   useEffect(() => {
     const element = dialog.current!
     open()
-    cancel.current?.focus()
+    // Foco no primeiro botão do rodapé: "Cancelar" ou, só para ler, "Fechar".
+    element.querySelector<HTMLButtonElement>('footer button')?.focus()
     return () => element.close()
   }, [dialog, open])
   return <dialog ref={dialog} className="rep-dialog rep-management-dialog" data-danger={danger} aria-labelledby={id} onCancel={event => { event.preventDefault(); if (!lock.current) void close(onClose) }}>
@@ -35,7 +35,7 @@ export default function ActionDialog({ title, confirm, children, onClose, onSubm
       <h2 id={id}>{title}</h2>
       <fieldset disabled={busy} inert={busy}>{children}</fieldset>
       {error && <ErrorNotice error={error} />}
-      <footer><button ref={cancel} type="button" className="rep-logout" disabled={busy} onClick={() => void close(onClose)}>Cancelar</button><GlisseButton type="submit" tint={danger ? '#9f3834' : undefined} disabled={busy}>{busy ? 'Salvando…' : confirm}</GlisseButton></footer>
+      <footer>{!readOnly && <GlisseButton variant="secondary" disabled={busy} onClick={() => void close(onClose)}>Cancelar</GlisseButton>}<GlisseButton type="submit" tint={danger ? '#9f3834' : undefined} disabled={busy}>{busy ? 'Salvando…' : confirm}</GlisseButton></footer>
     </form>
   </dialog>
 }

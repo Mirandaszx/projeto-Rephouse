@@ -7,6 +7,7 @@ import ActionDialog from './ActionDialog'
 import type { House, Member } from './types'
 import { errorFeedback } from './types'
 import { SectionHeading } from '../interno/WorkspaceUI'
+import ConfirmDialog from './ConfirmDialog'
 
 type Props = { house: House; members: Member[]; token: string; canManage: boolean; onChanged: () => void }
 export default function HouseSettings({ house, members, token, canManage, onChanged }: Props) {
@@ -38,7 +39,11 @@ export default function HouseSettings({ house, members, token, canManage, onChan
     <section className="rep-management-card workspace-settings-action"><SectionHeading title="Mudar de casa" /><p>Ao sair ou trocar, seu histórico e suas dívidas continuam disponíveis em Meu financeiro. {canManage && 'Transfira a administração antes de sair.'}</p>
       <div className="rep-management-actions"><GlisseButton variant="secondary" disabled={busy} onClick={() => setAction('swap')}>Trocar de república</GlisseButton><GlisseButton variant="secondary" disabled={busy} onClick={() => setAction('leave')}>Sair da república</GlisseButton></div>
     </section>
-    {action && <ActionDialog title={action === 'transfer' ? 'Confirmar transferência de administração' : action === 'swap' ? 'Confirmar troca de república' : 'Confirmar saída da república'} confirm={action === 'transfer' ? 'Confirmar transferência' : action === 'swap' ? 'Confirmar troca' : 'Confirmar saída'} danger={action === 'leave'} onClose={() => setAction(null)} onSubmit={async data => {
+    {action === 'leave' && <ConfirmDialog title="Confirmar saída da república" confirm="Confirmar saída" onClose={() => setAction(null)} onConfirm={async () => {
+      await apiRequest('POST', '/republicas/sair', token, {})
+      window.location.assign('/republica')
+    }}><p>Você deixará {house.nome}. Seu acesso à conta continua disponível.</p></ConfirmDialog>}
+    {action && action !== 'leave' && <ActionDialog title={action === 'transfer' ? 'Confirmar transferência de administração' : action === 'swap' ? 'Confirmar troca de república' : 'Confirmar saída da república'} confirm={action === 'transfer' ? 'Confirmar transferência' : action === 'swap' ? 'Confirmar troca' : 'Confirmar saída'} onClose={() => setAction(null)} onSubmit={async data => {
       if (action === 'transfer') {
         await apiRequest('POST', '/republicas/transferir-admin', token, { membroId: String(data.get('membroId')) })
         onChanged()

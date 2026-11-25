@@ -32,6 +32,8 @@
   --color-ring: var(--app-focus);
   --color-primary: var(--app-accent);
   --color-primary-foreground: #193732;
+  --color-popover: var(--app-surface);
+  --color-popover-foreground: var(--app-text);
   color-scheme: dark;
   color: var(--app-text);
   background: var(--app-canvas);

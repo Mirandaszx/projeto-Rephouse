@@ -47,8 +47,17 @@
   .rep-internal .finance-filter-group{width:100%}
 }
 @media(max-width:719px){.rep-internal .finance-controls>*{max-width:100%}.rep-internal .finance-recurring{padding:14px}.rep-internal .finance-actions{align-items:stretch}.rep-internal .finance-actions button{white-space:normal}}
-/* Filtro de mês vazio: esconde as máscaras do navegador e mostra "Todos os meses" até receber foco. */
-.rep-internal .month-filter{position:relative;min-width:0}
-.rep-internal .month-filter[data-empty] input:not(:focus)::-webkit-datetime-edit{color:transparent}
-.rep-internal .month-filter-empty{position:absolute;inset-inline-start:13px;inset-block-end:22px;translate:0 50%;pointer-events:none;color:var(--app-text)}
-.rep-internal .month-filter:focus-within .month-filter-empty{display:none}
+/* Filtro de mês e ano: o botão tem a cara dos outros seletores; a lista mostra o ano e os 12 meses. */
+.rep-internal .month-filter{display:grid;gap:6px;min-width:0}
+.rep-internal .month-filter-label{font-size:14px}
+.rep-internal .month-filter-trigger{min-width:min(220px,100%)}
+.rep-internal .month-filter-popup{width:264px;max-width:calc(100vw - 32px)}
+.rep-internal .month-filter-year{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;font-variant-numeric:tabular-nums}
+.rep-internal .month-filter-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.rep-internal .month-filter-popup button{display:grid;place-items:center;min-width:44px;min-height:44px;padding:0;border:1px solid transparent;border-radius:8px;background:transparent;color:inherit;font:inherit;font-size:16px;cursor:pointer}
+.rep-internal .month-filter-popup button:focus-visible{outline:3px solid var(--app-focus);outline-offset:-3px}
+.rep-internal .month-filter-popup button:disabled{opacity:.4;cursor:default}
+.rep-internal .month-filter-grid button[aria-current='date']{border-color:var(--app-control-border)}
+.rep-internal .month-filter-grid button[aria-pressed='true']{background:#205448;border-color:#205448;color:#fff;font-weight:600}
+:root[data-theme='dark'] .rep-internal .month-filter-grid button[aria-pressed='true']{background:#d2ec9c;border-color:#d2ec9c;color:#193732}
+@media(hover:hover) and (pointer:fine){.rep-internal .month-filter-popup button:not(:disabled):not([aria-pressed='true']):hover{background:var(--app-raised)}}

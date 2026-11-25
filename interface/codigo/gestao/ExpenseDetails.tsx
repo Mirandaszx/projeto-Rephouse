@@ -25,7 +25,7 @@ export default function ExpenseDetails({ id, token, members, memberId, userId, c
     return () => { active = false }
   }, [id, token, attempt])
   const locked = expense?.rateios.some(share => Number(share.valorPago) > 0 || Boolean(share.pagamentos?.length)) ?? false
-  return <ActionDialog title={editing ? 'Editar despesa' : 'Detalhes da despesa'} confirm={editing ? 'Salvar despesa' : 'Fechar detalhes'} onClose={onClose} onSubmit={async data => {
+  return <ActionDialog title={editing ? 'Editar despesa' : 'Detalhes da despesa'} confirm={editing ? 'Salvar despesa' : 'Fechar'} readOnly={!editing} onClose={onClose} onSubmit={async data => {
     if (!editing || !expense) return
     const input: Schemas['EditarDespesa'] = { titulo: String(data.get('titulo')).trim(), categoria: String(data.get('categoria')).trim(), vencimento: String(data.get('vencimento')) }
     if (!locked) {

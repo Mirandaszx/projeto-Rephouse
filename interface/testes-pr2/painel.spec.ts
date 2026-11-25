@@ -157,7 +157,7 @@ test('painel e páginas internas cabem no celular e logout continua revogando a 
       if (width < 720) await expect(page.getByRole('button', { name: /Abrir menu da conta/ })).toBeVisible()
       else await expect(page.getByRole('button', { name: 'Sair', exact: true })).toBeVisible()
       if (path === '/republica') await expect(page.getByRole('region', { name: 'Tarefas pendentes' }).locator('li')).toHaveCount(4)
-      if (path.endsWith('/tarefas')) await expect(page.getByRole('checkbox')).toHaveCount(6)
+      if (path.endsWith('/tarefas')) await expect(page.locator('.rep-task-row')).toHaveCount(6)
       if (path.endsWith('/moradores')) expect(await contrast(page.locator('.rep-copy button'))).toBeGreaterThanOrEqual(4.5)
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${path} em ${width}`).toBe(true)
       if (width <= 390) {

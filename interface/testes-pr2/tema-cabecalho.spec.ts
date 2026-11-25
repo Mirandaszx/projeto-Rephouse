@@ -15,16 +15,21 @@ test('Claro e Escuro ficam à esquerda do sino, sem repetir o controle na latera
   for (const colorScheme of ['light', 'dark'] as const) for (const width of [320,390,768,1440]) {
     await page.emulateMedia({ colorScheme, reducedMotion: 'reduce' }); await page.setViewportSize({ width, height: 900 })
     await page.goto('/republica')
-    const actions = page.locator('.workspace-heading-actions'), control = actions.locator('.appearance-switch')
+    const mobile = width < 720
+    const actions = page.locator('.workspace-heading-actions')
+    // Abre pelo teclado: é quem depende do contorno de foco conferido abaixo.
+    if (mobile) { await page.getByRole('button', { name: /Abrir menu da conta/ }).focus(); await page.keyboard.press('Enter') }
+    const control = (mobile ? page.locator('.account-menu-panel') : actions).locator('.appearance-switch')
     const select = page.getByRole('switch', { name: 'Modo escuro', exact: true })
-    const bell = actions.getByRole('button', { name: /Notificações/i })
+    const bell = page.getByRole('button', { name: /Notificações/i })
     await expect(select).toHaveCount(1); await expect(select).toHaveAttribute('aria-checked', String(colorScheme === 'dark'))
     await expect(page.getByRole('combobox', { name: 'Aparência', exact: true })).toHaveCount(0)
     await expect(page.locator('.rep-sidebar .appearance-switch, .rep-mobile-actions .appearance-switch')).toHaveCount(0)
+    if (mobile) await expect(actions.locator('.appearance-switch')).toBeHidden()
     await expect(bell).toBeVisible()
     const themeBounds = (await control.boundingBox())!, bellBounds = (await bell.boundingBox())!
     expect(themeBounds.width).toBeGreaterThanOrEqual(44); expect(themeBounds.height).toBeGreaterThanOrEqual(44)
-    expect(bellBounds.x - themeBounds.x - themeBounds.width).toBeGreaterThanOrEqual(12)
+    if (!mobile) expect(bellBounds.x - themeBounds.x - themeBounds.width).toBeGreaterThanOrEqual(12)
     expect(await contrast(control.locator('[data-active=true]'))).toBeGreaterThanOrEqual(4.5)
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await select.focus(); await expect(select).toBeFocused()
@@ -111,6 +116,9 @@ test('toque troca o tema e mantém foco visível em alto contraste', async ({ br
   const context = await browser.newContext({ hasTouch: true, viewport: { width: 390, height: 844 }, colorScheme: 'light' })
   try {
     const page = await context.newPage(); await prepare(page); await page.goto('http://127.0.0.1:5174/republica')
+    // No celular o tema fica no menu da conta (desde 25/11/2026).
+    const menu = page.getByRole('button', { name: /Abrir menu da conta/ })
+    await menu.tap()
     const control = page.getByRole('switch', { name: 'Modo escuro', exact: true })
     const bounds = (await control.boundingBox())!
     await page.touchscreen.tap(bounds.x + 78, bounds.y + 22); await expect(control).toBeChecked()

@@ -99,7 +99,10 @@ test('foto aparece para a casa atual, requisições são deduplicadas e falha de
   await expect(page.locator('.workspace-profile-link img')).toBeVisible();expect(downloads).toBe(1)
   for(const theme of ['light','dark'] as const)for(const width of [390,1440]){
     await page.setViewportSize({width,height:900})
+    // No celular o tema fica no menu da conta (desde 25/11/2026).
+    if(width<720)await page.getByRole('button',{name:/Abrir menu da conta/}).click()
     await page.getByRole('switch',{name:'Modo escuro',exact:true}).press(theme==='dark'?'ArrowRight':'ArrowLeft')
+    if(width<720)await page.keyboard.press('Escape')
     for(const selector of ['.workspace-profile-link','.rep-mobile-account-link:has(.profile-avatar)']){
       const link=page.locator(selector)
       if(!await link.isVisible())continue
@@ -127,7 +130,9 @@ test('perfil e editor cabem nos dois temas, teclado, zoom de página e janela ba
   await page.emulateMedia({reducedMotion:'reduce'})
   for(const theme of ['light','dark'] as const)for(const width of [320,390,768,1440]){
     await page.setViewportSize({width,height:900});await enter(page)
+    if(width<720)await page.getByRole('button',{name:/Abrir menu da conta/}).click()
     await page.getByRole('switch',{name:'Modo escuro',exact:true}).press(theme==='dark'?'ArrowRight':'ArrowLeft')
+    if(width<720)await page.keyboard.press('Escape')
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true)
     expect(await contrast(page.getByRole('heading',{name:'Foto de perfil',exact:true}))).toBeGreaterThanOrEqual(4.5)
     await page.screenshot({path:`${folder}/perfil-${theme}-${width}.png`,fullPage:true})
