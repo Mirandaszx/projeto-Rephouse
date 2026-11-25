@@ -16,12 +16,24 @@
 
 /* Blocos de carregamento (shadcn Skeleton): globais, porque aparecem antes das telas carregarem o próprio CSS. */
 .rep-skeleton-page { display: grid; gap: 16px; padding-block: 8px 40px; }
-.rep-skeleton-boot { max-width: 1120px; margin-inline: auto; padding: 48px 16px; }
 .rep-skeleton-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 16px; }
 .rep-skeleton-list { display: grid; }
 .rep-skeleton-row { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 16px; padding-block: 16px; border-bottom: 1px solid var(--app-border); }
 .rep-skeleton-row > div { display: grid; gap: 8px; }
 @media (max-width: 719px) { .rep-skeleton-row { grid-template-columns: 40px minmax(0, 1fr); } .rep-skeleton-row > :last-child { display: none; } }
+/*
+ * Abertura do site: a casinha da marca respira (escala e opacidade, 1,6 s, curva suave de vai e volta).
+ * Animação CSS de transform/opacity roda fora da thread principal, então continua fluida enquanto o site carrega.
+ * Aparece depois de 150 ms, para não piscar quando o carregamento é rápido. Com movimento reduzido: só opacidade.
+ */
+.rep-boot { display: grid; place-content: center; justify-items: center; gap: 16px; min-height: 100dvh; margin: 0; background: var(--app-canvas, #f6f8f5); color: var(--app-text, #193732); font-family: Inter, ui-sans-serif, system-ui, sans-serif; animation: rep-boot-in 200ms cubic-bezier(.23, 1, .32, 1) 150ms both; }
+.rep-boot-mark { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 18px; background: #d2ec9c; color: #205448; }
+.rep-boot-text { margin: 0; color: var(--app-muted, #546962); font-size: 16px; }
+@keyframes rep-boot-in { from { opacity: 0; } }
+@keyframes rep-boot-breathe { 50% { transform: scale(1.06); opacity: .85; } }
+@keyframes rep-boot-fade { 50% { opacity: .5; } }
+@media (prefers-reduced-motion: no-preference) { .rep-boot-mark { animation: rep-boot-breathe 1.6s cubic-bezier(.45, 0, .55, 1) infinite; } }
+@media (prefers-reduced-motion: reduce) { .rep-boot-mark { animation: rep-boot-fade 2s cubic-bezier(.45, 0, .55, 1) infinite; } }
 /* Dica dos botões só com ícone (shadcn Tooltip): entra rápido e sai sem demora; nada se move com movimento reduzido. */
 .rep-tooltip { font-family: Inter, ui-sans-serif, system-ui, sans-serif; line-height: 1.4; }
 @media (prefers-reduced-motion: no-preference) {

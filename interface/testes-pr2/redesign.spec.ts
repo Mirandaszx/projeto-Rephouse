@@ -153,6 +153,27 @@ test('no celular, o tema fica no menu da conta e o topo da página não tem uma 
   expect(first.y - heading.y).toBeLessThan(150)
 })
 
+test('enquanto o site carrega, a casinha da marca respira; com movimento reduzido ela só clareia e escurece', async ({ page }) => {
+  for (const reducedMotion of ['no-preference', 'reduce'] as const) {
+    await prepare(page)
+    await page.emulateMedia({ reducedMotion })
+    // Segura o código da tela da república para a abertura ficar na tela.
+    let release!: () => void
+    const gate = new Promise<void>(resolve => { release = resolve })
+    await page.route(url => url.pathname === '/codigo/novo/Republica.tsx', async route => { await gate; await route.fallback() })
+    await page.goto('/republica')
+    const loading = page.getByRole('status').filter({ hasText: 'Carregando RepHouse…' })
+    await expect(loading).toBeVisible()
+    const mark = loading.locator('.rep-boot-mark')
+    expect(await mark.evaluate(element => getComputedStyle(element).animationName)).toBe(reducedMotion === 'reduce' ? 'rep-boot-fade' : 'rep-boot-breathe')
+    expect(await mark.evaluate(element => getComputedStyle(element).animationIterationCount)).toBe('infinite')
+    release()
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    await expect(loading).toHaveCount(0)
+    await page.unrouteAll({ behavior: 'ignoreErrors' })
+  }
+})
+
 test('Modo simples mostra só o essencial, com ações grandes, e a escolha fica salva no aparelho', async ({ page }) => {
   await prepare(page)
   await page.goto('/republica')
