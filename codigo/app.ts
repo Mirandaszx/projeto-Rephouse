@@ -30,11 +30,12 @@ import { requestLog, type LogSink } from './compartilhado/http/request-log.js'
 import { isReady } from './modulos/saude/readiness.js'
 import type { GoogleOptions } from './modulos/autenticacao/google.service.js'
 import { createFrontendCompatibilityRouter, FRONT_PREFIX } from './modulos/integracao/frontend-compat.js'
+import { exportarDadosPessoais } from './modulos/privacidade/exportar.js'
 import type { EmailOptions } from './infraestrutura/email/resend.js'
 import { createNotificationsRouter } from './modulos/notificacoes/notificacoes.routes.js'
 import type { NotificationsSignal } from './modulos/notificacoes/notificacoes.stream.js'
 
-interface AppOptions { database?: PrismaClient; jwtSecret?: string; corsOrigins?: string[]; log?: LogSink; readiness?: () => Promise<unknown>; google?: GoogleOptions; email?: EmailOptions; notificationsSignal?: NotificationsSignal; trustProxy?: number }
+interface AppOptions { database?: PrismaClient; jwtSecret?: string; corsOrigins?: string[]; log?: LogSink; readiness?: () => Promise<unknown>; google?: GoogleOptions; email?: EmailOptions; notificationsSignal?: NotificationsSignal; trustProxy?: number; privacyContact?: string }
 
 // Monta HTTP sem abrir porta ou conexão: reutilizável nos testes.
 export function createApp(options: AppOptions = {}): Express {
@@ -60,6 +61,8 @@ export function createApp(options: AppOptions = {}): Express {
     res.status(ready ? 200 : 503).json({ status: ready ? 'ok' : 'unavailable' })
   })
   app.get('/api/openapi.json', (_req, res) => { res.json(openApiDocument) })
+  // Contato para pedidos de privacidade (LGPD, art. 41): público e lido da configuração, nunca fixo no código.
+  app.get(['/api/privacidade', FRONT_PREFIX + '/privacidade'], (_req, res) => { res.json({ contato: options.privacyContact ?? null, versaoPolitica: '2026-11-26' }) })
   if (options.database) {
     if (!options.jwtSecret || options.jwtSecret.length < 32) throw new Error('JWT_SECRET precisa ter ao menos 32 caracteres.')
     const db = options.database
@@ -82,6 +85,9 @@ export function createApp(options: AppOptions = {}): Express {
     api.use('/notificacoes', notifications.router)
     app.locals.closeNotifications = notifications.close
     api.get('/me', auth.me).patch('/me', auth.edit).delete('/me', auth.deleteAccount)
+    api.get('/me/dados', async (_req, res) => {
+      res.set('Content-Disposition', 'attachment; filename="rephouse-meus-dados.json"').json(await exportarDadosPessoais(db, res.locals.actor.id))
+    })
     api.get('/me/financeiro/resumo', fc.personalSummary)
     api.get('/me/financeiro', fc.personal).get('/me/financeiro/:id', fc.personalDetail)
     api.use('/republicas', createRepublicasRouter(rc))

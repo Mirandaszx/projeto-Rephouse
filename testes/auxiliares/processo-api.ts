@@ -17,7 +17,7 @@ export async function iniciarApiCompilada(schema: string) {
   // O IPC apenas envia o sinal normal de encerramento, também no Windows. Não altera a aplicação.
   const child = spawn(process.execPath, ['--input-type=module', '-e', "process.once('message', () => { process.disconnect(); process.emit('SIGTERM') }); await import('./dist/server.js')"], {
     env: { ...process.env, DATABASE_URL: url.toString(), JWT_SECRET: secret, NODE_ENV: 'test', HOST: '127.0.0.1', PORT: String(address.port),
-      GOOGLE_CLIENT_ID: '', RESEND_API_KEY: '', EMAIL_FROM: '', APP_PUBLIC_URL: '', CORS_ORIGINS: '', APP_TIME_ZONE: 'America/Sao_Paulo' },
+      GOOGLE_CLIENT_ID: '', RESEND_API_KEY: '', BREVO_API_KEY: '', EMAIL_FROM: '', APP_PUBLIC_URL: '', CORS_ORIGINS: '', APP_TIME_ZONE: 'America/Sao_Paulo' },
     windowsHide: true, stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
   })
   let startup = false, spawnError: Error | undefined

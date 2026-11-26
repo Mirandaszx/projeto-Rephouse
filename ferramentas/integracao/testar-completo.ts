@@ -13,7 +13,7 @@ const isolated = new URL(url); isolated.searchParams.set('schema', schema)
 const env = { ...process.env, NODE_ENV: 'test', DATABASE_URL: isolated.toString(), TEST_DATABASE_URL: isolated.toString(),
   DOTENV_CONFIG_OVERRIDE: 'false',
   JWT_SECRET: 'segredo-exclusivo-da-verificacao-completa-local-2026', GOOGLE_CLIENT_ID: '', CORS_ORIGINS: '',
-  RESEND_API_KEY: '', EMAIL_FROM: '', APP_PUBLIC_URL: '',
+  RESEND_API_KEY: '', BREVO_API_KEY: '', EMAIL_FROM: '', APP_PUBLIC_URL: '',
   FORCE_COLOR: '0', NODE_DISABLE_COLORS: '1', NO_COLOR: '1' }
 const directory = '.devops-local/testes-criticos'
 await mkdir(directory, { recursive: true })

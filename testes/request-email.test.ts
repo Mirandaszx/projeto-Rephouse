@@ -130,16 +130,69 @@ describe('Cadastro confirmado e link mágico por HTTP e PostgreSQL reais', () =>
       assert.equal((await c.request('POST','/api/auth/email/confirmar',undefined,latest,undefined,{Cookie:latestCookie})).status,200)
     } finally { await c.close() }
   })
-  it('quando a conta é desconhecida, bloqueada ou excluída, então responde genericamente sem enviar acesso', async () => {
+  it('quando a conta está bloqueada, então não envia acesso; e-mail sem conta ou de conta excluída recebe link de criação com a mesma resposta', async () => {
     const c = await abrirRequestSpec()
     try {
       const a = await c.account('ana'), b = await c.account('bruno'), master = await c.account('master')
       await c.request('PATCH', `/api/master/usuarios/${a.usuario.id}/status`, master.token, { ativo: false })
       await c.request('DELETE', '/api/me', b.token, { senha: password })
+      const before = c.mailbox.messages.length, novo = input().email
       const results = []
-      for (const email of [input().email, a.usuario.email, b.usuario.email]) results.push(await c.request('POST', '/api/auth/email/solicitar', undefined, { email }))
+      for (const email of [novo, a.usuario.email, b.usuario.email]) results.push(await c.request('POST', '/api/auth/email/solicitar', undefined, { email }))
       assert.deepEqual(results.map(r => r.status), [202, 202, 202]); assert.deepEqual(results[0].body, results[1].body); assert.deepEqual(results[1].body, results[2].body)
-      assert.equal(c.mailbox.messages.length, 0)
+      // A tela não diferencia os casos. Conta bloqueada não recebe nada; conta excluída foi anonimizada (LGPD), então
+      // o e-mail dela está livre e recebe, como qualquer e-mail sem conta, o convite para criar uma conta nova.
+      assert.deepEqual(c.mailbox.messages.slice(before).map(m => [m.to, m.subject]), [[novo, 'Crie sua conta no RepHouse'], [b.usuario.email, 'Crie sua conta no RepHouse']])
+      assert.equal(await c.db.usuario.count({ where: { email: novo } }), 0)
+    } finally { await c.close() }
+  })
+  it('quando entra por link com e-mail sem conta, então a confirmação pede nome e senha sem gastar o link e cria a conta', async () => {
+    const c = await abrirRequestSpec()
+    try {
+      const email = input().email
+      assert.equal((await c.request('POST', '/api/auth/email/solicitar', undefined, { email, finalidade: 'login' })).status, 202)
+      const proof = c.mailbox.proof(email)
+      for (const faltando of [{}, { nome: 'Nova Pessoa' }, { senha: password }]) {
+        const r = await c.request('POST', '/api/auth/email/confirmar', undefined, { ...proof, ...faltando })
+        assert.equal(r.status, 400); assert.equal((r.body as { error: { code: string } }).error.code, 'EMAIL_ACCOUNT_DETAILS_REQUIRED')
+      }
+      assert.equal((await c.db.linkEmail.findUniqueOrThrow({ where: { id: proof.id } })).consumidoEm, null)
+      assert.equal(await c.db.usuario.count({ where: { email } }), 0)
+      assert.equal((await c.request('POST', '/api/auth/email/confirmar', undefined, { ...proof, nome: '   ', senha: password })).status, 400)
+      assert.equal((await c.request('POST', '/api/auth/email/confirmar', undefined, { ...proof, nome: 'Nova Pessoa', senha: 'curta' })).status, 400)
+      const ok = await c.request<{ token: string; usuario: { nome: string; email: string }; acaoRepublica: null }>('POST', '/api/auth/email/confirmar', undefined, { ...proof, nome: '  Nova Pessoa  ', senha: password })
+      assert.equal(ok.status, 200); assert.ok(ok.body.token); assert.equal(ok.body.usuario.nome, 'Nova Pessoa'); assert.equal(ok.body.acaoRepublica, null)
+      const user = await c.db.usuario.findUniqueOrThrow({ where: { email } })
+      assert.ok(user.senhaHash?.startsWith('$argon2id$'))
+      assert.ok(await c.db.emailVerificado.findUnique({ where: { usuarioId: user.id } }))
+      assert.equal((await c.request('POST', '/api/auth/email/confirmar', undefined, { ...proof, nome: 'Outra', senha: password })).status, 401)
+      assert.equal((await c.request('POST', '/api/auth/login', undefined, { email, senha: password })).status, 200)
+      // Com a conta criada, o próximo pedido é um link de entrada comum.
+      await release(c)
+      await c.request('POST', '/api/auth/email/solicitar', undefined, { email })
+      assert.equal(c.mailbox.messages.at(-1)!.subject, 'Seu link para entrar no RepHouse')
+      assert.equal((await c.request('POST', '/api/auth/email/confirmar', undefined, c.mailbox.proof(email))).status, 200)
+    } finally { await c.close() }
+  })
+  it('quando há cadastro com senha pendente, então o link de entrada sem conta não o invalida nem o bloqueia', async () => {
+    const c = await abrirRequestSpec()
+    try {
+      const data = input()
+      // Link de entrada primeiro: não impede o cadastro com senha logo em seguida.
+      await c.request('POST', '/api/auth/email/solicitar', undefined, { email: data.email }, undefined, { Cookie: '' })
+      const magic = c.mailbox.proof(data.email), magicCookie = c.emailCookie()
+      await release(c)
+      assert.equal((await c.request('POST', '/api/auth/register', undefined, data, undefined, { Cookie: '' })).status, 202)
+      assert.equal(c.mailbox.messages.at(-1)!.subject, 'Confirme seu e-mail no RepHouse')
+      const registro = c.mailbox.proof(data.email), registroCookie = c.emailCookie()
+      // Um novo link de entrada (outro navegador) substitui só o anterior do mesmo tipo, não o cadastro com senha.
+      await release(c)
+      await c.request('POST', '/api/auth/email/solicitar', undefined, { email: data.email }, undefined, { Cookie: '' })
+      assert.equal((await c.request('POST', '/api/auth/email/confirmar', undefined, { ...magic, nome: 'Intrusa', senha: 'Senha-da-intrusa-2026' }, undefined, { Cookie: magicCookie })).status, 401)
+      assert.equal((await c.request('POST', '/api/auth/email/confirmar', undefined, registro, undefined, { Cookie: registroCookie })).status, 200)
+      const user = await c.db.usuario.findUniqueOrThrow({ where: { email: data.email } })
+      assert.equal(user.nome, data.nome); assert.ok(user.senhaHash)
+      assert.equal((await c.request('POST', '/api/auth/login', undefined, { email: data.email, senha: password })).status, 200)
     } finally { await c.close() }
   })
   it('quando faz logout ou bloqueio após solicitar, então um link anterior não contorna a revogação', async () => {

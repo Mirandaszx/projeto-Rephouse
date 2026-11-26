@@ -164,7 +164,7 @@ test('Google: assinatura real controlada, HTTP e PostgreSQL isolado', { timeout:
       for(const result of results){assert.equal(result.status,200);assert.equal(result.body.usuario.id,registered.body.usuario.id)}
       assert.equal(await env.db.identidadeGoogle.count({where:{usuarioId:registered.body.usuario.id}}),1)
     })
-    await scenario('bloqueio e exclusão não são revertidos pelo Google', async ({ request, challenge }) => {
+    await scenario('bloqueio e exclusão não são revertidos pelo Google; exclusão libera uma conta nova', async ({ request, challenge }) => {
       const email=`${randomUUID()}@google.example.test`,sub=randomUUID(),ch=await challenge()
       const user=(await request<Session>('/auth/google',{credential:await credential(ch,email,sub),desafioId:ch.desafioId})).body
       await env.db.usuario.update({where:{id:user.usuario.id},data:{ativo:false}})
@@ -174,7 +174,10 @@ test('Google: assinatura real controlada, HTTP e PostgreSQL isolado', { timeout:
       assert.equal((await request('/me',{credential:await credential(confirmation,email,sub),desafioId:confirmation.desafioId},user.token,'DELETE')).status,204)
       const deleted=await env.db.usuario.findUniqueOrThrow({where:{id:user.usuario.id}});assert.equal(deleted.ativo,false);assert.ok(deleted.excluidoEm)
       assert.equal((await request('/me',undefined,user.token,'GET')).status,401)
-      const retry=await challenge();assert.equal((await request('/auth/google',{credential:await credential(retry,email,sub),desafioId:retry.desafioId})).status,401)
+      // LGPD (26/11/2026): a exclusão anonimiza e desliga o Google; voltar pelo Google cria uma conta nova, sem reviver a antiga.
+      const retry=await challenge(),novo=await request<{usuario:{id:string}}>('/auth/google',{credential:await credential(retry,email,sub),desafioId:retry.desafioId})
+      assert.equal(novo.status,200);assert.notEqual(novo.body.usuario.id,user.usuario.id)
+      const antigo=await env.db.usuario.findUniqueOrThrow({where:{id:user.usuario.id}});assert.equal(antigo.ativo,false);assert.ok(antigo.excluidoEm);assert.equal(antigo.nome,'Ex-morador')
     })
     await scenario('exclusão exige Google próprio e preserva restrição de administração e último MASTER', async ({ request, challenge }) => {
       const email=`${randomUUID()}@google.example.test`,sub=randomUUID(),ch=await challenge()

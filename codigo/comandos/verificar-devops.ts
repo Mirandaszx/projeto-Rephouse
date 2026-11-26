@@ -3,7 +3,7 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import { mkdir, writeFile, readdir,readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
-import { command, compose, stack, backup, restore, root, assertInsideRoot, type Stack } from './operacao-docker.js'
+import { NODE_API, command, compose, stack, backup, restore, root, assertInsideRoot, type Stack } from './operacao-docker.js'
 import {legacyBackupFixture} from './fixture-backup-legado.js'
 
 // Credenciais descartáveis, novas por execução; nenhum segredo real do .env é usado.
@@ -55,6 +55,7 @@ const snapshotSql = `SELECT json_build_object(
 async function snapshot(s: Stack): Promise<Record<string, unknown>> {
   return JSON.parse(await compose(s,['exec','-T','postgres','sh','-c','exec psql -X -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d rabbu_mvp -At'],{input:snapshotSql})) as Record<string, unknown>
 }
+const AUDITORIA_EMAIL = 'admin.horizonte@demo.rephouse.test'
 async function fixture(base: string) {
   const paymentKey=randomUUID()
   async function request(method: string, path: string, token?: string, data?: unknown) {
@@ -63,13 +64,17 @@ async function fixture(base: string) {
     assert.ok(result.ok, `${method} ${path}: ${result.status}`)
     return await result.json() as Record<string, unknown>
   }
-  const session = await request('POST','/api/auth/register',undefined,{nome:'Auditoria Docker',email:'docker@audit.example.test',senha})
+  // Desde a autenticação 4.2.0 o cadastro confirma o e-mail antes de criar a conta. O ensaio entra como o
+  // administrador da República Horizonte, semeado logo antes com a senha descartável desta execução.
+  const session = await request('POST','/api/auth/login',undefined,{email:AUDITORIA_EMAIL,senha})
   const token = session.token as string
-  await request('POST','/api/republicas',token,{nome:'República Docker'})
   const membersRes = await fetch(`${base}/api/membros`,{headers:{Authorization:`Bearer ${token}`}})
   assert.equal(membersRes.status,200)
   const members = (await membersRes.json() as {dados:{id:string}[]}).dados
-  const expense = await request('POST','/api/despesas',token,{titulo:'Conta preservada',categoria:'OUTROS',valorTotal:'120.00',vencimento:'2030-01-01',membroIds:[members[0]!.id]})
+  // A parcela é do próprio usuário: cada morador só registra pagamento da sua parte.
+  const me = await (await fetch(`${base}/api/me`,{headers:{Authorization:`Bearer ${token}`}})).json() as {membro?:{id:string}}
+  assert.ok(me.membro && members.some(member=>member.id===me.membro!.id), 'O administrador da auditoria precisa ser morador ativo.')
+  const expense = await request('POST','/api/despesas',token,{titulo:'Conta preservada',categoria:'OUTROS',valorTotal:'120.00',vencimento:'2030-01-01',membroIds:[me.membro.id]})
   const rateio = (expense.rateios as {id:string}[])[0]!
   const content = '%PDF-1.4\nComprovante privado da auditoria Docker\n%%EOF'
   const data = new FormData()
@@ -100,15 +105,16 @@ try {
   const base = `http://127.0.0.1:${port}`
   await ready(base)
   assert.deepEqual(await (await fetch(`${base}/api/health`)).json(),{status:'ok'})
-  const uid = await compose(source,['exec','-T','api','id','-u'])
-  assert.equal(uid,'1000')
+  // Distroless não tem `id`: o próprio node informa o usuário do processo (nonroot = 65532).
+  const uid = await compose(source,['exec','-T','api',NODE_API,'-e','process.stdout.write(String(process.getuid()))'])
+  assert.equal(uid,'65532')
   const mountIds = await compose(source,['ps','-q','api'])
   const mounts = JSON.parse(await command(['inspect','--format','{{json .Mounts}}',mountIds])) as {Type:string}[]
   assert.ok(mounts.every(mount=>mount.Type==='volume'))
   assert.equal(mounts.length,0,'A API não depende de armazenamento em volume.')
   // Exercita backup dos três perfis, vínculos históricos e tarefas, além do comprovante.
   source.env.DEMO_PASSWORD=senha
-  await compose(source,['exec','-T','-e','NODE_ENV=test','-e','DEMO_PASSWORD','api','node','dist/comandos/semear-demonstracao.js'])
+  await compose(source,['exec','-T','-e','NODE_ENV=test','-e','DEMO_PASSWORD','api',NODE_API,'dist/comandos/semear-demonstracao.js'])
   const data = await fixture(base)
   await verifyReceipt(base,data.token,data.paymentId,data.hash)
   const before = await snapshot(source)
@@ -152,7 +158,7 @@ try {
   await compose(source,['start','api']);await ready(base)
   assert.deepEqual(await snapshot(source),before)
   evidence('SIGTERM drenou requisição em andamento; replay após reinício preservou o mesmo pagamento sem duplicação.')
-  evidence(`Imagem compilada sem bind mount, usuário 1000, ${before.versoes} migrations, registros e comprovante preservados após restart.`)
+  evidence(`Imagem compilada sem bind mount, usuário 65532 (nonroot), ${before.versoes} migrations, registros e comprovante preservados após restart.`)
 
   await compose(source,['stop','postgres'])
   const start = performance.now()
@@ -197,7 +203,7 @@ try {
   const restoredBase = `http://127.0.0.1:${restorePort}`
   await ready(restoredBase)
   assert.deepEqual(await snapshot(target),before)
-  const login = await fetch(`${restoredBase}/api/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'docker@audit.example.test',senha})})
+  const login = await fetch(`${restoredBase}/api/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:AUDITORIA_EMAIL,senha})})
   assert.equal(login.status,200)
   const restoredToken = (await login.json() as {token:string}).token
   await verifyReceipt(restoredBase,restoredToken,data.paymentId,data.hash)

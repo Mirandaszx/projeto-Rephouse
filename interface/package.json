@@ -5,12 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b tsconfig.app.json tsconfig.node.json && vite build",
     "lint": "eslint codigo",
     "preview": "vite preview",
     "test:e2e": "playwright test",
     "test:pr2": "playwright test --config playwright.pr2.config.ts",
-    "typecheck": "tsc -b --pretty false && tsc -p tsconfig.test.json",
+    "typecheck": "tsc -b --pretty false tsconfig.app.json tsconfig.node.json && tsc -p tsconfig.test.json",
     "verificar": "npm run build && npm run typecheck && npm run lint && npm run test:e2e"
   },
   "dependencies": {

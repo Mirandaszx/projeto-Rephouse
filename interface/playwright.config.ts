@@ -42,7 +42,7 @@ export default defineConfig({
       cwd: root,
       env: {
         TEST_DATABASE_URL: testDatabaseUrl,
-        RESEND_API_KEY: '', EMAIL_FROM: '', APP_PUBLIC_URL: '',
+        RESEND_API_KEY: '', BREVO_API_KEY: '', EMAIL_FROM: '', APP_PUBLIC_URL: '',
         REPHOUSE_INTERFACE_TEST_RUN: process.env.REPHOUSE_INTERFACE_TEST_RUN,
       },
       url: "http://127.0.0.1:3405/api/ready",

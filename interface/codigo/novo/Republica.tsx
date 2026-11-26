@@ -8,7 +8,6 @@ import { request, brl as money } from '../api'
 import CopyInvite from './CopyInvite'
 import Master from '../rebuild/Admin'
 import { GlisseButton } from '../rebuild/GlisseButton'
-import { SegmentedControl } from 'glisse'
 import { HaloDropzone } from '../rebuild/vendor/cult-halo-dropzone'
 import { AnimatedField, DateField } from '../rebuild/Fields'
 import { Check, ReceiptText, UserRoundPlus, House as HouseIcon, KeyRound } from 'lucide-react'
@@ -68,7 +67,12 @@ export default function Republica() {
   const [newExpenseTotal, setNewExpenseTotal] = useState('')
   const results = useWorkspaceTransition(filter)
   const [editing, setEditing] = useState<{ expense: Expense; share: Share } | null>(null)
-  const [createHouse, setCreateHouse] = useState(() => new URLSearchParams(window.location.search).get('acao') === 'criar')
+  // Sem república: a escolha vem do cadastro (?acao=) ou fica em aberto até a pessoa tocar numa das duas opções.
+  const [houseChoice, setHouseChoice] = useState<'criar' | 'entrar' | null>(() => {
+    const acao = new URLSearchParams(window.location.search).get('acao')
+    return acao === 'criar' || acao === 'entrar' ? acao : null
+  })
+  const createHouse = houseChoice === 'criar'
   const [busy, setBusy] = useState(false)
   const [formError, setFormError] = useState<Feedback>('')
   const [notice, setNotice] = useState<Notice | null>(null)
@@ -210,17 +214,32 @@ export default function Republica() {
   </div>
   if (!house) return <div className="republica rep-internal"><main className="rep-main rep-onboarding">
     <header className="rep-top"><WorkspaceBrand /><div className="rep-onboarding-actions"><a href="/republica/perfil">Meu perfil</a><a href="/republica/financeiro">Meu financeiro</a><AppearanceControl compact manualOnly /><GlisseButton variant="secondary" disabled={busy} onClick={() => void logout()}>Sair</GlisseButton></div></header>
-    <PageHeading title={'Oi, ' + user.nome.split(' ')[0] + '.'} context="Seu espaço no RepHouse" description={createHouse ? 'Dê um nome à sua república. Você receberá um código para convidar os moradores.' : 'Informe o código compartilhado por alguém da sua república ou crie uma nova.'} />
-    <section className="rep-expenses workspace-onboarding-card"><span className="workspace-onboarding-symbol" aria-hidden="true">{createHouse ? <HouseIcon size={24} /> : <KeyRound size={24} />}</span><SegmentedControl aria-label="Escolher república" value={createHouse ? 'criar' : 'entrar'} items={[
-      { value: 'entrar', label: 'Tenho um convite' },
-      { value: 'criar', label: 'Criar república' },
-    ]} onValueChange={value => { if (!busy && !loading) { setCreateHouse(value === 'criar'); setError('') } }} />
-    <SectionHeading title={createHouse ? 'Uma casa para a sua turma' : 'Encontre a sua casa'} description={createHouse ? 'Você será o primeiro administrador da república.' : 'O código é compartilhado por um morador da república.'} />
-    <form className="rep-house-form" key={String(createHouse)} onSubmit={enterHouse}>
-      {createHouse ? <AnimatedField label="Nome da república" name="nome" required maxLength={120} /> : <AnimatedField label="Código de entrada" name="codigoEntrada" required pattern="[A-Za-z0-9]{6,32}" autoCapitalize="characters" autoComplete="off" />}
-      {error && <ErrorNotice error={error} />}
-      <GlisseButton type="submit" disabled={busy || loading}>{busy || loading ? 'Aguarde…' : createHouse ? 'Criar república' : 'Entrar na república'}</GlisseButton>
-    </form></section>
+    <PageHeading title={'Oi, ' + user.nome.split(' ')[0] + '.'} context="Seu espaço no RepHouse" description="Para começar, entre na república da sua turma ou crie uma nova." />
+    {/* Duas opções grandes, lado a lado: rádios de verdade (teclado com setas, leitor de tela), com o cartão inteiro clicável. */}
+    <div className="rep-house-choices" role="radiogroup" aria-label="Como você quer começar">
+      {([
+        { value: 'entrar', title: 'Tenho um convite', text: 'Alguém da república me passou um código para entrar.', Icon: KeyRound },
+        { value: 'criar', title: 'Criar república', text: 'Você vira o administrador e convida os moradores.', Icon: HouseIcon },
+      ] as const).map(({ value, title, text, Icon }) => <label key={value} className="rep-house-choice" data-selected={houseChoice === value || undefined}>
+        <input type="radio" name="escolha-republica" value={value} checked={houseChoice === value} disabled={busy || loading}
+          aria-labelledby={`escolha-${value}-titulo`} aria-describedby={`escolha-${value}-texto`}
+          onChange={() => { setHouseChoice(value); setError('') }} />
+        <span className="rep-house-choice-mark" aria-hidden="true">{houseChoice === value && <Check size={14} strokeWidth={3} />}</span>
+        <span className="rep-house-choice-icon" aria-hidden="true"><Icon size={22} /></span>
+        <strong id={`escolha-${value}-titulo`}>{title}</strong>
+        <span id={`escolha-${value}-texto`}>{text}</span>
+      </label>)}
+    </div>
+    {houseChoice && <section className="rep-expenses workspace-onboarding-card rep-house-step" key={houseChoice} aria-label={createHouse ? 'Criar república' : 'Entrar com convite'}>
+      <form className="rep-house-form" onSubmit={enterHouse}>
+        {createHouse
+          ? <AnimatedField label="Nome da república" name="nome" required maxLength={120} />
+          : <AnimatedField label="Código de entrada" name="codigoEntrada" required pattern="[A-Za-z0-9]{6,32}" autoCapitalize="characters" autoComplete="off" />}
+        <p className="rep-house-hint">{createHouse ? 'Depois de criar, você recebe um código para convidar os moradores.' : 'O código tem letras e números, como aparece no convite.'}</p>
+        {error && <ErrorNotice error={error} />}
+        <GlisseButton type="submit" disabled={busy || loading}>{busy || loading ? 'Aguarde…' : createHouse ? 'Criar república' : 'Entrar na república'}</GlisseButton>
+      </form>
+    </section>}
   </main></div>
 
   const canCreate = user.tipoUsuario === 'USUARIO_ADMIN' && house.adminId === user.id

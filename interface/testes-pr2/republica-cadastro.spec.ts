@@ -141,13 +141,14 @@ test('escolha da república após cadastro fica utilizável em celular, tablet e
     await expect(page.getByRole('heading', { name: 'Oi, Moradora.', exact: true })).toBeVisible()
     await page.getByRole('radio', { name: 'Criar república', exact: true }).click()
     for (const name of ['Criar república', 'Tenho um convite']) {
+      // O cartão da opção comporta título e explicação sem cortar texto nem vazar para o lado.
       const fits = await page.getByRole('radio', { name, exact: true }).evaluate(control => {
-        const label = control.querySelector('.lg-tab-text')!.getBoundingClientRect()
-        const button = control.getBoundingClientRect()
-        return label.width <= button.width && label.height <= button.height
+        const card = control.closest('.rep-house-choice')!
+        return card.scrollWidth <= card.clientWidth && card.getBoundingClientRect().height >= 44
       })
       expect(fits).toBe(true)
     }
+    await expect(page.getByRole('radio', { name: 'Criar república', exact: true })).toBeChecked()
     await expect(page.getByLabel('Nome da república', { exact: true })).toBeVisible()
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await page.screenshot({ path: `${captures}/criar-republica-${width}x${height}.png`, fullPage: true })

@@ -103,7 +103,7 @@ describe('Conta técnica limitada da API no PostgreSQL real',()=>{
     const c=await contextoPermissoes(anteriores)
     if(anteriores){
       // Incluir as migrations funcionais exigidas pela API atual, mantendo a base sem a auditoria de nove migrations.
-      for(const name of ['202611200002_autenticacao_email','202611200003_tarefas_compartilhadas','202611200004_notificacoes','202611210001_notificacoes_gerais','202611220001_recorrencia_data_fim','202611220002_fotos_perfil'])await c.db.query(await readFile(`prisma/migracoes/${name}/migration.sql`,'utf8'))
+      for(const name of ['202611200002_autenticacao_email','202611200003_tarefas_compartilhadas','202611200004_notificacoes','202611210001_notificacoes_gerais','202611220001_recorrencia_data_fim','202611220002_fotos_perfil','202611260001_cadastro_por_link','202611260002_lgpd_anonimizacao_limpeza'])await c.db.query(await readFile(`prisma/migracoes/${name}/migration.sql`,'utf8'))
     }
     const runtimeDb=createDatabase(c.url.toString())
     const clientId='permissoes-test.apps.googleusercontent.com'

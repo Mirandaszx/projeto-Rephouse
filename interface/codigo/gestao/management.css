@@ -47,3 +47,7 @@
 .rh-admin-actions > a { color: var(--app-text); font-size: .8rem; }
 .rep-management :focus-visible, .rep-management-dialog :focus-visible { outline: 3px solid var(--app-focus); outline-offset: 3px; }
 @media(max-width:720px) { .rep-mobile-profile { flex-wrap: wrap; } .rep-mobile-actions { flex-wrap: wrap; } .rep-onboarding .rep-top { flex-wrap: wrap; } .rep-onboarding-actions { flex: 1 1 100%; justify-content: flex-start; } .rep-account-header nav { gap: 12px; } .rep-management-actions .lg-button { height: auto; min-height: 40px; white-space: normal; padding-block: 8px; } }
+
+/* LGPD (26/11/2026): baixar os próprios dados e link para a política, em Meu perfil. */
+.profile-privacy-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+.profile-privacy-actions > a { display: inline-flex; min-height: 44px; align-items: center; text-decoration: underline; text-underline-offset: 4px; }

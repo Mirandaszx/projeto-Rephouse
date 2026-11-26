@@ -2,7 +2,10 @@
 # (argon2, sharp) são compilados contra a mesma glibc em que vão rodar.
 FROM node:24-trixie-slim@sha256:4d00acb4bcc42c454c4eb801526f7ad7f772ea3bd4fd168c5cc2e384abcbb9d4 AS base
 # upgrade aplica as correções de segurança já publicadas pelo Debian.
-RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
+# A data (passada pelo operar.mjs) refaz esta camada a cada dia: sem ela, o cache do Docker
+# reaproveitava um upgrade antigo e a imagem ficava sem correções já publicadas.
+ARG ATUALIZACOES_SEGURANCA=manual
+RUN echo "atualizações de segurança: ${ATUALIZACOES_SEGURANCA}" && apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 
 FROM base AS dependencias
 WORKDIR /app

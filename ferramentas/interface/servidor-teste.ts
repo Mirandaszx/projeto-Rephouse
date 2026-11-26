@@ -6,6 +6,8 @@ import { abrirAmbienteIntegracao } from "../integracao/ambiente.js";
 import { createAuthService } from "../../codigo/modulos/autenticacao/auth.service.js";
 import { hash, argon2id } from 'argon2';
 import { createNotificationsSignal } from '../../codigo/modulos/notificacoes/notificacoes.stream.js';
+import { generateKeyPair, SignJWT } from 'jose';
+import { createGoogleVerifier } from '../../codigo/modulos/autenticacao/google.verifier.js';
 
 // Este servidor usa exclusivamente o banco dedicado e um schema descartável por execução.
 const environment = await abrirAmbienteIntegracao(
@@ -21,7 +23,7 @@ const auth = createAuthService(environment.db, jwtSecret);
 const managementAccounts: Record<string, { token: string; id: string; email: string }> = {};
 const fixturePasswordHash = await hash('Senha-interface-teste-2026', { type: argon2id });
 try {
-  for (const name of ["admin", "morador", "removido", "outra-casa", "excluir", "master", "financeiro-admin", "financeiro-morador", "polimento-admin", "polimento-ana", "polimento-bruno", "reenvio-despesas", "reenvio-tarefas", "validacao-despesas", "validacao-tarefas", "avisos-admin", "avisos-ana", "avisos-bruno", "tema-admin", "perfil-admin", "perfil-morador", "perfil-sem-casa"]) {
+  for (const name of ["google-vinculo", "admin", "morador", "removido", "outra-casa", "excluir", "master", "financeiro-admin", "financeiro-morador", "polimento-admin", "polimento-ana", "polimento-bruno", "reenvio-despesas", "reenvio-tarefas", "validacao-despesas", "validacao-tarefas", "avisos-admin", "avisos-ana", "avisos-bruno", "tema-admin", "perfil-admin", "perfil-morador", "perfil-sem-casa"]) {
     const email = `gestao-${name}@integracao.rephouse.test`;
     await environment.db.usuario.create({ data: { nome: `Gestão ${name}`, email, senhaHash: fixturePasswordHash } });
     const session = await auth.login({ email, senha: 'Senha-interface-teste-2026' });
@@ -37,18 +39,25 @@ try {
 const notificationUrl = new URL(process.env.TEST_DATABASE_URL!);
 notificationUrl.searchParams.set('schema', environment.schema);
 const notificationSignal = createNotificationsSignal(notificationUrl.toString(), () => {});
-const createTestApp = () => createApp({
+// Google do harness: chaves locais no lugar das do Google. A API usa o verificador real (assinatura, emissor,
+// destinatário, e-mail verificado e nonce), só que apontado para esta chave. Vale apenas para google.spec.ts,
+// que simula a produção sem envio de e-mail.
+const googleClientId = 'rephouse-interface-teste.apps.googleusercontent.com';
+const googleKeys = await generateKeyPair('RS256');
+const googleOptions = { clientId: googleClientId, verify: createGoogleVerifier(googleClientId, async () => googleKeys.publicKey) };
+const createTestApp = (suite?: string) => createApp({
   database: environment.db,
   jwtSecret,
   notificationsSignal: notificationSignal,
   // Igual ao ambiente real: o Vite de teste é o único proxy e repassa o IP em X-Forwarded-For.
   trustProxy: 1,
   corsOrigins: ["http://127.0.0.1:5174"],
-  email: { publicUrl: 'http://127.0.0.1:5174', send: async message => {
+  privacyContact: "privacidade@integracao.rephouse.test",
+  ...(suite === 'google.spec.ts' ? { google: googleOptions } : { email: { publicUrl: 'http://127.0.0.1:5174', send: async message => {
     // Caixa de e-mail do harness, fora do produto e acessível somente com o identificador da execução.
     const proof = new URL(message.text.match(/http:\/\/[^\s]+/)![0]);
     emails.set(message.to, proof.href);
-  } },
+  } } }),
 });
 const emails = new Map<string, string>();
 const app = createTestApp();
@@ -64,6 +73,16 @@ const server = createServer((req, res) => {
     res.writeHead(emails.has(email) ? 200 : 404, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }).end(JSON.stringify({ link: emails.get(email) ?? null }));
     return;
   }
+  if (req.method === 'GET' && req.url?.startsWith('/__interface_google?') && req.headers['x-interface-test-run'] === runId) {
+    // Emite a credencial que o Google entregaria ao navegador para o nonce do desafio da página.
+    const params = new URL(req.url, 'http://127.0.0.1').searchParams;
+    const email = params.get('email')!;
+    void new SignJWT({ email, email_verified: true, nonce: params.get('nonce')!, ...(params.get('nome') ? { name: params.get('nome')! } : {}) })
+      .setSubject(params.get('sub') ?? 'google-' + email).setIssuer('https://accounts.google.com').setAudience(googleClientId)
+      .setProtectedHeader({ alg: 'RS256' }).setIssuedAt().setExpirationTime('10m').sign(googleKeys.privateKey)
+      .then(credential => res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }).end(JSON.stringify({ credential })));
+    return;
+  }
   if (
     req.method === "POST" &&
     req.url === "/__interface_shutdown" &&
@@ -77,7 +96,7 @@ const server = createServer((req, res) => {
   // compartilhamento acidental entre jornadas de pessoas fictícias da suíte inteira.
   const suite = req.headers['x-interface-suite'];
   if (req.headers['x-interface-test-run'] === runId && typeof suite === 'string' && /^[a-z0-9-]+\.spec\.ts$/.test(suite)) {
-    if (!suiteApps.has(suite)) suiteApps.set(suite, createTestApp());
+    if (!suiteApps.has(suite)) suiteApps.set(suite, createTestApp(suite));
     suiteApps.get(suite)!(req, res);
   } else app(req, res);
 }).listen(3405, "127.0.0.1");

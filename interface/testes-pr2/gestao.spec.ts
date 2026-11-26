@@ -221,6 +221,9 @@ test('saída encerra somente vínculo e mantém acesso ao perfil e histórico se
   const response = page.waitForResponse(result => result.url().endsWith('/api/republicas/sair'))
   await page.getByRole('alertdialog').getByRole('button', { name: 'Confirmar saída', exact: true }).click()
   expect((await response).status()).toBe(204)
+  // Sem república, as duas opções aparecem lado a lado; o formulário surge com a escolhida.
+  await expect(page.getByRole('radio', { name: 'Criar república', exact: true })).not.toBeChecked()
+  await page.getByRole('radio', { name: 'Tenho um convite', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Entrar na república', exact: true })).toBeVisible()
   expect((await send<Schemas['MinhaConta']>(request, 'GET', '/me', 'admin')).membro).toBeNull()
   await page.getByRole('link', { name: 'Meu financeiro', exact: true }).click()

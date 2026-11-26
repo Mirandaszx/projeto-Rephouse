@@ -37,7 +37,9 @@ test('API compilada gera sem visita, encerra e reinicia sem duplicar nem perder 
       const port=address.port;await new Promise<void>(resolve=>portProbe.close(()=>resolve()))
       // IPC existe somente no processo de teste: emite os mesmos sinais do encerramento normal, também no Windows.
       child=spawn(process.execPath,['--input-type=module','-e',"process.once('message', () => { process.disconnect(); process.emit('SIGTERM') }); await import('./dist/server.js')"],{
-        env:{...process.env,DATABASE_URL:isolated.toString(),JWT_SECRET:secret,PORT:String(port),HOST:'127.0.0.1',NODE_ENV:'test',APP_TIME_ZONE:'America/Sao_Paulo',CORS_ORIGINS:'',GOOGLE_CLIENT_ID:''},stdio:['ignore','pipe','pipe','ipc'],windowsHide:true,
+        env:{...process.env,DATABASE_URL:isolated.toString(),JWT_SECRET:secret,PORT:String(port),HOST:'127.0.0.1',NODE_ENV:'test',APP_TIME_ZONE:'America/Sao_Paulo',CORS_ORIGINS:'',GOOGLE_CLIENT_ID:'',
+          // Isola do .env de quem roda os testes, como processo-api.ts: sem envio real de e-mail.
+          RESEND_API_KEY:'',BREVO_API_KEY:'',EMAIL_FROM:'',APP_PUBLIC_URL:''},stdio:['ignore','pipe','pipe','ipc'],windowsHide:true,
       })
       let started=false
       child.stdout!.on('data',(chunk:Buffer)=>{if(chunk.toString().includes('"event":"started"'))started=true})

@@ -8,6 +8,7 @@ import { LabelInput } from '../rebuild/vendor/spell-label-input'
 import AuthHouse from './AuthHouse'
 import AppearanceControl from '../aparencia/AppearanceControl'
 import AuthFeedback, { type AuthFailure } from './AuthFeedback'
+import GoogleAccess from './GoogleAccess'
 import './auth.css'
 import type { components } from '../../../integracao/api'
 
@@ -27,8 +28,11 @@ export default function Auth({ register, confirm = false }: { register: boolean;
   const reduced = useReducedMotion()
   const [magic, setMagic] = useState(false)
   const [emailEnabled, setEmailEnabled] = useState<boolean | null>(null)
+  const [googleClientId, setGoogleClientId] = useState<string | null>(null)
   const [pending, setPending] = useState<{ email: string; finalidade: 'cadastro' | 'login' } | null>(null)
   const [cooldown, setCooldown] = useState(0)
+  // Link de "entrar por e-mail" para quem ainda não tem conta: a confirmação pede nome e senha antes de criá-la.
+  const [newAccount, setNewAccount] = useState(false)
   const [proof] = useState(() => {
     if (!confirm) return null
     const params = new URLSearchParams(window.location.hash.slice(1))
@@ -40,7 +44,10 @@ export default function Auth({ register, confirm = false }: { register: boolean;
     if (confirm) window.history.replaceState(null, '', '/confirmar-email')
     const controller = new AbortController()
     void request<components['schemas']['MetodosAutenticacao']>('/auth/metodos', undefined, undefined, undefined, controller.signal)
-      .then(methods => setEmailEnabled(methods.email?.habilitado === true))
+      .then(methods => {
+        setEmailEnabled(methods.email?.habilitado === true)
+        setGoogleClientId(methods.google?.habilitado && methods.google.clientId ? methods.google.clientId : null)
+      })
       .catch(() => { if (!controller.signal.aborted) setEmailEnabled(false) })
     return () => controller.abort()
   }, [confirm])
@@ -60,6 +67,8 @@ export default function Auth({ register, confirm = false }: { register: boolean;
     sessionStorage.setItem('rephouse-token', result.token)
     window.location.assign(result.acaoRepublica ? `/republica?acao=${result.acaoRepublica}` : '/republica')
   }
+  // Sem envio de e-mail, o cadastro acontece só pelo Google: some o formulário de e-mail e senha.
+  const googleOnly = register && emailEnabled === false && !!googleClientId
   async function resend() {
     if (!pending || submitting.current || cooldown > 0) return
     submitting.current = true; setBusy(true); setError(null)
@@ -83,7 +92,14 @@ export default function Auth({ register, confirm = false }: { register: boolean;
     setError(null)
     try {
       if (confirm) {
-        enter(await request<components['schemas']['ConfirmacaoEmail']>('/auth/email/confirmar', undefined, proof!))
+        try {
+          enter(await request<components['schemas']['ConfirmacaoEmail']>('/auth/email/confirmar', undefined,
+            newAccount ? { ...proof!, nome: fields.get('nome'), senha: fields.get('senha') } : proof!))
+        } catch (failure) {
+          // O link continua valendo: a API só pede os dados da conta nova antes de criá-la.
+          if (!newAccount && failure instanceof ApiError && failure.code === 'EMAIL_ACCOUNT_DETAILS_REQUIRED') { setNewAccount(true); return }
+          throw failure
+        }
       } else if (register || magic) {
         await request<components['schemas']['EmailPendente']>(register ? '/auth/register' : '/auth/email/solicitar', undefined,
           register ? { ...input, acaoRepublica: houseAction } : { email: input.email, finalidade: 'login' })
@@ -110,27 +126,39 @@ export default function Auth({ register, confirm = false }: { register: boolean;
       <AuthBrand mobile />
       <motion.div className="auth-content" initial={reduced ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? 0 : 0.18, ease: 'easeOut' }}>
         <header className="auth-heading">
-          <h1 id="auth-title" ref={feedbackHeading} tabIndex={-1}>{pending ? 'Confira seu e-mail.' : confirm ? 'Confirme seu acesso.' : magic ? 'Entre pelo seu e-mail.' : register ? 'Sinta-se em casa.' : 'Bem-vindo de volta.'}</h1>
+          <h1 id="auth-title" ref={feedbackHeading} tabIndex={-1}>{pending ? 'Confira seu e-mail.' : confirm ? newAccount ? 'Crie sua conta.' : 'Confirme seu acesso.' : magic ? 'Entre pelo seu e-mail.' : register ? 'Sinta-se em casa.' : 'Bem-vindo de volta.'}</h1>
           {!pending && !confirm && <p>{register ? 'Já faz parte?' : 'Ainda não faz parte?'}{' '}<a href={register ? '/login' : '/cadastro'}>{register ? 'Entrar' : 'Criar conta'}</a></p>}
         </header>
         {pending ? <div className="auth-email-note">
-          <p role="status">Se o endereço estiver elegível, enviaremos um link para <strong>{pending.email}</strong>.</p>
-          <p>Confira também a pasta de spam. O link vale por 10 minutos. Abra no mesmo navegador em que fez a solicitação.</p>
-          <p>{pending.finalidade === 'cadastro' ? 'Sua conta será criada somente depois da confirmação.' : 'O link permite entrar na sua conta sem digitar a senha.'}</p>
+          {/* Entrar por link serve para quem tem conta e para quem não tem (o link cria a conta); a tela é a mesma nos
+              dois casos, então não revela quem usa o RepHouse. */}
+          {pending.finalidade === 'cadastro' ? <>
+            <p role="status">Enviamos um link de confirmação para <strong>{pending.email}</strong>.</p>
+            <p>Sua conta será criada quando você abrir o link e confirmar. Ele vale por 10 minutos e precisa ser aberto neste mesmo navegador. Confira também a pasta de spam.</p>
+          </> : <>
+            <p role="status">Enviamos um link para <strong>{pending.email}</strong>. Ele chega em até 2 minutos.</p>
+            <p>Se você já tem conta, o link entra nela. Se ainda não tem, ele cria uma: é só dizer seu nome e criar uma senha. O link vale por 10 minutos e precisa ser aberto neste mesmo navegador. Confira também a pasta de spam.</p>
+          </>}
           {error && <AuthFeedback key={error.id} failure={error} onDismiss={dismissError} />}
           <GlisseButton className="auth-submit" tint="#d2ec9c" disabled={busy || cooldown > 0} onClick={() => void resend()}>{busy ? 'Enviando…' : cooldown > 0 ? `Reenviar em ${cooldown}s` : 'Reenviar link'}</GlisseButton>
           <a className="auth-email-back" href={pending.finalidade === 'cadastro' ? '/cadastro' : '/login'}>Usar outro e-mail</a>
         </div> : <>
         <form className="auth-form" onSubmit={submit} aria-busy={busy}>
-          {confirm ? <div className="auth-email-note">
+          {confirm ? newAccount ? <>
+            <p className="auth-email-note" role="status">Ainda não existe uma conta com este e-mail. Diga como você se chama e crie uma senha para terminar.</p>
+            <fieldset disabled={busy} className="auth-fields">
+              <LabelInput labelPlacement="outside" containerClassName="auth-field" label="Nome" name="nome" placeholder="Como você se chama?" autoComplete="name" required maxLength={120} autoFocus />
+              <LabelInput labelPlacement="outside" containerClassName="auth-field" label="Senha" name="senha" type="password" placeholder="Pelo menos 8 caracteres" autoComplete="new-password" minLength={8} maxLength={128} required />
+            </fieldset>
+          </> : <div className="auth-email-note">
             <p>{proof ? 'Ao confirmar, você entrará na conta associada a este link.' : 'O link está incompleto ou já foi removido desta página. Solicite outro para continuar.'}</p>
             <p>O link funciona uma única vez, durante 10 minutos e no navegador da solicitação.</p>
           </div> : <>
-          <fieldset disabled={busy} className="auth-fields">
+          {!googleOnly && <fieldset disabled={busy} className="auth-fields">
             {register && <LabelInput labelPlacement="outside" containerClassName="auth-field" label="Nome" name="nome" placeholder="Como você se chama?" autoComplete="name" required maxLength={120} />}
             <LabelInput labelPlacement="outside" containerClassName="auth-field" label="E-mail" name="email" type="email" placeholder="voce@exemplo.com" autoComplete="email" autoCapitalize="none" spellCheck={false} required maxLength={254} />
             {!magic && <LabelInput labelPlacement="outside" containerClassName="auth-field" label="Senha" name="senha" type="password" placeholder={register ? 'Pelo menos 8 caracteres' : 'Sua senha'} autoComplete={register ? 'new-password' : 'current-password'} minLength={register ? 8 : undefined} maxLength={128} required />}
-          </fieldset>
+          </fieldset>}
           {register && <fieldset className="auth-house-choice" disabled={busy} aria-describedby="auth-house-help">
             <legend>Sua república</legend>
             <div className="auth-house-options">
@@ -141,19 +169,28 @@ export default function Auth({ register, confirm = false }: { register: boolean;
           </fieldset>}
           </>}
           {error && <AuthFeedback key={error.id} failure={error} onDismiss={dismissError} />}
-          {register && emailEnabled === false && <p className="auth-email-note" role="status">O cadastro está temporariamente indisponível. Contas existentes podem entrar com senha.</p>}
+          {register && emailEnabled === false && !googleClientId && <p className="auth-email-note" role="status">O cadastro está temporariamente indisponível. Contas existentes podem entrar com senha.</p>}
           {register && emailEnabled === null && <p className="auth-email-note" role="status">Verificando disponibilidade do cadastro…</p>}
-          <GlisseButton className="auth-submit" tint="#d2ec9c" type="submit" disabled={busy || (confirm && !proof) || (register && emailEnabled !== true)} aria-busy={busy}>
+          {googleOnly && <p className="auth-email-note auth-google-intro">Crie sua conta com o Google: leva poucos segundos e você não precisa inventar outra senha.</p>}
+          {!googleOnly && <GlisseButton className="auth-submit" tint="#d2ec9c" type="submit" disabled={busy || (confirm && !proof) || (register && emailEnabled !== true)} aria-busy={busy}>
             {busy && <LoaderCircle className="auth-spinner" size={18} aria-hidden="true" />}
-            {busy ? 'Aguarde…' : confirm ? 'Confirmar e entrar' : magic ? 'Enviar link de acesso' : register ? 'Criar minha conta' : 'Entrar na minha conta'}
-          </GlisseButton>
+            {busy ? 'Aguarde…' : confirm ? newAccount ? 'Criar conta e entrar' : 'Confirmar e entrar' : magic ? 'Enviar link de acesso' : register ? 'Criar minha conta' : 'Entrar na minha conta'}
+          </GlisseButton>}
         </form>
+        {!confirm && !magic && googleClientId && <>
+          {!googleOnly && <p className="auth-divider"><span>ou</span></p>}
+          <GoogleAccess clientId={googleClientId} register={register} disabled={busy}
+            onSession={session => enter(register ? { ...session, acaoRepublica: houseAction } : session)} onFailure={showFailure} />
+        </>}
         {confirm ? <a className="auth-email-back" href="/login">Voltar ao login</a>
           : !register && emailEnabled && <button type="button" className="auth-email-back" disabled={busy} onClick={() => { setMagic(value => !value); setError(null) }}>{magic ? 'Usar minha senha' : 'Entrar por link no e-mail'}</button>}
         </>}
-        <p className="auth-reassurance"><span aria-hidden="true" />Uma casa organizada começa com você.</p>
+        {/* No cadastro, o aviso dos termos ocupa o lugar da frase decorativa, sem aumentar a tela (LGPD, 26/11/2026). */}
+        {register || newAccount
+          ? <p className="auth-reassurance auth-legal">Ao criar a conta, você aceita os <a href="/privacidade#termos">termos</a> e a <a href="/privacidade">política de privacidade</a>.</p>
+          : <p className="auth-reassurance"><span aria-hidden="true" />Uma casa organizada começa com você.</p>}
       </motion.div>
-      <p className="auth-panel-footer">RepHouse · Feito para compartilhar a casa, não a complicação.</p>
+      <p className="auth-panel-footer">RepHouse · Feito para compartilhar a casa, não a complicação.{!register && !newAccount && <> <a href="/privacidade">Privacidade e termos</a></>}</p>
     </section>
   </main>
 }

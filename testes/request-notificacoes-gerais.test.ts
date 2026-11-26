@@ -73,8 +73,10 @@ describe('Notificações gerais e filtro Todas por HTTP real', () => {
       assert.equal((await c.request('DELETE','/api/me',person.token,{senha:password})).status,204)
       const event=await c.db.eventoNotificacao.findFirstOrThrow({where:{membroEventoId:member.id,tipo:'MEMBRO_SAIU'}})
       const list=await c.request<Page<Notice>>('GET','/api/notificacoes?categoria=GERAIS',c.ana.token)
-      assert.ok(list.body.dados.some(row=>row.titulo===person.usuario.nome&&row.tipo===event.tipo))
+      // LGPD (26/11/2026): a conta excluída é anonimizada, então o aviso de saída também deixa de trazer o nome.
+      assert.ok(list.body.dados.some(row=>row.titulo==='Ex-morador'&&row.tipo===event.tipo))
       assert.ok(!JSON.stringify(list.body).includes(person.usuario.email))
+      assert.ok(!JSON.stringify(list.body).includes(person.usuario.nome))
       assert.equal((await c.request('GET','/api/notificacoes?categoria=TODAS',person.token)).status,401)
     } finally {await c.close()}
   })

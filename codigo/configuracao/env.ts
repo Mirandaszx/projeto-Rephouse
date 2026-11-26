@@ -14,7 +14,10 @@ const environmentSchema = z.object({
   JWT_SECRET: z.string().min(32),
   GOOGLE_CLIENT_ID: z.preprocess(value => value === '' ? undefined : value, z.string().regex(/^[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/).optional()),
   RESEND_API_KEY: z.preprocess(value => value === '' ? undefined : value, z.string().regex(/^re_[A-Za-z0-9_-]+$/).optional()),
+  BREVO_API_KEY: z.preprocess(value => value === '' ? undefined : value, z.string().regex(/^xkeysib-[A-Za-z0-9_-]+$/).optional()),
   EMAIL_FROM: z.preprocess(value => value === '' ? undefined : value, z.email().optional()),
+  // Contato para pedidos de privacidade (LGPD). Sem ele, a política usa o remetente EMAIL_FROM.
+  PRIVACY_CONTACT_EMAIL: z.preprocess(value => value === '' ? undefined : value, z.email().optional()),
   APP_PUBLIC_URL: z.preprocess(value => value === '' ? undefined : value, z.url().refine(value => {
     const url = new URL(value)
     return ['http:', 'https:'].includes(url.protocol) && value === url.origin && !url.username && !url.password
@@ -29,8 +32,10 @@ const environmentSchema = z.object({
     return protocol === 'postgresql:' || protocol === 'postgres:'
   }, 'DATABASE_URL deve usar PostgreSQL.'),
 }).superRefine((env, ctx) => {
-  const provided = [env.RESEND_API_KEY, env.EMAIL_FROM, env.APP_PUBLIC_URL].filter(Boolean).length
-  if (provided > 0 && provided < 3) ctx.addIssue({ code: 'custom', message: 'Configure RESEND_API_KEY, EMAIL_FROM e APP_PUBLIC_URL em conjunto.' })
+  // Um provedor por vez: Brevo (deploy sem domínio próprio) ou Resend (domínio verificado).
+  if (env.RESEND_API_KEY && env.BREVO_API_KEY) ctx.addIssue({ code: 'custom', message: 'Configure só um provedor de e-mail: BREVO_API_KEY ou RESEND_API_KEY.' })
+  const provided = [env.RESEND_API_KEY ?? env.BREVO_API_KEY, env.EMAIL_FROM, env.APP_PUBLIC_URL].filter(Boolean).length
+  if (provided > 0 && provided < 3) ctx.addIssue({ code: 'custom', message: 'Configure a chave do provedor (BREVO_API_KEY ou RESEND_API_KEY), EMAIL_FROM e APP_PUBLIC_URL em conjunto.' })
   if (env.NODE_ENV === 'production' && env.APP_PUBLIC_URL && !env.APP_PUBLIC_URL.startsWith('https://')) {
     ctx.addIssue({ code: 'custom', path: ['APP_PUBLIC_URL'], message: 'Produção exige HTTPS nos links de autenticação.' })
   }

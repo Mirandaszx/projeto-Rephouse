@@ -272,7 +272,9 @@ docker compose --env-file .env -f docker-compose.yml -f .devops-local/principal-
 
 Use os mesmos arquivos `-f` ao recriar seus serviços. Não copie esse comando para uma instalação sem o override e a imagem local correspondente.
 
-## Configurar cadastro real e link mágico com Resend
+## Configurar cadastro real e link mágico (Brevo ou Resend)
+
+Para o deploy sem domínio próprio, use o **Brevo** (grátis, 300 e-mails por dia, pode cair no spam): `BREVO_API_KEY`, `EMAIL_FROM` com um remetente verificado no Brevo e `APP_PUBLIC_URL`. O passo a passo está em [AUTENTICACAO_EMAIL.md](documentacao/AUTENTICACAO_EMAIL.md). Configure só um provedor por vez. O restante desta seção descreve o Resend.
 
 Para testar o frontend, as contas de demonstração são suficientes. Para enviar mensagens reais, cada ambiente precisa de uma configuração de e-mail autorizada.
 

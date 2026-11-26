@@ -17,7 +17,7 @@ export type Page<T> = { dados: T[]; paginacao: { pagina: number; limite: number;
 export const password = 'Senha-exclusiva-request-spec-2026!'
 export const secret = 'segredo-exclusivo-request-spec-com-mais-de-32-caracteres'
 
-export async function abrirRequestSpec(google?: GoogleOptions, opcoes: { trustProxy?: number } = {}) {
+export async function abrirRequestSpec(google?: GoogleOptions, opcoes: { trustProxy?: number; privacyContact?: string } = {}) {
   validarDestinoTestes(process.env.TEST_DATABASE_URL)
   const env = await abrirAmbienteIntegracao(process.env.TEST_DATABASE_URL, password)
   const logs: Record<string, unknown>[] = []

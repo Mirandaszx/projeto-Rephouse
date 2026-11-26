@@ -13,6 +13,7 @@ const Republica = lazy(() => import('./novo/Republica'))
 const Auth = lazy(() => import('./novo/Auth'))
 const Home = lazy(() => import('./rebuild/Home'))
 const NotFound = lazy(() => import('./interno/NotFound'))
+const Privacidade = lazy(() => import('./interno/Privacidade'))
 
 const path = window.location.pathname.replace(/\/$/, '')
 // Mantém os favoritos antigos, mas toda navegação nova usa os caminhos definitivos.
@@ -31,6 +32,7 @@ const screen = path === '/login' || path === '/cadastro' || path === '/confirmar
   : workspacePaths.has(path)
     ? <Republica />
     : path === '/design-system' ? <DesignSystem />
+      : path === '/privacidade' ? <Privacidade />
       : path === '/legado' ? <App /> : path === '' ? <Home /> : <NotFound />
 
 if (redirect) {

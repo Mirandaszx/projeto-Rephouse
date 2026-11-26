@@ -170,7 +170,29 @@
 .rep-internal .workspace-onboarding-card { max-width: 600px; margin: 0; padding: 32px; border-radius: 14px; }
 .rep-internal .workspace-onboarding-card .workspace-section-heading { margin-top: 24px; margin-bottom: 0; }
 .rep-internal .workspace-onboarding-card .workspace-onboarding-symbol { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 14px; background: var(--rep-mint); color: var(--app-accent); margin-bottom: 24px; }
-.rep-internal .rep-onboarding .lg-segmented { --lg-tab-width: clamp(118px, calc((100vw - 96px) / 2), 180px); }
+/* Sem república (26/11/2026): duas opções grandes lado a lado, com o formulário da escolhida logo abaixo. */
+.rep-internal .rep-onboarding-actions > a { padding-inline: 8px; }
+.rep-internal .rep-house-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; max-width: 640px; margin: 8px 0 16px; }
+.rep-internal .rep-house-choice { position: relative; display: grid; gap: 6px; align-content: start; padding: 20px; border: 1px solid var(--app-border); border-radius: var(--workspace-radius); background: var(--app-surface); color: var(--app-text); cursor: pointer; transition: border-color 160ms ease, box-shadow 160ms ease; }
+.rep-internal .rep-house-choice input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.rep-internal .rep-house-choice strong { font-size: 1.05rem; line-height: 1.3; }
+.rep-internal .rep-house-choice > span:last-child { color: var(--app-muted); font-size: .9rem; line-height: 1.5; }
+.rep-internal .rep-house-choice-icon { display: grid; place-items: center; width: 44px; height: 44px; margin-bottom: 8px; border-radius: 12px; background: var(--rep-mint); color: var(--app-accent); }
+.rep-internal .rep-house-choice[data-selected] { border-color: var(--app-accent); box-shadow: inset 0 0 0 1px var(--app-accent); background: color-mix(in srgb, var(--app-accent) 7%, var(--app-surface)); }
+/* Círculo de seleção no canto: deixa claro que é uma escolha e qual está marcada, além da cor. */
+.rep-internal .rep-house-choice-mark { position: absolute; top: 16px; right: 16px; display: grid; place-items: center; width: 24px; height: 24px; border: 1.5px solid var(--app-control-border); border-radius: 50%; color: var(--app-surface); pointer-events: none; }
+.rep-internal .rep-house-choice[data-selected] .rep-house-choice-mark { border-color: var(--app-accent); background: var(--app-accent); }
+.rep-internal .rep-house-choice[data-selected] .rep-house-choice-icon { background: var(--workspace-lime); color: #193732; }
+.rep-internal .rep-house-choice:has(input:focus-visible) { outline: 2px solid var(--app-focus); outline-offset: 2px; }
+.rep-internal .rep-house-choice:has(input:disabled) { cursor: progress; opacity: .7; }
+@media (hover: hover) and (pointer: fine) { .rep-internal .rep-house-choice:not([data-selected]):hover { border-color: var(--app-control-border); } }
+.rep-internal .rep-house-step { max-width: 640px; transition: opacity 180ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)), translate 180ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)); }
+@starting-style { .rep-internal .rep-house-step { opacity: 0; translate: 0 4px; } }
+.rep-internal[data-workspace-input='keyboard'] .rep-house-step { transition: none; }
+@media (prefers-reduced-motion: reduce) { .rep-internal .rep-house-step { transition: none; } }
+.rep-internal .rep-house-step .rep-house-form { margin-top: 0; }
+.rep-internal .rep-house-hint { margin: -8px 0 0; color: var(--app-muted); font-size: .88rem; line-height: 1.5; }
+@media (max-width: 560px) { .rep-internal .rep-house-choices { grid-template-columns: 1fr; } }
 .rep-internal .rep-form-fields, .rep-internal .rep-dialog fieldset { min-width: 0; }
 .rep-internal .rep-animated-field { margin: 0; }
 .rep-internal .rep-animated-field .spell-label-outside { display: block; margin-bottom: 8px; font-size: 14px; color: var(--app-text); font-weight: 500; }

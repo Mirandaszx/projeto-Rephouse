@@ -30,6 +30,27 @@ O link abre `/confirmar-email#id=...&token=...`. O fragmento é lido em memória
 
 Recarregar a confirmação depois de remover o fragmento perde o segredo em memória: solicitar outro link. Não persistir esse segredo em localStorage/sessionStorage. A sessão JWT continua em sessionStorage, conforme o comportamento existente; não houve migração da sessão para cookies.
 
+## Configurar o Brevo (deploy sem domínio próprio)
+
+Decisão de 25/11/2026: para o deploy sem domínio próprio, o envio passa a ser pelo Brevo, cujo plano gratuito permite 300 e-mails por dia para qualquer destinatário. O Resend continua suportado para quando houver domínio verificado. A API aceita **um** provedor por vez: com as duas chaves preenchidas, ela não inicia.
+
+1. Criar a conta no Brevo e, em **Senders, domains & dedicated IPs → Senders**, adicionar o e-mail remetente (por exemplo, um Gmail da equipe) e confirmar pelo link que o Brevo envia.
+2. Em **SMTP & API → API keys**, gerar uma chave (começa com `xkeysib-`).
+3. Em **Security → Authorised IPs**, desativar o bloqueio automático de IPs para chaves de API. Depois de 30 dias de uso, o Brevo passa a recusar IPs desconhecidos, e o servidor de deploy não tem IP fixo; sem isso, o envio começa a falhar com 503 `EMAIL_UNAVAILABLE`.
+4. No `.env` do backend (ou nas variáveis secretas do serviço de deploy):
+
+```dotenv
+BREVO_API_KEY=xkeysib-SUBSTITUA_LOCALMENTE
+EMAIL_FROM=remetente-verificado@gmail.com
+APP_PUBLIC_URL=http://localhost:5173
+```
+
+Limitações aceitas pela equipe: com remetente gratuito (Gmail, Yahoo), o Brevo troca o endereço visível por um endereço próprio dele, e a mensagem pode cair no spam. Por isso a tela pede para conferir também a caixa de spam. A solução definitiva é um domínio próprio autenticado no Brevo.
+
+O adaptador (`codigo/infraestrutura/email/brevo.ts`) segue as mesmas regras do Resend abaixo: `fetch` nativo, timeout de oito segundos, nenhuma repetição automática e falhas como 503 `EMAIL_UNAVAILABLE`, sem detalhes do provedor. A API do Brevo não documenta chave de idempotência; o uso único do link continua protegendo a confirmação.
+
+Referências oficiais: [envio transacional do Brevo](https://developers.brevo.com/reference/send-transac-email), [IPs autorizados](https://help.brevo.com/hc/en-us/articles/5740111683858), [remetentes gratuitos](https://help.brevo.com/hc/en-us/articles/14925263522578).
+
 ## Configurar o Resend
 
 O OAuth do MCP conecta as ferramentas do Codex, mas **não fornece credenciais à aplicação**. Criar uma chave própria em Resend → API Keys → Sending access. Revogar qualquer chave publicada em chat, código ou captura e gerar uma substituta.

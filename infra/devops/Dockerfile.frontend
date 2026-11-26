@@ -8,7 +8,9 @@ RUN npm run build
 
 FROM nginx:1.30.7-alpine AS runtime
 # Aplica as correções já publicadas pelo Alpine (ex.: libxml2) antes de trocar para o usuário sem privilégios.
-RUN apk upgrade --no-cache
+# A data refaz esta camada a cada dia, para o cache não manter um upgrade antigo.
+ARG ATUALIZACOES_SEGURANCA=manual
+RUN echo "atualizações de segurança: ${ATUALIZACOES_SEGURANCA}" && apk upgrade --no-cache
 COPY infra/devops/nginx.conf /etc/nginx/nginx.conf
 COPY --from=build /workspace/interface/dist /usr/share/nginx/html
 USER 101:101

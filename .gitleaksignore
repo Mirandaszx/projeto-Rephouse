@@ -43,3 +43,5 @@ bbe7672d4d53bd4258e2a8ae3141eff4a61bdbef:testes/financeiro-reinicio.test.ts:gene
 7781cfbcceb5c4abe0283cd38010626e117f3324:.env.backend.example:generic-api-key:6
 # segredo JWT fictício usado só nos testes automatizados
 6d86d5ee51734862476e4babdcd78e08162b8769:testes/migration.test.ts:generic-api-key:37
+# 25/11/2026: a mesma linha revisada acima (tag de imagem rephouse-api com hash), agora no histórico do commit 49dfb6e.
+49dfb6eea4a76c83184f18e6f025005a829f058f:infra/devops/CORRECOES_DEPENDENCIAS.md:generic-api-key:47

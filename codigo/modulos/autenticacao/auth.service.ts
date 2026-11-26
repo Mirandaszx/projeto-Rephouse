@@ -103,9 +103,11 @@ export function createAuthService(db: PrismaClient, secret: string, googleOption
         const memberships = await tx.membroRepublica.findMany({where:{usuarioId:user.id,ativo:true}})
         await repository.encerrarVinculos(tx, user.id)
         for (const member of memberships) await notifyMembership(tx, member, user.id, 'MEMBRO_SAIU')
-        // Exclusão lógica é definitiva na API: conserva FKs e invalida todos os tokens.
+        // Exclusão definitiva: invalida todos os tokens e, na mesma transação, anonimiza os dados pessoais (LGPD,
+        // 26/11/2026). Nome vira "Ex-morador", e-mail e senha somem, e foto, Google, links e notificações são apagados.
+        // O histórico financeiro e de tarefas fica para os outros moradores, sem identificar a pessoa.
         await repository.excluir(tx, user.id)
-        await tx.fotoPerfil.deleteMany({ where: { usuarioId: user.id } })
+        await tx.$executeRaw`SELECT rephouse_anonimizar_conta_excluida(${user.id}::uuid)`
       })
     },
   }

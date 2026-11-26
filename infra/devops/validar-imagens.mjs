@@ -8,7 +8,7 @@ try{
   for(const image of manifest.images){
     const info=JSON.parse(docker(['image','inspect',image.image]))[0]
     assert.equal(info.Id,image.id);assert.ok(info.Config.User&&!['root','0','0:0'].includes(info.Config.User))
-    assert.ok((info.Config.Env??[]).every(value=>! /^(DATABASE_URL|RESEND_API_KEY|JWT_SECRET|GOOGLE_CLIENT_ID)=/.test(value)))
+    assert.ok((info.Config.Env??[]).every(value=>! /^(DATABASE_URL|RESEND_API_KEY|BREVO_API_KEY|JWT_SECRET|GOOGLE_CLIENT_ID)=/.test(value)))
     checks.push({name:`${image.name}: digest, usuário limitado e ausência de credenciais na configuração`,passed:true})
   }
   const api=manifest.images.find(x=>x.name==='api').image

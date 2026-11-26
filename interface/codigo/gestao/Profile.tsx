@@ -14,6 +14,8 @@ export default function Profile({ account, token, onChanged }: { account: Accoun
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<Feedback>('')
   const [notice, setNotice] = useState('')
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState<Feedback>('')
   const lock = useRef(false)
   return <div className="rep-management">
     <ProfilePhoto account={account} token={token} onChanged={onChanged} />
@@ -39,8 +41,25 @@ export default function Profile({ account, token, onChanged }: { account: Accoun
         <div><dt>Sua função</dt><dd>{account.tipoUsuario === 'USUARIO_MASTER' ? 'MASTER' : account.membro ? account.membro.republica.adminId === account.id ? 'Administra a república' : 'Mora na república' : 'Sem função em uma república'}</dd></div>
       </dl>
     </section>
+    {/* LGPD, art. 18 (26/11/2026): cópia dos dados e caminho para a política, ao lado da exclusão. */}
+    <section className="rep-management-card" aria-labelledby="privacy-title"><SectionHeading id="privacy-title" title="Privacidade e seus dados" description="Baixe uma cópia de tudo o que o RepHouse guarda sobre você, em um arquivo que outros sistemas conseguem ler." />
+      <div className="profile-privacy-actions">
+        <GlisseButton variant="secondary" disabled={exporting} aria-busy={exporting} onClick={() => {
+          setExporting(true); setExportError('')
+          void apiRequest<unknown>('GET', '/me/dados', token).then(dados => {
+            const link = document.createElement('a')
+            link.href = URL.createObjectURL(new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' }))
+            link.download = 'rephouse-meus-dados.json'
+            link.click()
+            setTimeout(() => URL.revokeObjectURL(link.href), 1000)
+          }).catch(failure => setExportError(errorFeedback(failure))).finally(() => setExporting(false))
+        }}>{exporting ? 'Preparando…' : 'Baixar meus dados'}</GlisseButton>
+        <a href="/privacidade">Política de privacidade e termos</a>
+      </div>
+      {exportError && <ErrorNotice error={exportError} />}
+    </section>
     <section className="rep-management-card rep-danger-zone"><SectionHeading title="Excluir minha conta" />
-      <p>A exclusão encerra seu acesso e seus vínculos. O histórico financeiro permanece preservado. Quite as dívidas de todas as repúblicas e transfira a administração antes de continuar.</p>
+      <p>A exclusão encerra seu acesso e apaga seus dados pessoais: seu nome vira "Ex-morador" e seu e-mail, sua foto e o login com Google são removidos. As despesas e tarefas da casa continuam para os outros moradores, sem identificar você. Antes, quite as dívidas de todas as repúblicas e transfira a administração.</p>
       <GlisseButton tint="#9f3834" disabled={busy} onClick={() => setDeleting(true)}>Excluir minha conta</GlisseButton>
     </section>
     {deleting && <ActionDialog title="Confirmar exclusão da conta" confirm="Excluir conta definitivamente" danger onClose={() => setDeleting(false)} onSubmit={async data => {
@@ -49,7 +68,7 @@ export default function Profile({ account, token, onChanged }: { account: Accoun
     }}>
       <p>Essa ação é definitiva. Confirme a senha da sua conta para encerrar o acesso.</p>
       <label>Senha atual<input type="password" name="senha" autoComplete="current-password" required maxLength={128} /></label>
-      <label><input type="checkbox" required />Entendo que perderei o acesso à conta.</label>
+      <label><input type="checkbox" required />Entendo que perderei o acesso e que meus dados pessoais serão apagados.</label>
     </ActionDialog>}
   </div>
 }

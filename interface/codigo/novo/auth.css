@@ -120,3 +120,21 @@
 }
 @media (max-height: 699px) and (min-width: 900px) { .auth-story { padding-top: 28px; } .auth-house { width: 240px; } .auth-panel { padding-top: 28px; } }
 @media (prefers-reduced-motion: reduce) { .auth-page *, .auth-page *::before, .auth-page *::after { transition: none !important; } }
+
+/* Acesso com Google (25/11/2026): botão oficial do Google, centralizado, com divisor "ou" quando há formulário acima. */
+.auth-divider { display: flex; align-items: center; gap: 12px; margin: 22px 0 16px; color: var(--auth-muted); font-size: 13px; }
+.auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: currentColor; opacity: .35; }
+.auth-google { display: grid; justify-items: center; gap: 10px; min-height: 44px; }
+.auth-google[data-disabled] { opacity: .7; pointer-events: none; }
+.auth-google-slot { display: flex; justify-content: center; width: 100%; max-width: 400px; min-height: 44px; }
+.auth-google-slot[hidden] { display: none; }
+.auth-google-note { margin: 0; color: var(--auth-muted); font-size: 13px; line-height: 1.5; text-align: center; }
+.auth-google-intro { margin: 0; }
+.auth-google-link { display: grid; gap: 16px; margin-top: 8px; }
+.auth-google-link > p { margin: 0; color: var(--auth-muted); font-size: 14px; line-height: 1.6; }
+.auth-google-link .auth-email-back { margin-top: 0; }
+
+/* LGPD (26/11/2026): aviso dos termos no cadastro e link de privacidade no rodapé. */
+.auth-reassurance.auth-legal { display: block; font-size: 13px; text-align: center; }
+.auth-legal a, .auth-panel-footer a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.auth-panel-footer a { display: inline-block; margin-left: 4px; padding-block: 8px; }

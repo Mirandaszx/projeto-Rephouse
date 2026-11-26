@@ -14,7 +14,8 @@ test('backup reinicia a API quando pg_dump falha e não anuncia cópia completa'
       calls.push(args[0]!)
       if (args[0]==='ps') return 'id-ficticio'
       if (args.includes('dist/comandos/verificar-comprovantes.js')) return JSON.stringify({invalidos:0,referenciasLegadasPendentes:0})
-      if (args.includes('node')) return JSON.stringify({version:'1.0.0',timeZone:'America/Sao_Paulo'})
+      // Leitura de versão e fuso pelo node da imagem distroless (caminho completo, sem PATH).
+      if (args.includes('/nodejs/bin/node')) return JSON.stringify({version:'1.0.0',timeZone:'America/Sao_Paulo'})
       if (args[0]==='exec') { output=opts?.output; throw new Error('falha simulada de captura') }
       return ''
     },async ()=>JSON.stringify([{Type:'volume',Name:'teste-sem-docker_comprovantes',Destination:'/app/armazenamento/comprovantes'}])),/falha simulada/)

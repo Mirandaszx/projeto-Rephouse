@@ -1,0 +1,10 @@
+# Exceções revisadas da barreira de imagens (infra/devops/seguranca.mjs). Cada uma tem motivo e prazo:
+# depois de expired_at, o Trivy volta a bloquear. O relatório completo (trivy-<imagem>.json) não usa este arquivo.
+vulnerabilities:
+  - id: CVE-2026-124851
+    statement: >-
+      libzstd1 da imagem distroless nodejs24-debian13 (runtime da API). O Debian já publicou 1.5.7+dfsg-1+deb13u1,
+      mas a imagem distroless ainda não foi republicada com ela e não tem apt para atualizar. A imagem de migrations
+      é corrigida no build (apt-get upgrade). Remover esta exceção ao trocar o digest do distroless no Dockerfile.
+      Revisado em 25/11/2026.
+    expired_at: 2026-12-15

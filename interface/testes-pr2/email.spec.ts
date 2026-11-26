@@ -28,6 +28,34 @@ test('login por link exige ação explícita, remove segredo da URL e mantém a 
   expect(await page.evaluate(() => sessionStorage.getItem('rephouse-token'))).toBeTruthy()
 })
 
+test('entrar por link com e-mail sem conta cria a conta pedindo nome e senha na confirmação', async ({ page }) => {
+  const email = `link-novo-${Date.now()}@integracao.rephouse.test`
+  await page.goto('/login')
+  await page.getByRole('button', {name:'Entrar por link no e-mail',exact:true}).click()
+  await page.getByLabel('E-mail',{exact:true}).fill(email)
+  await page.getByRole('button',{name:'Enviar link de acesso',exact:true}).click()
+  await expect(page.getByRole('heading',{name:'Confira seu e-mail.',exact:true})).toBeVisible()
+  await expect(page.getByText('Se ainda não tem, ele cria uma',{exact:false})).toBeVisible()
+  await page.goto(await emailLink(page.request,email))
+  await page.getByRole('button',{name:'Confirmar e entrar',exact:true}).click()
+  // O link continua valendo: a tela só pede os dados que faltam para criar a conta.
+  await expect(page.getByRole('heading',{name:'Crie sua conta.',exact:true})).toBeVisible()
+  await expect(page.getByLabel('Nome',{exact:true})).toBeFocused()
+  expect(await page.evaluate(() => sessionStorage.getItem('rephouse-token'))).toBeNull()
+  await page.getByLabel('Nome',{exact:true}).fill('Pessoa Nova')
+  await page.getByLabel('Senha',{exact:true}).fill('Senha-interface-teste-2026')
+  await page.getByRole('button',{name:'Criar conta e entrar',exact:true}).click()
+  await expect(page).toHaveURL(/\/republica$/)
+  expect(await page.evaluate(() => sessionStorage.getItem('rephouse-token'))).toBeTruthy()
+  // A conta criada já entra com a senha escolhida.
+  await page.evaluate(() => sessionStorage.clear())
+  await page.goto('/login')
+  await page.getByLabel('E-mail',{exact:true}).fill(email)
+  await page.getByLabel('Senha',{exact:true}).fill('Senha-interface-teste-2026')
+  await page.getByRole('button',{name:'Entrar na minha conta',exact:true}).click()
+  await expect(page).toHaveURL(/\/republica$/)
+})
+
 test('link incompleto orienta a recuperação e não envia confirmação', async ({ page }) => {
   let requests = 0
   page.on('request', req => { if(req.url().endsWith('/api/auth/email/confirmar'))requests++ })

@@ -11,7 +11,7 @@ const local = resolve('.devops-local/devops')
 const stateFile = resolve(local, 'credenciais.json')
 const obs = 'rephouse-observabilidade', app = 'rephouse-demo'
 const hex = () => randomBytes(32).toString('hex')
-const safe = { ...process.env, RESEND_API_KEY: '', EMAIL_FROM: '', APP_PUBLIC_URL: '', GOOGLE_CLIENT_ID: '' }
+const safe = { ...process.env, RESEND_API_KEY: '', BREVO_API_KEY: '', EMAIL_FROM: '', APP_PUBLIC_URL: '', GOOGLE_CLIENT_ID: '' }
 const bin = value => process.platform === 'win32' ? `${value}.exe` : value
 async function run(program, args, { input, capture = false, allowFailure = false, env = {} } = {}) {
   return new Promise((resolveRun, reject) => {
@@ -76,8 +76,10 @@ async function sourceTag() {
 }
 async function build() {
   const tag = await sourceTag()
-  for (const target of ['runtime','migracoes']) await run('docker', ['build','--target',target,'-t',`rephouse-${target === 'runtime' ? 'api' : 'migracoes'}:${tag}`,'.'])
-  await run('docker', ['build','-f','infra/devops/Dockerfile.frontend','-t',`rephouse-frontend:${tag}`,'.'])
+  // Data do dia: refaz só a camada de atualizações de segurança (apt/apk upgrade), nunca o cache inteiro.
+  const atualizacoes = ['--build-arg', `ATUALIZACOES_SEGURANCA=${new Date().toISOString().slice(0, 10)}`]
+  for (const target of ['runtime','migracoes']) await run('docker', ['build',...atualizacoes,'--target',target,'-t',`rephouse-${target === 'runtime' ? 'api' : 'migracoes'}:${tag}`,'.'])
+  await run('docker', ['build',...atualizacoes,'-f','infra/devops/Dockerfile.frontend','-t',`rephouse-frontend:${tag}`,'.'])
   const images = []
   for (const name of ['api','migracoes','frontend']) {
     const image = `rephouse-${name}:${tag}`

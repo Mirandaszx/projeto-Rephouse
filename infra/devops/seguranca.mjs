@@ -51,7 +51,7 @@ try{
       // Relatório completo (inclui falhas ainda sem correção publicada), só informativo.
       await scan(`relatorio-${image.name}`,versions.trivy,['image','--input',`/reports/image-${image.name}.tar`,'--scanners','vuln','--severity','HIGH,CRITICAL','--exit-code','0','--format','json','--output',`/reports/trivy-${image.name}.json`])
       // Critério de reprovação: HIGH/CRITICAL que já têm correção publicada e não foram aplicadas.
-      await scan(`imagem-${image.name}`,versions.trivy,['image','--input',`/reports/image-${image.name}.tar`,'--scanners','vuln','--severity','HIGH,CRITICAL','--ignore-unfixed','--exit-code','1','--format','json','--output',`/reports/trivy-${image.name}-corrigiveis.json`])
+      await scan(`imagem-${image.name}`,versions.trivy,['image','--input',`/reports/image-${image.name}.tar`,'--scanners','vuln','--severity','HIGH,CRITICAL','--ignore-unfixed','--ignorefile','/source/.trivyignore.yaml','--exit-code','1','--format','json','--output',`/reports/trivy-${image.name}-corrigiveis.json`])
     }finally{await unlink(tar).catch(error=>{if(error.code!=='ENOENT')throw error})}
   }
 }catch(error){console.error(error.message);results.push({name:'execucao',code:1})}

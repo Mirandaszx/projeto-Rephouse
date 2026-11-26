@@ -59,7 +59,7 @@ export function createAuthController(service: AuthService, origins: string[] = [
     }),
     confirmEmail: endpoint(req => {
       emailOrigin(req)
-      return service.confirmEmail(z.object({ id: z.uuid(), token: z.string().regex(/^[A-Za-z0-9_-]{43}$/) }).strict().parse(req.body), emailCookie(req))
+      return service.confirmEmail(z.object({ id: z.uuid(), token: z.string().regex(/^[A-Za-z0-9_-]{43}$/), nome: name.optional(), senha: password.optional() }).strict().parse(req.body), emailCookie(req))
     }),
     login: endpoint(req => service.login(z.object({ email, senha: password }).strict().parse(req.body))),
     me: endpoint((_req, actor) => service.me(actor)),
