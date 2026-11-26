@@ -40,7 +40,8 @@ try{
   try{
     const file=resolve(report,'semgrep.json'), data=JSON.parse(await readFile(file,'utf8'))
     for(const result of data.results??[]){delete result.extra?.lines;delete result.extra?.metavars;delete result.extra?.dataflow_trace}
-    await writeFile(file,JSON.stringify(data,null,2))
+    // No Linux da CI o contêiner grava o arquivo como root; apagar e recriar só exige permissão na pasta, que é nossa.
+    await unlink(file);await writeFile(file,JSON.stringify(data,null,2))
   }catch(error){if(error.code!=='ENOENT')throw error}
   await scan('dependencias',versions.trivy,['fs','--scanners','vuln','--include-dev-deps','--severity','HIGH,CRITICAL','--exit-code','1','--format','json','--output','/reports/trivy-dependencies.json','--skip-dirs','node_modules','/source'])
   const images=JSON.parse(await readFile('.devops-local/devops/imagens.json','utf8')).images

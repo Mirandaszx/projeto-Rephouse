@@ -444,11 +444,15 @@ test('migração: jornada HTTP, privacidade, exclusão e concorrência', { skip:
     await t.test('pagamento concorrente com edição conserva o histórico ou invalida o rateio antigo',async()=>{
       const created=await request<Expense>('POST','/api/despesas',admin.token,{titulo:'Concorrência',categoria:'OUTROS',valorTotal:'100.00',vencimento:'2035-01-01',membroIds:[adminMember.id]})
       const [paid,edited]=await Promise.all([request('POST','/api/pagamentos',admin.token,{rateioId:created.body.rateios[0]!.id,valor:'40.00'},randomUUID()),request('PATCH',`/api/despesas/${created.body.id}`,admin.token,{valorTotal:'120.00'})])
-      assert.ok((paid.status===201&&edited.status===409)||(paid.status===404&&edited.status===200),JSON.stringify([paid,edited]))
+      // Desde 24/11 a edição atualiza a parcela no lugar (avisos de vencimento continuam apontando para ela), então as
+      // duas ordens válidas são: pagamento antes, edição recusada; ou edição antes, pagamento sobre o valor novo.
+      assert.ok(paid.status===201&&(edited.status===409||edited.status===200),JSON.stringify([paid,edited]))
       const item=await db.despesa.findUniqueOrThrow({where:{id:created.body.id},include:{rateios:{include:{pagamentos:true}}}})
       assert.equal(item.rateios.length,1)
+      assert.equal(item.valorTotal.toFixed(2),edited.status===200?'120.00':'100.00')
       assert.equal(item.rateios[0]!.valorDevido.toFixed(2),item.valorTotal.toFixed(2))
-      assert.equal(item.rateios[0]!.valorPago.toFixed(2),paid.status===201?'40.00':'0.00')
+      assert.equal(item.rateios[0]!.valorPago.toFixed(2),'40.00')
+      assert.equal(item.rateios[0]!.pagamentos.length,1)
     })
     await t.test('excluir conta concorrente com nova dívida não deixa usuário excluído devedor',async()=>{
       const user=await prepareAccount('Concorrência de conta')
