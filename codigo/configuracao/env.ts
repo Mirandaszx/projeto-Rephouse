@@ -27,6 +27,8 @@ const environmentSchema = z.object({
       const url = new URL(value)
       return ['http:', 'https:'].includes(url.protocol) && url.origin === value
     }, 'Informe origens HTTP(S) completas, sem caminho, separadas por vírgula.'))),
+  // Pasta da interface compilada. Com ela, a própria API serve as páginas (deploy num único serviço, como no Render).
+  INTERFACE_DIR: z.preprocess(value => value === '' ? undefined : value, z.string().min(1).optional()),
   DATABASE_URL: z.url().refine(value => {
     const protocol = new URL(value).protocol
     return protocol === 'postgresql:' || protocol === 'postgres:'
@@ -45,5 +47,19 @@ const environmentSchema = z.object({
 export type Environment = z.infer<typeof environmentSchema>
 
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Environment {
-  return environmentSchema.parse(source)
+  return environmentSchema.parse(withRenderDefaults(source))
+}
+
+// No Render, RENDER_EXTERNAL_URL traz o endereço público do serviço (https://<nome>.onrender.com).
+// Ele vira a origem permitida e, quando há provedor de e-mail, o endereço dos links enviados.
+// Valores informados explicitamente sempre têm prioridade.
+function withRenderDefaults(source: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const publicUrl = source.RENDER_EXTERNAL_URL?.replace(/\/+$/, '')
+  if (!publicUrl) return source
+  const hasEmail = Boolean(source.BREVO_API_KEY || source.RESEND_API_KEY)
+  return {
+    ...source,
+    CORS_ORIGINS: source.CORS_ORIGINS || publicUrl,
+    APP_PUBLIC_URL: source.APP_PUBLIC_URL || (hasEmail ? publicUrl : ''),
+  }
 }

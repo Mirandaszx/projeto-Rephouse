@@ -1,0 +1,42 @@
+# Blueprint do Render: um serviço web (API + interface) e um PostgreSQL gerenciado.
+# Guia: documentacao/DEPLOY_RENDER.md. Valores marcados com sync: false são preenchidos no painel do Render.
+services:
+  - type: web
+    name: rephouse
+    runtime: docker
+    plan: free
+    region: virginia
+    branch: main
+    dockerfilePath: ./infra/render/Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/ready
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: rephouse-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: TRUST_PROXY
+        value: "1"
+      - key: APP_TIME_ZONE
+        value: America/Maceio
+      # E-mail de cadastro e de entrada por link (Brevo). Sem a chave, o login por senha continua funcionando.
+      - key: BREVO_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: PRIVACY_CONTACT_EMAIL
+        sync: false
+      # Login com Google: Client ID com a origem https://<serviço>.onrender.com autorizada no Google Cloud.
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+
+databases:
+  - name: rephouse-db
+    plan: free
+    region: virginia
+    postgresMajorVersion: "17"
+    databaseName: rephouse
+    user: rephouse

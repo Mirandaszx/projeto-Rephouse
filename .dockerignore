@@ -14,4 +14,8 @@ documentacao
 /armazenamento
 copias-seguranca
 .devops-local
-interface
+# A interface entra no contexto porque a imagem do Render (infra/render/Dockerfile) a compila;
+# a imagem da API não copia esta pasta. Resultados de teste ficam de fora.
+interface/test-results
+interface/playwright-report
+**/.env

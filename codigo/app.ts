@@ -1,4 +1,7 @@
 import express, { type Express } from 'express'
+import { join, resolve } from 'node:path'
+import { readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { createHealthRouter } from './modulos/saude/health.routes.js'
 import { errorHandler } from './compartilhado/http/error-handler.js'
 import { notFoundHandler } from './compartilhado/http/not-found.js'
@@ -35,16 +38,52 @@ import type { EmailOptions } from './infraestrutura/email/resend.js'
 import { createNotificationsRouter } from './modulos/notificacoes/notificacoes.routes.js'
 import type { NotificationsSignal } from './modulos/notificacoes/notificacoes.stream.js'
 
-interface AppOptions { database?: PrismaClient; jwtSecret?: string; corsOrigins?: string[]; log?: LogSink; readiness?: () => Promise<unknown>; google?: GoogleOptions; email?: EmailOptions; notificationsSignal?: NotificationsSignal; trustProxy?: number; privacyContact?: string }
+interface AppOptions { database?: PrismaClient; jwtSecret?: string; corsOrigins?: string[]; log?: LogSink; readiness?: () => Promise<unknown>; google?: GoogleOptions; email?: EmailOptions; notificationsSignal?: NotificationsSignal; trustProxy?: number; privacyContact?: string; interfaceDir?: string }
+
+// Rotas operacionais que continuam na superfície canônica quando a API também serve a interface.
+const OPERATIONAL_PATHS = ['/api/health', '/api/ready', '/api/openapi.json']
+
+// Com a interface no mesmo serviço, a página chama /api/* e recebe a superfície da interface, como faz o Nginx da demo.
+function frontendPath(url: string): string {
+  if (!url.startsWith('/api/') || url.startsWith(FRONT_PREFIX + '/') || url.startsWith(FRONT_PREFIX + '?')) return url
+  if (OPERATIONAL_PATHS.some(path => url === path || url.startsWith(path + '/') || url.startsWith(path + '?'))) return url
+  return FRONT_PREFIX + url.slice('/api'.length)
+}
+
+// Scripts embutidos no index.html (o que aplica a aparência antes do primeiro desenho) entram na CSP pelo hash,
+// calculado do arquivo compilado: só aquele conteúdo exato roda, sem liberar 'unsafe-inline'.
+function inlineScriptHashes(dir: string): string[] {
+  const html = readFileSync(join(dir, 'index.html'), 'utf8')
+  return [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)]
+    .map(match => `'sha256-${createHash('sha256').update(match[1] ?? '').digest('base64')}'`)
+}
+
+// Política de segurança das páginas: só a origem própria, mais o necessário para o login com Google.
+const interfaceSecurity = (scriptHashes: string[]) => ({
+  strictTransportSecurity: false,
+  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' as const },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' as const },
+  contentSecurityPolicy: { directives: {
+    upgradeInsecureRequests: null,
+    defaultSrc: ["'self'"],
+    scriptSrc: ["'self'", ...scriptHashes, 'https://accounts.google.com/gsi/client'],
+    styleSrc: ["'self'", "'unsafe-inline'", 'https://accounts.google.com/gsi/style'],
+    frameSrc: ['https://accounts.google.com/gsi/'],
+    connectSrc: ["'self'", 'https://accounts.google.com/gsi/'],
+    imgSrc: ["'self'", 'data:', 'blob:', 'https://*.googleusercontent.com'],
+    fontSrc: ["'self'", 'data:'],
+  } },
+})
 
 // Monta HTTP sem abrir porta ou conexão: reutilizável nos testes.
 export function createApp(options: AppOptions = {}): Express {
   const app = express()
   app.disable('x-powered-by')
+  if (options.interfaceDir) app.use((req, _res, next) => { req.url = frontendPath(req.url); next() })
   // Atrás do Vite ou do Nginx, o IP do cliente vem de X-Forwarded-For; sem proxy confiável, o cabeçalho é ignorado.
   if (options.trustProxy) app.set('trust proxy', options.trustProxy)
   app.use(requestLog(options.log))
-  app.use(helmet({strictTransportSecurity:false,contentSecurityPolicy:{directives:{upgradeInsecureRequests:null}}}))
+  app.use(helmet(options.interfaceDir ? interfaceSecurity(inlineScriptHashes(resolve(options.interfaceDir))) : {strictTransportSecurity:false,contentSecurityPolicy:{directives:{upgradeInsecureRequests:null}}}))
   app.use('/api',(_req,res,next)=>{res.set('Cache-Control','no-store');next()})
   // CORS regula leitura pelo navegador. Identidade e permissões continuam nas rotas.
   app.use(cors({
@@ -113,6 +152,16 @@ export function createApp(options: AppOptions = {}): Express {
     app.use(FRONT_PREFIX, createFrontendCompatibilityRouter(authRouter, api))
     app.use('/api/auth', authRouter)
     app.use('/api', api)
+  }
+  if (options.interfaceDir) {
+    const dir = resolve(options.interfaceDir)
+    // Arquivos com hash no nome podem ficar em cache; o index.html é sempre buscado de novo.
+    app.use('/assets', express.static(join(dir, 'assets'), { immutable: true, maxAge: '1y', index: false }))
+    app.use(express.static(dir, { index: false }))
+    app.use((req, res, next) => {
+      if ((req.method !== 'GET' && req.method !== 'HEAD') || req.path.startsWith('/api/')) { next(); return }
+      res.set('Cache-Control', 'no-store').sendFile(join(dir, 'index.html'))
+    })
   }
   app.use(notFoundHandler)
   app.use(errorHandler)
