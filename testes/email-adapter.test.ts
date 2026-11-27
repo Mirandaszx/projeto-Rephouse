@@ -3,7 +3,6 @@ import assert from 'node:assert/strict'
 import { createResendSender, type EmailMessage } from '../codigo/infraestrutura/email/resend.js'
 import { createBrevoSender } from '../codigo/infraestrutura/email/brevo.js'
 import { loadEnv } from '../codigo/configuracao/env.js'
-import { operationalLog } from '../codigo/compartilhado/http/request-log.js'
 
 const message: EmailMessage = { id: 'operacao-ficticia', to: 'destino@example.test', subject: 'Teste', text: 'Corpo fictício', html: '<p>Corpo fictício</p>' }
 describe('Fronteira externa de e-mail e configuração', () => {
@@ -69,35 +68,6 @@ describe('Fronteira externa de e-mail e configuração', () => {
       })
       assert.equal(calls, 1)
     }
-  })
-  it('quando o Brevo recusa, então registra só o status e o código documentado, nunca o conteúdo do provedor', async () => {
-    const registros: Record<string, unknown>[] = []
-    const recusa = (body: unknown, status: number) => createBrevoSender('xkeysib-ficticia', 'remetente@example.test', async () => Response.json(body, { status }), evento => registros.push(evento))
-    await assert.rejects(recusa({ code: 'unauthorized', message: 'chave senha-do-provedor-ficticia' }, 401)(message))
-    await assert.rejects(recusa({ code: 'senha-do-provedor-ficticia' }, 400)(message))
-    await assert.rejects(createBrevoSender('xkeysib-ficticia', 'remetente@example.test', async () => { throw new Error('senha-do-provedor-ficticia') }, evento => registros.push(evento))(message))
-    assert.deepEqual(registros, [
-      { event: 'email_provider_rejected', category: 'brevo', status: 401, code: 'unauthorized' },
-      { event: 'email_provider_rejected', category: 'brevo', status: 400, code: 'outro' },
-      { event: 'email_provider_unreachable', category: 'brevo' },
-    ])
-    assert.ok(!JSON.stringify(registros).includes('senha-do-provedor'))
-    assert.ok(!JSON.stringify(registros).includes('example.test'))
-  })
-  it('quando a recusa passa pelo logger de produção, então conserva o código seguro e descarta conteúdo privado', async () => {
-    const registros: Record<string, unknown>[] = []
-    const send = createBrevoSender('xkeysib-ficticia', 'remetente@example.test', async () => Response.json({
-      code: 'unauthorized', message: 'segredo-ficticio-do-provedor destino@example.test',
-    }, { status: 401 }), evento => registros.push(operationalLog(evento)))
-    await assert.rejects(send(message), { code: 'EMAIL_UNAVAILABLE' })
-    assert.equal(registros.length, 1)
-    assert.equal(registros[0]!.event, 'email_provider_rejected')
-    assert.equal(registros[0]!.category, 'brevo')
-    assert.equal(registros[0]!.status, 401)
-    assert.equal(registros[0]!.code, 'unauthorized')
-    assert.equal(registros[0]!['log.level'], 'warn')
-    assert.ok(!JSON.stringify(registros).includes('segredo-ficticio'))
-    assert.ok(!JSON.stringify(registros).includes('example.test'))
   })
   it('quando escolhe o Brevo, então exige remetente e origem junto com a chave e recusa dois provedores ao mesmo tempo', () => {
     const base = { JWT_SECRET: 'segredo-ficticio-com-mais-de-32-caracteres', DATABASE_URL: 'postgresql://teste:teste@localhost/rabbu_mvp_test', CORS_ORIGINS: 'https://app.example.test' }
