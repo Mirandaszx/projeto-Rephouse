@@ -10,7 +10,7 @@
     "start": "node dist/server.js",
     "dev": "tsx watch codigo/server.ts",
     "build": "npm run db:generate && tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.check.json && tsc -p tsconfig.carga.json && tsc -p tsconfig.integracao.json && npm run typecheck --workspace @rephouse/contrato",
+    "typecheck": "tsc -p testes/config/tsconfig.check.json && tsc -p testes/config/tsconfig.carga.json && tsc -p testes/config/tsconfig.integracao.json && npm run typecheck --workspace @rephouse/contrato",
     "db:generate": "prisma generate",
     "db:validate": "prisma validate",
     "db:deploy": "prisma migrate deploy",

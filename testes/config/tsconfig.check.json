@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "../..",
+    "noEmit": true
+  },
+  "include": ["../../codigo/**/*.ts", "../**/*.ts", "../../ferramentas/integracao/**/*.ts", "../../ferramentas/interface/**/*.ts", "../../prisma.config.ts"],
+  "exclude":["../carga"]
+}

@@ -6,5 +6,5 @@
     "verbatimModuleSyntax": true, "erasableSyntaxOnly": true,
     "noUnusedLocals": true, "noUnusedParameters": true
   },
-  "include": ["integracao/**/*.ts"]
+  "include": ["../../integracao/**/*.ts"]
 }
