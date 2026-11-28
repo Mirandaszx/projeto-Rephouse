@@ -15,6 +15,8 @@ const environmentSchema = z.object({
   GOOGLE_CLIENT_ID: z.preprocess(value => value === '' ? undefined : value, z.string().regex(/^[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/).optional()),
   RESEND_API_KEY: z.preprocess(value => value === '' ? undefined : value, z.string().regex(/^re_[A-Za-z0-9_-]+$/).optional()),
   BREVO_API_KEY: z.preprocess(value => value === '' ? undefined : value, z.string().regex(/^xkeysib-[A-Za-z0-9_-]+$/).optional()),
+  BREVO_CADASTRO_TEMPLATE_ID: z.preprocess(value => value === '' ? undefined : value, z.coerce.number().int().positive().optional()),
+  BREVO_LOGIN_TEMPLATE_ID: z.preprocess(value => value === '' ? undefined : value, z.coerce.number().int().positive().optional()),
   EMAIL_FROM: z.preprocess(value => value === '' ? undefined : value, z.email().optional()),
   // Contato para pedidos de privacidade (LGPD). Sem ele, a política usa o remetente EMAIL_FROM.
   PRIVACY_CONTACT_EMAIL: z.preprocess(value => value === '' ? undefined : value, z.email().optional()),

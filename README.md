@@ -2,7 +2,8 @@
   <img src="interface/publico/rephouse.svg" width="72" height="72" alt="">
   <h1>RepHouse</h1>
   <p><strong>Organização de repúblicas e moradias compartilhadas</strong></p>
-  <p><a href="#como-rodar-localmente">🚀 Como rodar</a> · <a href="#acesso-de-demonstração">🔑 Acesso de demonstração</a></p>
+  <p><strong>O RepHouse está no ar</strong> · <a href="https://rephouse.onrender.com">Acessar versão online</a></p>
+  <p><a href="#como-rodar-localmente">🚀 Como rodar localmente</a> · <a href="#acesso-de-demonstração">🔑 Acesso de demonstração</a></p>
 </div>
 
 ## 🏠 Sobre o projeto

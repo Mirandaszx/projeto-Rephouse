@@ -1,6 +1,17 @@
 import { AppError } from '../../compartilhado/http/app-error.js'
 
-export interface EmailMessage { id: string; to: string; subject: string; text: string; html: string }
+type ConfirmacaoEmail =
+  | { finalidade: 'cadastro'; params: { linkConfirmacao: string } }
+  | { finalidade: 'login'; params: { linkConfirmacao: string; titulo: string; instrucao: string; acao: string } }
+
+export interface EmailMessage {
+  id: string
+  to: string
+  subject: string
+  text: string
+  html: string
+  confirmacao?: ConfirmacaoEmail
+}
 export type EmailSender = (message: EmailMessage) => Promise<void>
 export interface EmailOptions { send: EmailSender; publicUrl: string; secureCookies?: boolean }
 

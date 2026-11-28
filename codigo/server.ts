@@ -24,7 +24,9 @@ async function startServer(): Promise<void> {
     const app = createApp({ database, readiness: () => probe.check(), jwtSecret: env.JWT_SECRET, corsOrigins: env.CORS_ORIGINS, notificationsSignal: signal, trustProxy: env.TRUST_PROXY, privacyContact: env.PRIVACY_CONTACT_EMAIL ?? env.EMAIL_FROM, interfaceDir: env.INTERFACE_DIR,
       google: env.GOOGLE_CLIENT_ID ? { clientId: env.GOOGLE_CLIENT_ID, secureCookies: env.NODE_ENV === 'production' } : undefined,
       email: env.BREVO_API_KEY || env.RESEND_API_KEY ? {
-        send: env.BREVO_API_KEY ? createBrevoSender(env.BREVO_API_KEY, env.EMAIL_FROM!) : createResendSender(env.RESEND_API_KEY!, env.EMAIL_FROM!),
+        send: env.BREVO_API_KEY
+          ? createBrevoSender(env.BREVO_API_KEY, env.EMAIL_FROM!, fetch, { cadastro: env.BREVO_CADASTRO_TEMPLATE_ID, login: env.BREVO_LOGIN_TEMPLATE_ID })
+          : createResendSender(env.RESEND_API_KEY!, env.EMAIL_FROM!),
         publicUrl: env.APP_PUBLIC_URL!, secureCookies: env.NODE_ENV === 'production',
       } : undefined,
     })

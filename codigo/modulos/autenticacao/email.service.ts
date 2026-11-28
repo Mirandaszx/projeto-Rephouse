@@ -39,10 +39,20 @@ export function createEmailService(db: PrismaClient, options?: EmailOptions) {
     const title = purpose === 'cadastro' ? 'Confirme seu e-mail no RepHouse' : purpose === 'novaConta' ? 'Crie sua conta no RepHouse' : 'Seu link para entrar no RepHouse'
     const lead = purpose === 'novaConta' ? 'Ainda não existe uma conta RepHouse com este e-mail. Abra o link no mesmo navegador em que fez a solicitação para criá-la:' : 'Abra o link no mesmo navegador em que fez a solicitação e confirme o acesso:'
     const text = `${title}\n\n${lead}\n${url.href}\n\nO link vale por 10 minutos e funciona uma única vez. Se não solicitou, ignore esta mensagem.`
+    const instrucao = `${purpose === 'novaConta' ? 'Ainda não existe uma conta RepHouse com este e-mail. ' : ''}Abra no mesmo navegador em que fez a solicitação.`
+    const acao = purpose === 'novaConta' ? 'Criar minha conta no RepHouse' : 'Confirmar e entrar no RepHouse'
     // URL base é configuração validada. Nome e outros textos do usuário não entram no HTML.
     const safeUrl = url.href.replaceAll('&', '&amp;').replaceAll('"', '&quot;')
     await config.send({ id, to, subject: title, text,
-      html: `<html lang="pt-BR"><body><h1>${title}</h1><p>${purpose === 'novaConta' ? 'Ainda não existe uma conta RepHouse com este e-mail. ' : ''}Abra no mesmo navegador em que fez a solicitação.</p><p><a href="${safeUrl}">${purpose === 'novaConta' ? 'Criar minha conta no RepHouse' : 'Confirmar e entrar no RepHouse'}</a></p><p>Válido por 10 minutos, para uma única utilização. Se não solicitou, ignore esta mensagem.</p></body></html>` })
+      confirmacao: purpose === 'cadastro'
+        ? { finalidade: 'cadastro', params: { linkConfirmacao: url.href } }
+        : { finalidade: 'login', params: {
+          linkConfirmacao: url.href,
+          titulo: purpose === 'novaConta' ? 'Crie sua conta' : 'Entre no RepHouse',
+          instrucao,
+          acao: purpose === 'novaConta' ? 'Criar minha conta' : 'Confirmar e entrar',
+        } },
+      html: `<html lang="pt-BR"><body><h1>${title}</h1><p>${instrucao}</p><p><a href="${safeUrl}">${acao}</a></p><p>Válido por 10 minutos, para uma única utilização. Se não solicitou, ignore esta mensagem.</p></body></html>` })
   }
   return {
     enabled: () => !!options,

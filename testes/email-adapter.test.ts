@@ -50,6 +50,27 @@ describe('Fronteira externa de e-mail e configuração', () => {
     await send(message); assert.equal(calls, 1)
     await createBrevoSender('xkeysib-ficticia', 'remetente@example.test', async () => Response.json({ messageIds: ['<a@relay.example.test>'] }, { status: 201 }))(message)
   })
+  it('seleciona o modelo do Brevo por finalidade e preserva o link completo', async () => {
+    const link = 'https://app.example.test/confirmar-email#id=cadastro-ficticio&token=segredo-ficticio'
+    const bodies: unknown[] = []
+    const send = createBrevoSender('xkeysib-ficticia', 'remetente@example.test', async (_url, options) => {
+      bodies.push(JSON.parse(String(options?.body)))
+      return Response.json({ messageId: '<provider-message@relay.example.test>' }, { status: 201 })
+    }, { cadastro: 1, login: 2 })
+
+    const cadastro = { linkConfirmacao: link }
+    const login = { linkConfirmacao: link, titulo: 'Entre no RepHouse', instrucao: 'Abra no mesmo navegador.', acao: 'Confirmar e entrar' }
+    await send({ ...message, confirmacao: { finalidade: 'cadastro', params: cadastro } })
+    await send({ ...message, confirmacao: { finalidade: 'login', params: login } })
+    await send(message)
+
+    const common = { sender: { email: 'remetente@example.test', name: 'RepHouse' }, to: [{ email: message.to }], subject: message.subject }
+    assert.deepEqual(bodies, [
+      { ...common, templateId: 1, params: cadastro },
+      { ...common, templateId: 2, params: login },
+      { ...common, htmlContent: message.html, textContent: message.text },
+    ])
+  })
   it('quando o Brevo recusa (IP bloqueado, sem créditos, quota), responde inválido ou cai, então retorna erro seguro sem repetir', async () => {
     for (const mode of ['unauthorized', 'credits', 'quota', 'badjson', 'missing', 'empty-list', 'network']) {
       let calls = 0
@@ -77,6 +98,10 @@ describe('Fronteira externa de e-mail e configuração', () => {
     assert.throws(() => loadEnv({ ...completo, BREVO_API_KEY: 'xkeysib-ficticia', RESEND_API_KEY: 're_ficticia' }))
     assert.equal(loadEnv({ ...completo, BREVO_API_KEY: 'xkeysib-ficticia' }).BREVO_API_KEY, 'xkeysib-ficticia')
     assert.equal(loadEnv(base).BREVO_API_KEY, undefined)
+    assert.equal(loadEnv(base).BREVO_CADASTRO_TEMPLATE_ID, undefined)
+    assert.equal(loadEnv({ ...completo, BREVO_API_KEY: 'xkeysib-ficticia', BREVO_CADASTRO_TEMPLATE_ID: '1' }).BREVO_CADASTRO_TEMPLATE_ID, 1)
+    assert.throws(() => loadEnv({ ...completo, BREVO_API_KEY: 'xkeysib-ficticia', BREVO_CADASTRO_TEMPLATE_ID: '0' }))
+    assert.equal(loadEnv({ ...completo, BREVO_API_KEY: 'xkeysib-ficticia', BREVO_LOGIN_TEMPLATE_ID: '2' }).BREVO_LOGIN_TEMPLATE_ID, 2)
   })
   it('quando configura parcialmente ou usa HTTP em produção, então recusa iniciar; configuração ausente preserva senha', () => {
     const base = { JWT_SECRET: 'segredo-ficticio-com-mais-de-32-caracteres', DATABASE_URL: 'postgresql://teste:teste@localhost/rabbu_mvp_test', CORS_ORIGINS: 'http://localhost:5173' }
