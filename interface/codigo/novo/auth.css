@@ -84,6 +84,9 @@
 .auth-email-note { color: var(--auth-muted); font-size: 14px; line-height: 1.65; overflow-wrap: anywhere; }
 .auth-email-note p { margin: 0 0 16px; }
 .auth-email-note strong { color: var(--auth-ink); }
+.auth-approval { margin: 20px 0 16px; }
+.auth-approval p { margin-bottom: 6px; }
+.auth-approval-code { font-size: 24px; font-variant-numeric: tabular-nums; letter-spacing: .12em; }
 .auth-email-note .auth-submit { margin-top: 8px; }
 .auth-email-back { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 44px; margin: 12px 0 0; padding: 8px; border: 0; color: var(--auth-ink); background: transparent; font: inherit; font-size: 14px; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
 .auth-email-back:disabled { opacity: .65; cursor: wait; }

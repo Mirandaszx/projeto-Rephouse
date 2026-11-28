@@ -1,4 +1,24 @@
 export type paths = {
+    "/api/auth/email/concluir": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Concluir acesso no navegador solicitante
+         * @description Acesso público. Envie solicitacaoId como id e mantenha o cookie HttpOnly do pedido. Consulte a cada cinco segundos durante a espera. A resposta permanece pendente até a aprovação. Conta nova pelo link de login requer nome e senha no navegador solicitante. A sessão é emitida uma única vez.
+         */
+        post: operations["post__api_auth_email_concluir"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/email/confirmar": {
         parameters: {
             query?: never;
@@ -9,8 +29,8 @@ export type paths = {
         get?: never;
         put?: never;
         /**
-         * Confirmar e-mail e emitir sessão
-         * @description Acesso público. POST explícito após abrir /confirmar-email. Revalida expiração, uso único, cookie do navegador, origem, conta ativa e versão de revogação na mesma transação. GET não consome o link. Link de conta nova responde 400 EMAIL_ACCOUNT_DETAILS_REQUIRED sem consumir o link; repetir enviando nome e senha. O segredo vai no fragmento do link e não deve ser registrado nem persistido pelo cliente.
+         * Confirmar ou aprovar link por e-mail
+         * @description Acesso público. POST explícito depois de abrir /confirmar-email. O cookie original permite concluir o acesso diretamente. Em outro aparelho, 400 EMAIL_APPROVAL_REQUIRED solicita o código que aparece na tela original. Aprovação com código retorna aprovadoEmOutroDispositivo e a sessão é emitida pela rota de conclusão. O link expira em dez minutos e deve ser usado uma única vez.
          */
         post: operations["post__api_auth_email_confirmar"];
         delete?: never;
@@ -30,7 +50,7 @@ export type paths = {
         put?: never;
         /**
          * Solicitar link mágico ou reenviar confirmação
-         * @description Acesso público. Resposta genérica para conta desconhecida, bloqueada ou excluída e para limite por e-mail. Até três envios em 15 minutos, com intervalo mínimo de 60 segundos. Reenvio de cadastro exige o mesmo cookie. Para e-mail sem conta, a finalidade login envia um link que cria a conta somente após a confirmação com nome e senha; a resposta é idêntica à de quem tem conta. Link substitui os anteriores da mesma finalidade. Não valida a posse do e-mail até consumir o token.
+         * @description Acesso público. Resposta genérica para contas novas, existentes ou indisponíveis e envios limitados. Até três envios em 15 minutos, com intervalo mínimo de 60 segundos. Reenvio de cadastro exige o cookie do pedido original e substitui o link e o código. Para e-mail sem conta, o link permite concluir o cadastro com nome e senha.
          */
         post: operations["post__api_auth_email_solicitar"];
         delete?: never;
@@ -150,7 +170,7 @@ export type paths = {
         put?: never;
         /**
          * Solicitar cadastro com confirmação obrigatória
-         * @description Acesso público. Não cria usuário nem sessão antes da confirmação. Sempre cria NORMAL na confirmação; campos de privilégio são rejeitados. Contas antigas continuam acessando por senha. E-mail já utilizado retorna 409. Link de dez minutos, uso único, no mesmo navegador. Origin permitido e cookie HttpOnly obrigatórios. Sem envio configurado, retorna 503. Mudança incompatível em relação ao cadastro com sessão imediata da versão 2.x. Cadastro e login compartilham limite de 20 tentativas por IP a cada 15 minutos.
+         * @description Acesso público. A conta NORMAL é criada ao concluir a confirmação. Campos de privilégio são rejeitados e e-mail já utilizado retorna 409. O link vale dez minutos e é de uso único. O código exibido no navegador solicitante permite aprovar em outro aparelho e continuar no primeiro. Cadastro e login compartilham limite de 20 tentativas por IP a cada 15 minutos.
          */
         post: operations["post__api_auth_register"];
         delete?: never;
@@ -227,6 +247,26 @@ export type paths = {
         patch: operations["patch__api_despesas_id"];
         trace?: never;
     };
+    "/api/front/v1/auth/email/concluir": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Concluir acesso no navegador solicitante
+         * @description Acesso público. Envie solicitacaoId como id e mantenha o cookie HttpOnly do pedido. Consulte a cada cinco segundos durante a espera. A resposta permanece pendente até a aprovação. Conta nova pelo link de login requer nome e senha no navegador solicitante. A sessão é emitida uma única vez. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         */
+        post: operations["frontV1_post__api_auth_email_concluir"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/front/v1/auth/email/confirmar": {
         parameters: {
             query?: never;
@@ -237,8 +277,8 @@ export type paths = {
         get?: never;
         put?: never;
         /**
-         * Confirmar e-mail e emitir sessão
-         * @description Acesso público. POST explícito após abrir /confirmar-email. Revalida expiração, uso único, cookie do navegador, origem, conta ativa e versão de revogação na mesma transação. GET não consome o link. Link de conta nova responde 400 EMAIL_ACCOUNT_DETAILS_REQUIRED sem consumir o link; repetir enviando nome e senha. O segredo vai no fragmento do link e não deve ser registrado nem persistido pelo cliente. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         * Confirmar ou aprovar link por e-mail
+         * @description Acesso público. POST explícito depois de abrir /confirmar-email. O cookie original permite concluir o acesso diretamente. Em outro aparelho, 400 EMAIL_APPROVAL_REQUIRED solicita o código que aparece na tela original. Aprovação com código retorna aprovadoEmOutroDispositivo e a sessão é emitida pela rota de conclusão. O link expira em dez minutos e deve ser usado uma única vez. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
          */
         post: operations["frontV1_post__api_auth_email_confirmar"];
         delete?: never;
@@ -258,7 +298,7 @@ export type paths = {
         put?: never;
         /**
          * Solicitar link mágico ou reenviar confirmação
-         * @description Acesso público. Resposta genérica para conta desconhecida, bloqueada ou excluída e para limite por e-mail. Até três envios em 15 minutos, com intervalo mínimo de 60 segundos. Reenvio de cadastro exige o mesmo cookie. Para e-mail sem conta, a finalidade login envia um link que cria a conta somente após a confirmação com nome e senha; a resposta é idêntica à de quem tem conta. Link substitui os anteriores da mesma finalidade. Não valida a posse do e-mail até consumir o token. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         * @description Acesso público. Resposta genérica para contas novas, existentes ou indisponíveis e envios limitados. Até três envios em 15 minutos, com intervalo mínimo de 60 segundos. Reenvio de cadastro exige o cookie do pedido original e substitui o link e o código. Para e-mail sem conta, o link permite concluir o cadastro com nome e senha. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
          */
         post: operations["frontV1_post__api_auth_email_solicitar"];
         delete?: never;
@@ -378,7 +418,7 @@ export type paths = {
         put?: never;
         /**
          * Solicitar cadastro com confirmação obrigatória
-         * @description Acesso público. Não cria usuário nem sessão antes da confirmação. Sempre cria NORMAL na confirmação; campos de privilégio são rejeitados. Contas antigas continuam acessando por senha. E-mail já utilizado retorna 409. Link de dez minutos, uso único, no mesmo navegador. Origin permitido e cookie HttpOnly obrigatórios. Sem envio configurado, retorna 503. Mudança incompatível em relação ao cadastro com sessão imediata da versão 2.x. Cadastro e login compartilham limite de 20 tentativas por IP a cada 15 minutos. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         * @description Acesso público. A conta NORMAL é criada ao concluir a confirmação. Campos de privilégio são rejeitados e e-mail já utilizado retorna 409. O link vale dez minutos e é de uso único. O código exibido no navegador solicitante permite aprovar em outro aparelho e continuar no primeiro. Cadastro e login compartilham limite de 20 tentativas por IP a cada 15 minutos. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
          */
         post: operations["frontV1_post__api_auth_register"];
         delete?: never;
@@ -2870,9 +2910,12 @@ export type components = {
             titulo?: string;
         };
         EmailPendente: {
+            codigoAprovacao: string;
             /** @constant */
             confirmacaoPendente: true;
             message: string;
+            /** Format: uuid */
+            solicitacaoId: string;
         };
         Error: {
             error: {
@@ -3133,6 +3176,14 @@ export type components = {
             id: string;
             nome: string;
         };
+        ResultadoConclusaoEmail: components["schemas"]["ConfirmacaoEmail"] | {
+            /** @constant */
+            confirmacaoPendente: true;
+        };
+        ResultadoConfirmacaoEmail: components["schemas"]["ConfirmacaoEmail"] | {
+            /** @constant */
+            aprovadoEmOutroDispositivo: true;
+        };
         ResumoIndividual: {
             competencia: string | null;
             /**
@@ -3205,6 +3256,220 @@ export type components = {
 };
 export type $defs = Record<string, never>;
 export interface operations {
+    post__api_auth_email_concluir: {
+        parameters: {
+            query?: never;
+            header: {
+                Origin: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "id": "de000000-0000-4000-8000-000900000003"
+                 *     }
+                 */
+                "application/json": {
+                    /** Format: uuid */
+                    id: string;
+                    nome?: string;
+                    senha?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Operação concluída. */
+            200: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "confirmacaoPendente": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ResultadoConclusaoEmail"];
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Link ou origem não autorizado. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "EMAIL_LINK_INVALID",
+                     *         "message": "Link ou origem não autorizado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Link ou origem não autorizado. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "EMAIL_ORIGIN_FORBIDDEN",
+                     *         "message": "Link ou origem não autorizado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Aguarde antes de tentar novamente. */
+            429: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "TOO_MANY_REQUESTS",
+                     *         "message": "Aguarde antes de tentar novamente."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Envio de e-mail indisponível ou não configurado. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "EMAIL_DISABLED",
+                     *         "message": "O envio de e-mails ainda não foi configurado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     post__api_auth_email_confirmar: {
         parameters: {
             query?: never;
@@ -3223,6 +3488,7 @@ export interface operations {
                  *     }
                  */
                 "application/json": {
+                    codigoAprovacao?: string;
                     /** Format: uuid */
                     id: string;
                     nome?: string;
@@ -3254,7 +3520,7 @@ export interface operations {
                      *       "acaoRepublica": "criar"
                      *     }
                      */
-                    "application/json": components["schemas"]["ConfirmacaoEmail"];
+                    "application/json": components["schemas"]["ResultadoConfirmacaoEmail"];
                 };
             };
             /** @description Os dados enviados são inválidos. */
@@ -3470,7 +3736,9 @@ export interface operations {
                     /**
                      * @example {
                      *       "confirmacaoPendente": true,
-                     *       "message": "Confira seu e-mail."
+                     *       "message": "Confira seu e-mail.",
+                     *       "solicitacaoId": "de000000-0000-4000-8000-000900000003",
+                     *       "codigoAprovacao": "123456"
                      *     }
                      */
                     "application/json": components["schemas"]["EmailPendente"];
@@ -4629,7 +4897,9 @@ export interface operations {
                     /**
                      * @example {
                      *       "confirmacaoPendente": true,
-                     *       "message": "Confira seu e-mail."
+                     *       "message": "Confira seu e-mail.",
+                     *       "solicitacaoId": "de000000-0000-4000-8000-000900000003",
+                     *       "codigoAprovacao": "123456"
                      *     }
                      */
                     "application/json": components["schemas"]["EmailPendente"];
@@ -5941,6 +6211,220 @@ export interface operations {
             };
         };
     };
+    frontV1_post__api_auth_email_concluir: {
+        parameters: {
+            query?: never;
+            header: {
+                Origin: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "id": "de000000-0000-4000-8000-000900000003"
+                 *     }
+                 */
+                "application/json": {
+                    /** Format: uuid */
+                    id: string;
+                    nome?: string;
+                    senha?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Operação concluída. */
+            200: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "confirmacaoPendente": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ResultadoConclusaoEmail"];
+                };
+            };
+            /** @description Os dados enviados são inválidos. */
+            400: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "VALIDATION_ERROR",
+                     *         "message": "Os dados enviados são inválidos."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Link ou origem não autorizado. */
+            401: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "EMAIL_LINK_INVALID",
+                     *         "message": "Link ou origem não autorizado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Link ou origem não autorizado. */
+            403: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "EMAIL_ORIGIN_FORBIDDEN",
+                     *         "message": "Link ou origem não autorizado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Registro não encontrado. */
+            404: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "NOT_FOUND",
+                     *         "message": "Registro não encontrado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Já existe um registro com estes dados. */
+            409: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "CONFLICT",
+                     *         "message": "Já existe um registro com estes dados."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description O corpo JSON deve ter no máximo 1 MB. */
+            413: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "PAYLOAD_TOO_LARGE",
+                     *         "message": "O corpo JSON deve ter no máximo 1 MB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Aguarde antes de tentar novamente. */
+            429: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "TOO_MANY_REQUESTS",
+                     *         "message": "Aguarde antes de tentar novamente."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erro interno do servidor. */
+            500: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "INTERNAL_SERVER_ERROR",
+                     *         "message": "Erro interno do servidor."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Envio de e-mail indisponível ou não configurado. */
+            503: {
+                headers: {
+                    /** @description UUID gerado pelo servidor para correlação com os logs. */
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "code": "EMAIL_DISABLED",
+                     *         "message": "O envio de e-mails ainda não foi configurado."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     frontV1_post__api_auth_email_confirmar: {
         parameters: {
             query?: never;
@@ -5959,6 +6443,7 @@ export interface operations {
                  *     }
                  */
                 "application/json": {
+                    codigoAprovacao?: string;
                     /** Format: uuid */
                     id: string;
                     nome?: string;
@@ -5990,7 +6475,7 @@ export interface operations {
                      *       "acaoRepublica": "criar"
                      *     }
                      */
-                    "application/json": components["schemas"]["ConfirmacaoEmail"];
+                    "application/json": components["schemas"]["ResultadoConfirmacaoEmail"];
                 };
             };
             /** @description Os dados enviados são inválidos. */
@@ -6206,7 +6691,9 @@ export interface operations {
                     /**
                      * @example {
                      *       "confirmacaoPendente": true,
-                     *       "message": "Confira seu e-mail."
+                     *       "message": "Confira seu e-mail.",
+                     *       "solicitacaoId": "de000000-0000-4000-8000-000900000003",
+                     *       "codigoAprovacao": "123456"
                      *     }
                      */
                     "application/json": components["schemas"]["EmailPendente"];
@@ -7365,7 +7852,9 @@ export interface operations {
                     /**
                      * @example {
                      *       "confirmacaoPendente": true,
-                     *       "message": "Confira seu e-mail."
+                     *       "message": "Confira seu e-mail.",
+                     *       "solicitacaoId": "de000000-0000-4000-8000-000900000003",
+                     *       "codigoAprovacao": "123456"
                      *     }
                      */
                     "application/json": components["schemas"]["EmailPendente"];

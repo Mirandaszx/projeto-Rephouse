@@ -22,6 +22,7 @@ const array = (items: Schema): Schema => ({ type: 'array', items })
 const object = (properties: Record<string, Schema>, required = Object.keys(properties)): Schema => ({ type: 'object', additionalProperties: false, properties, required })
 const nameInput = { type: 'string', minLength: 1, maxLength: 120 }
 const password = { type: 'string', minLength: 8, maxLength: 128, writeOnly: true }
+const codigoAprovacao = { type: 'string', pattern: '^[0-9]{6}$' }
 const id = (tipo: number, numero: number) => `de000000-0000-4000-8000-${String(tipo).padStart(4, '0')}${String(numero).padStart(8, '0')}`
 const agora = '2026-10-16T12:00:00.000Z'
 const usuario = { id: id(1, 4), nome: 'Ana Moradora', email: 'ana@demo.rephouse.test', tipoUsuario: 'USUARIO_NORMAL', ativo: true, criadoEm: agora }
@@ -54,8 +55,10 @@ const schemas: Record<string, Schema> = {
   Usuario: object({ ...usuarioFields, foto: nullable(ref('FotoPerfil')) }, Object.keys(usuarioFields)),
   UsuarioMaster: object({ ...usuarioFields, excluidoEm: nullable(timestamp) }),
   Sessao: object({ token: { type: 'string', description: 'Bearer JWT válido por uma hora.' }, usuario: ref('Usuario') }),
-  EmailPendente: object({ confirmacaoPendente: { const: true }, message: { type: 'string' } }),
+  EmailPendente: object({ confirmacaoPendente: { const: true }, message: { type: 'string' }, solicitacaoId: uuid, codigoAprovacao }),
   ConfirmacaoEmail: object({ token: { type: 'string' }, usuario: ref('Usuario'), acaoRepublica: { enum: ['criar','entrar',null] } }),
+  ResultadoConfirmacaoEmail: { oneOf: [ref('ConfirmacaoEmail'), object({ aprovadoEmOutroDispositivo: { const: true } })] },
+  ResultadoConclusaoEmail: { oneOf: [ref('ConfirmacaoEmail'), object({ confirmacaoPendente: { const: true } })] },
   Republica: object({ id: uuid, nome: { type: 'string' }, endereco: nullable({ type: 'string' }), codigoEntrada: { type: 'string' }, adminId: uuid, ativa: { type: 'boolean' }, criadaEm: timestamp }),
   Membro: object(membroFields),
   MembroListado: object({ ...membroFields, usuario: object({ id: uuid, nome: { type: 'string' }, email: { type: 'string', format: 'email' }, foto: nullable(ref('FotoPerfil')) }, ['id','nome','email']) }),
@@ -138,7 +141,8 @@ add('/api/health', 'get', 'Verificar o processo HTTP', { public: true, tag: 'Doc
 const ready = add('/api/ready', 'get', 'Verificar conexão ao PostgreSQL', { public: true, tag: 'Documentação', description: 'Consulta SELECT 1; responde em até dois segundos, sem detalhes da conexão.', response: object({ status: { const: 'ok' } }), output: { status: 'ok' } })
 ready.responses['503'] = { description: 'PostgreSQL indisponível.', content: { 'application/json': { schema: object({ status: { const: 'unavailable' } }), example: { status: 'unavailable' } } } }
 add('/api/openapi.json', 'get', 'Obter o contrato OpenAPI', { public: true, tag: 'Documentação', response: { type: 'object', required: ['openapi', 'info', 'paths', 'components'] }, output: { openapi: '3.1.0', info: { title: 'RepHouse API', version: '4.2.0' }, paths: {}, components: {} } })
-const cadastro = add('/api/auth/register', 'post', 'Solicitar cadastro com confirmação obrigatória', { public: true, tag: 'Autenticação', status: 202, body: ref('Cadastro'), input: { nome: usuario.nome, email: usuario.email, senha: 'SuaSenhaDeTeste123!' }, response: ref('EmailPendente'), output: { confirmacaoPendente: true, message: 'Confira seu e-mail.' }, description: 'Não cria usuário nem sessão antes da confirmação. Sempre cria NORMAL na confirmação; campos de privilégio são rejeitados. Contas antigas continuam acessando por senha. E-mail já utilizado retorna 409. Link de dez minutos, uso único, no mesmo navegador. Origin permitido e cookie HttpOnly obrigatórios. Sem envio configurado, retorna 503. Mudança incompatível em relação ao cadastro com sessão imediata da versão 2.x.' })
+const exemploEmailPendente = { confirmacaoPendente: true, message: 'Confira seu e-mail.', solicitacaoId: id(9, 3), codigoAprovacao: '123456' }
+const cadastro = add('/api/auth/register', 'post', 'Solicitar cadastro com confirmação obrigatória', { public: true, tag: 'Autenticação', status: 202, body: ref('Cadastro'), input: { nome: usuario.nome, email: usuario.email, senha: 'SuaSenhaDeTeste123!' }, response: ref('EmailPendente'), output: exemploEmailPendente, description: 'A conta NORMAL é criada ao concluir a confirmação. Campos de privilégio são rejeitados e e-mail já utilizado retorna 409. O link vale dez minutos e é de uso único. O código exibido no navegador solicitante permite aprovar em outro aparelho e continuar no primeiro.' })
 const login = add('/api/auth/login', 'post', 'Autenticar por e-mail e senha', { public: true, tag: 'Autenticação', body: ref('Login'), input: { email: usuario.email, senha: 'SuaSenhaDeTeste123!' }, response: ref('Sessao'), output: { token: 'JWT_RECEBIDO_DA_API', usuario }, description: 'Token de uma hora. Contas bloqueadas ou excluídas não autenticam. Ao expirar, faça login novamente; não há refresh token.' })
 login.responses['401'] = { description: 'Credenciais incorretas ou conta indisponível.', content: { 'application/json': { schema: ref('Error'), example: { error: { code: 'INVALID_CREDENTIALS', message: 'E-mail ou senha inválidos.' } } } } }
 cadastro.description += ' Cadastro e login compartilham limite de 20 tentativas por IP a cada 15 minutos.'
@@ -147,13 +151,17 @@ add('/api/auth/metodos', 'get', 'Consultar métodos de autenticação', { public
 const requestEmail = add('/api/auth/email/solicitar', 'post', 'Solicitar link mágico ou reenviar confirmação', { public: true, tag: 'Autenticação', status: 202,
   body: object({ email: { type: 'string', format: 'email', maxLength: 254 }, finalidade: { enum: ['login','cadastro'], default: 'login' } }, ['email']),
   input: { email: usuario.email, finalidade: 'login' },
-  response: ref('EmailPendente'), output: { confirmacaoPendente: true, message: 'Confira seu e-mail.' },
-  description: 'Resposta genérica para conta desconhecida, bloqueada ou excluída e para limite por e-mail. Até três envios em 15 minutos, com intervalo mínimo de 60 segundos. Reenvio de cadastro exige o mesmo cookie. Para e-mail sem conta, a finalidade login envia um link que cria a conta somente após a confirmação com nome e senha; a resposta é idêntica à de quem tem conta. Link substitui os anteriores da mesma finalidade. Não valida a posse do e-mail até consumir o token.' })
-const confirmEmail = add('/api/auth/email/confirmar', 'post', 'Confirmar e-mail e emitir sessão', { public: true, tag: 'Autenticação',
-  body: object({ id: uuid, token: { type: 'string', pattern: '^[A-Za-z0-9_-]{43}$' }, nome: { type: 'string', minLength: 1, maxLength: 120 }, senha: { type: 'string', minLength: 8, maxLength: 128 } }, ['id', 'token']), response: ref('ConfirmacaoEmail'),
+  response: ref('EmailPendente'), output: exemploEmailPendente,
+  description: 'Resposta genérica para contas novas, existentes ou indisponíveis e envios limitados. Até três envios em 15 minutos, com intervalo mínimo de 60 segundos. Reenvio de cadastro exige o cookie do pedido original e substitui o link e o código. Para e-mail sem conta, o link permite concluir o cadastro com nome e senha.' })
+const confirmEmail = add('/api/auth/email/confirmar', 'post', 'Confirmar ou aprovar link por e-mail', { public: true, tag: 'Autenticação',
+  body: object({ id: uuid, token: { type: 'string', pattern: '^[A-Za-z0-9_-]{43}$' }, nome: nameInput, senha: password, codigoAprovacao }, ['id', 'token']), response: ref('ResultadoConfirmacaoEmail'),
   input: { id: id(9, 3), token: 'a'.repeat(43) },
-  output: { token: 'JWT_RECEBIDO_DA_API', usuario, acaoRepublica: 'criar' }, description: 'POST explícito após abrir /confirmar-email. Revalida expiração, uso único, cookie do navegador, origem, conta ativa e versão de revogação na mesma transação. GET não consome o link. Link de conta nova responde 400 EMAIL_ACCOUNT_DETAILS_REQUIRED sem consumir o link; repetir enviando nome e senha. O segredo vai no fragmento do link e não deve ser registrado nem persistido pelo cliente.' })
-for (const operation of [cadastro, requestEmail, confirmEmail]) {
+  output: { token: 'JWT_RECEBIDO_DA_API', usuario, acaoRepublica: 'criar' }, description: 'POST explícito depois de abrir /confirmar-email. O cookie original permite concluir o acesso diretamente. Em outro aparelho, 400 EMAIL_APPROVAL_REQUIRED solicita o código que aparece na tela original. Aprovação com código retorna aprovadoEmOutroDispositivo e a sessão é emitida pela rota de conclusão. O link expira em dez minutos e deve ser usado uma única vez.' })
+const concludeEmail = add('/api/auth/email/concluir', 'post', 'Concluir acesso no navegador solicitante', { public: true, tag: 'Autenticação',
+  body: object({ id: uuid, nome: nameInput, senha: password }, ['id']), input: { id: id(9, 3) },
+  response: ref('ResultadoConclusaoEmail'), output: { confirmacaoPendente: true },
+  description: 'Envie solicitacaoId como id e mantenha o cookie HttpOnly do pedido. Consulte a cada cinco segundos durante a espera. A resposta permanece pendente até a aprovação. Conta nova pelo link de login requer nome e senha no navegador solicitante. A sessão é emitida uma única vez.' })
+for (const operation of [cadastro, requestEmail, confirmEmail, concludeEmail]) {
   for (const status of ['401','403','503']) operation.responses[status] = { description: status === '503' ? 'Envio de e-mail indisponível ou não configurado.' : 'Link ou origem não autorizado.', content: { 'application/json': { schema: ref('Error'), example: { error: { code: status === '503' ? 'EMAIL_DISABLED' : status === '403' ? 'EMAIL_ORIGIN_FORBIDDEN' : 'EMAIL_LINK_INVALID', message: status === '503' ? 'O envio de e-mails ainda não foi configurado.' : 'Link ou origem não autorizado.' } } } } }
   operation.parameters = [{ name: 'Origin', in: 'header', required: true, schema: { type: 'string', format: 'uri' } }]
 }

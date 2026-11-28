@@ -8,7 +8,7 @@ import { z } from 'zod'
 import { AuthRepository } from './auth.repository.js'
 import type { LoginInput } from './auth.types.js'
 import { createGoogleService, type GoogleOptions, type GoogleProof } from './google.service.js'
-import { createEmailService, type EmailProof } from './email.service.js'
+import { createEmailService, type EmailConclusao, type EmailProof } from './email.service.js'
 import type { EmailOptions } from '../../infraestrutura/email/resend.js'
 import { notifyMembership } from '../notificacoes/notificacoes.service.js'
 import { fotoPublica, fotoSelect } from '../perfil/foto.service.js'
@@ -37,13 +37,20 @@ export function createAuthService(db: PrismaClient, secret: string, googleOption
       .setSubject(user.id).setIssuedAt().setIssuer('rephouse').setAudience('rephouse-api')
       .setExpirationTime('1h').sign(key)
   }
+  async function emailSession(result: { user: Usuario; acaoRepublica: string | null }) {
+    return { token: await token(result.user), usuario: publicUser(result.user), acaoRepublica: result.acaoRepublica }
+  }
   return {
     methods: () => ({ ...google.methods(), email: { habilitado: email.enabled() } }),
     register: email.register,
     requestEmail: email.request,
     async confirmEmail(proof: EmailProof, cookie?: string) {
       const result = await email.confirm(proof, cookie)
-      return { token: await token(result.user), usuario: publicUser(result.user), acaoRepublica: result.acaoRepublica }
+      return 'user' in result ? emailSession(result) : result
+    },
+    async concludeEmail(proof: EmailConclusao, cookie?: string) {
+      const result = await email.conclude(proof, cookie)
+      return result ? emailSession(result) : { confirmacaoPendente: true } as const
     },
     challenge: google.challenge.bind(google),
     async googleLogin(proof: GoogleProof, cookie?: string) {

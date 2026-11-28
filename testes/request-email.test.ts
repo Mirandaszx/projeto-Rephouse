@@ -9,6 +9,7 @@ import { createResendSender } from '../codigo/infraestrutura/email/resend.js'
 
 const origin = 'http://localhost:5173'
 const input = () => ({ nome: 'Pessoa confirmação', email: `${randomUUID()}@email.rephouse.test`, senha: password })
+type PendingEmail = { confirmacaoPendente: true; message: string; solicitacaoId: string; codigoAprovacao: string }
 async function release(c: Awaited<ReturnType<typeof abrirRequestSpec>>) {
   await c.db.$executeRaw`UPDATE limites_envio_email SET ultimo_envio = CURRENT_TIMESTAMP - interval '61 seconds'`
 }
@@ -76,20 +77,37 @@ describe('Cadastro confirmado e link mágico por HTTP e PostgreSQL reais', () =>
       assert.equal(await c.db.emailVerificado.count(), 1)
     } finally { await c.close() }
   })
-  it('quando outro navegador ou origem tenta confirmar, então não consome o link nem cria conta', async () => {
+  it('aprova o cadastro em outro navegador e emite a sessão uma única vez no navegador que fez o pedido', async () => {
     const c = await abrirRequestSpec()
     try {
-      const data = input(); await c.request('POST', '/api/auth/register', undefined, data)
+      const data = input()
+      const pending = await c.request<PendingEmail>('POST', '/api/auth/register', undefined, data)
       const proof = c.mailbox.proof(data.email)
-      assert.equal((await c.request('POST', '/api/auth/email/confirmar', undefined, proof, undefined, { Cookie: '' })).status, 401)
-      assert.equal((await c.request('POST', '/api/auth/email/confirmar', undefined, proof, undefined, { Cookie: 'rephouse_email=' + randomBytes(32).toString('base64url') })).status, 401)
+      assert.equal(pending.body.solicitacaoId, proof.id)
+      assert.match(pending.body.codigoAprovacao, /^\d{6}$/)
+      const other = { Cookie: '' }
+      const approved = { ...proof, codigoAprovacao: pending.body.codigoAprovacao }
+      const challenge = await c.request<{ error: { code: string } }>('POST', '/api/auth/email/confirmar', undefined, proof, undefined, other)
+      assert.equal(challenge.status, 400)
+      assert.equal(challenge.body.error.code, 'EMAIL_APPROVAL_REQUIRED')
       assert.equal((await c.request('POST', '/api/auth/email/confirmar', undefined, proof, undefined, { Origin: 'https://invasor.example.test' })).status, 403)
       assert.equal((await c.request('POST', '/api/auth/email/confirmar', undefined, { ...proof, token: 'inválido' })).status, 400)
       const get = await fetch(c.base + '/api/auth/email/confirmar')
       // O roteador privado de fallback exige autenticação; GET nunca confirma identidade.
       assert.equal(get.status, 401); assert.deepEqual(await get.json(), { error: { code: 'UNAUTHENTICATED', message: 'Autenticação necessária.' } })
-      assert.equal((await c.db.linkEmail.findUniqueOrThrow({ where: { id: proof.id } })).consumidoEm, null)
-      assert.equal((await c.request('POST', '/api/auth/email/confirmar', undefined, proof)).status, 200)
+      const wrongCode = pending.body.codigoAprovacao === '000000' ? '000001' : '000000'
+      assert.equal((await c.request('POST', '/api/auth/email/confirmar', undefined, { ...proof, codigoAprovacao: wrongCode }, undefined, other)).status, 400)
+      assert.equal((await c.db.linkEmail.findUniqueOrThrow({ where: { id: proof.id } })).tentativasAprovacao, 1)
+      assert.deepEqual((await c.request('POST', '/api/auth/email/concluir', undefined, { id: proof.id })).body, { confirmacaoPendente: true })
+      assert.deepEqual((await c.request('POST', '/api/auth/email/confirmar', undefined, approved, undefined, other)).body, { aprovadoEmOutroDispositivo: true })
+      assert.equal(await c.db.usuario.count({ where: { email: data.email } }), 0)
+      assert.equal((await c.request('POST', '/api/auth/email/concluir', undefined, { id: proof.id }, undefined, other)).status, 401)
+      const wrongBrowser = { Cookie: 'rephouse_email=' + randomBytes(32).toString('base64url') }
+      assert.deepEqual((await c.request('POST', '/api/auth/email/concluir', undefined, { id: proof.id }, undefined, wrongBrowser)).body, { confirmacaoPendente: true })
+      const result = await c.request<Session>('POST', '/api/auth/email/concluir', undefined, { id: proof.id })
+      assert.equal(result.status, 200); assert.ok(result.body.token)
+      assert.equal(result.body.usuario.email, data.email)
+      assert.deepEqual((await c.request('POST', '/api/auth/email/concluir', undefined, { id: proof.id })).body, { confirmacaoPendente: true })
     } finally { await c.close() }
   })
   it('quando o link expira ou é substituído por reenvio, então rejeita o anterior e aceita o novo', async () => {
@@ -138,12 +156,41 @@ describe('Cadastro confirmado e link mágico por HTTP e PostgreSQL reais', () =>
       await c.request('DELETE', '/api/me', b.token, { senha: password })
       const before = c.mailbox.messages.length, novo = input().email
       const results = []
-      for (const email of [novo, a.usuario.email, b.usuario.email]) results.push(await c.request('POST', '/api/auth/email/solicitar', undefined, { email }))
-      assert.deepEqual(results.map(r => r.status), [202, 202, 202]); assert.deepEqual(results[0].body, results[1].body); assert.deepEqual(results[1].body, results[2].body)
+      for (const email of [novo, a.usuario.email, b.usuario.email]) results.push(await c.request<PendingEmail>('POST', '/api/auth/email/solicitar', undefined, { email }))
+      assert.deepEqual(results.map(r => r.status), [202, 202, 202])
+      for (const { body } of results) {
+        assert.equal(body.confirmacaoPendente, true)
+        assert.equal(body.message, results[0].body.message)
+        assert.match(body.codigoAprovacao, /^\d{6}$/)
+        assert.match(body.solicitacaoId, /^[a-f0-9-]{36}$/)
+      }
       // A tela não diferencia os casos. Conta bloqueada não recebe nada; conta excluída foi anonimizada (LGPD), então
       // o e-mail dela está livre e recebe, como qualquer e-mail sem conta, o convite para criar uma conta nova.
       assert.deepEqual(c.mailbox.messages.slice(before).map(m => [m.to, m.subject]), [[novo, 'Crie sua conta no RepHouse'], [b.usuario.email, 'Crie sua conta no RepHouse']])
       assert.equal(await c.db.usuario.count({ where: { email: novo } }), 0)
+    } finally { await c.close() }
+  })
+  it('continua o login no navegador original e pede os dados nesse navegador se a conta for nova', async () => {
+    const c = await abrirRequestSpec()
+    try {
+      const existing = (await c.account('ana')).usuario.email
+      for (const email of [existing, input().email]) {
+        const r = await c.request<PendingEmail>('POST', '/api/auth/email/solicitar', undefined, { email })
+        const proof = c.mailbox.proof(email)
+        const approved = await c.request('POST', '/api/auth/email/confirmar', undefined,
+          { ...proof, codigoAprovacao: r.body.codigoAprovacao }, undefined, { Cookie: '' })
+        assert.deepEqual(approved.body, { aprovadoEmOutroDispositivo: true })
+        const id = r.body.solicitacaoId
+        const result = await c.request<Session>('POST', '/api/auth/email/concluir', undefined, { id })
+        if (email === existing) {
+          assert.equal(result.status, 200); assert.equal(result.body.usuario.email, email)
+        } else {
+          assert.equal(result.status, 400)
+          assert.equal(await c.db.usuario.count({ where: { email } }), 0)
+          const completed = await c.request<Session>('POST', '/api/auth/email/concluir', undefined, { id, nome: 'Pessoa Nova', senha: password })
+          assert.equal(completed.status, 200); assert.equal(completed.body.usuario.email, email)
+        }
+      }
     } finally { await c.close() }
   })
   it('quando entra por link com e-mail sem conta, então a confirmação pede nome e senha sem gastar o link e cria a conta', async () => {

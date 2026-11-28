@@ -1,7 +1,7 @@
 import { AppError } from '../../compartilhado/http/app-error.js'
 
 type ConfirmacaoEmail =
-  | { finalidade: 'cadastro'; params: { linkConfirmacao: string } }
+  | { finalidade: 'cadastro'; params: { linkConfirmacao: string; instrucao: string } }
   | { finalidade: 'login'; params: { linkConfirmacao: string; titulo: string; instrucao: string; acao: string } }
 
 export interface EmailMessage {

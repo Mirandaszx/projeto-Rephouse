@@ -4,7 +4,8 @@ import { emailLink } from './auxiliares/email-harness'
 import { contrast } from './auxiliares/contraste'
 
 // Instancia HTTP isolada por arquivo; os controles reais permanecem habilitados.
-test.use({ extraHTTPHeaders: { 'x-interface-test-run': process.env.REPHOUSE_INTERFACE_TEST_RUN ?? '', 'x-interface-suite': 'email.spec.ts' } })
+const testHeaders = { 'x-interface-test-run': process.env.REPHOUSE_INTERFACE_TEST_RUN ?? '', 'x-interface-suite': 'email.spec.ts' }
+test.use({ extraHTTPHeaders: testHeaders })
 
 test('login por link exige ação explícita, remove segredo da URL e mantém a conta existente', async ({ page }) => {
   await page.goto('/login')
@@ -35,7 +36,7 @@ test('entrar por link com e-mail sem conta cria a conta pedindo nome e senha na 
   await page.getByLabel('E-mail',{exact:true}).fill(email)
   await page.getByRole('button',{name:'Enviar link de acesso',exact:true}).click()
   await expect(page.getByRole('heading',{name:'Confira seu e-mail.',exact:true})).toBeVisible()
-  await expect(page.getByText('Se ainda não tem, ele cria uma',{exact:false})).toBeVisible()
+  await expect(page.getByText('Se ainda não tiver conta',{exact:false})).toBeVisible()
   await page.goto(await emailLink(page.request,email))
   await page.getByRole('button',{name:'Confirmar e entrar',exact:true}).click()
   // O link continua valendo: a tela só pede os dados que faltam para criar a conta.
@@ -55,6 +56,40 @@ test('entrar por link com e-mail sem conta cria a conta pedindo nome e senha na 
   await page.getByRole('button',{name:'Entrar na minha conta',exact:true}).click()
   await expect(page).toHaveURL(/\/republica$/)
 })
+
+for (const fluxo of ['login no PC', 'cadastro no celular'] as const) {
+  test(`aprovação em outro aparelho continua ${fluxo} na tela original`, async ({ page, browser }) => {
+    const cadastro = fluxo === 'cadastro no celular'
+    const email = cadastro ? `aprovacao-${Date.now()}@integracao.rephouse.test` : 'ana@integracao.rephouse.test'
+    await page.setViewportSize({ width: cadastro ? 390 : 1440, height: 900 })
+    await page.goto(cadastro ? '/cadastro' : '/login')
+    if (cadastro) {
+      await page.getByLabel('Nome', { exact: true }).fill('Pessoa Fictícia')
+      await page.getByLabel('Senha', { exact: true }).fill('Senha-exclusiva-de-teste-2026')
+    } else {
+      await page.getByRole('button', { name: 'Entrar por link no e-mail', exact: true }).click()
+    }
+    await page.getByLabel('E-mail', { exact: true }).fill(email)
+    await page.getByRole('button', { name: cadastro ? 'Criar minha conta' : 'Enviar link de acesso', exact: true }).click()
+    const code = page.locator('.auth-approval-code')
+    await expect(code).toHaveText(/^\d{6}$/)
+    expect(await page.evaluate(() => sessionStorage.getItem('rephouse-token'))).toBeNull()
+
+    const other = await browser.newContext({ viewport: { width: cadastro ? 1440 : 390, height: 900 }, extraHTTPHeaders: testHeaders })
+    try {
+      const confirmationPage = await other.newPage()
+      await confirmationPage.goto(await emailLink(page.request, email))
+      await confirmationPage.getByRole('button', { name: 'Confirmar e entrar', exact: true }).click()
+      await expect(confirmationPage.getByRole('heading', { name: 'Confirme o outro aparelho.' })).toBeVisible()
+      await confirmationPage.getByLabel('Código de aprovação').fill(await code.innerText())
+      await confirmationPage.getByRole('button', { name: 'Aprovar pedido', exact: true }).click()
+      await expect(confirmationPage.getByRole('heading', { name: 'Pedido aprovado.' })).toBeVisible()
+      expect(await confirmationPage.evaluate(() => sessionStorage.getItem('rephouse-token'))).toBeNull()
+      await expect(page).toHaveURL(/\/republica(?:\?acao=criar)?$/, { timeout: 12_000 })
+      expect(await page.evaluate(() => sessionStorage.getItem('rephouse-token'))).toBeTruthy()
+    } finally { await other.close() }
+  })
+}
 
 test('link incompleto orienta a recuperação e não envia confirmação', async ({ page }) => {
   let requests = 0
@@ -84,10 +119,10 @@ test('API antiga ou envio desabilitado não permite cadastro sem confirmação n
 })
 
 test('falha de confirmação mantém mensagem legível e código de suporte recolhido', async ({ page }) => {
-  await page.route('**/api/auth/email/confirmar', route => route.fulfill({status:401,contentType:'application/json',headers:{'X-Request-Id':'00000000-0000-4000-8000-000000000001'},body:JSON.stringify({error:{code:'EMAIL_LINK_INVALID',message:'Este link é inválido, expirou ou já foi utilizado. Solicite outro no mesmo navegador.'}})}))
+  await page.route('**/api/auth/email/confirmar', route => route.fulfill({status:401,contentType:'application/json',headers:{'X-Request-Id':'00000000-0000-4000-8000-000000000001'},body:JSON.stringify({error:{code:'EMAIL_LINK_INVALID',message:'Este link é inválido, expirou ou já foi utilizado. Solicite outro link.'}})}))
   await page.goto('/confirmar-email#id=00000000-0000-4000-8000-000000000002&token='+'a'.repeat(43))
   await page.getByRole('button',{name:'Confirmar e entrar',exact:true}).click()
-  await expect(page.getByRole('alert')).toContainText('Solicite outro no mesmo navegador.')
+  await expect(page.getByRole('alert')).toContainText('Solicite outro link.')
   await expect(page.getByRole('alert')).not.toContainText('00000000')
   expect(await page.evaluate(()=>sessionStorage.getItem('rephouse-token'))).toBeNull()
 })

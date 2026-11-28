@@ -10,6 +10,8 @@ const googleProof = z.object({ credential: z.string().min(1).max(16000), desafio
 const confirmation = z.union([z.object({ senha: password }).strict(), googleProof.omit({ senha: true })])
 const cookieName = 'rephouse_google'
 const emailCookieName = 'rephouse_email'
+const emailConclusion = z.object({ id: z.uuid(), nome: name.optional(), senha: password.optional() }).strict()
+const emailConfirmation = emailConclusion.extend({ token: z.string().regex(/^[A-Za-z0-9_-]{43}$/), codigoAprovacao: z.string().regex(/^\d{6}$/).optional() })
 export function createAuthController(service: AuthService, origins: string[] = [], options?: GoogleOptions) {
   const cookie = (req: Parameters<RequestHandler>[0]) => req.get('Cookie')?.split(';').map(value => value.trim()).find(value => value.startsWith(cookieName + '='))?.slice(cookieName.length + 1)
   const origin = (req: Parameters<RequestHandler>[0]) => {
@@ -59,7 +61,11 @@ export function createAuthController(service: AuthService, origins: string[] = [
     }),
     confirmEmail: endpoint(req => {
       emailOrigin(req)
-      return service.confirmEmail(z.object({ id: z.uuid(), token: z.string().regex(/^[A-Za-z0-9_-]{43}$/), nome: name.optional(), senha: password.optional() }).strict().parse(req.body), emailCookie(req))
+      return service.confirmEmail(emailConfirmation.parse(req.body), emailCookie(req))
+    }),
+    concludeEmail: endpoint(req => {
+      emailOrigin(req)
+      return service.concludeEmail(emailConclusion.parse(req.body), emailCookie(req))
     }),
     login: endpoint(req => service.login(z.object({ email, senha: password }).strict().parse(req.body))),
     me: endpoint((_req, actor) => service.me(actor)),

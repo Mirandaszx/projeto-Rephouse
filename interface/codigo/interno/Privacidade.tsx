@@ -82,7 +82,7 @@ export default function Privacidade() {
       </section>
 
       <section id="cookies"><h2>Cookies e armazenamento no navegador</h2>
-        <p>Usamos só o essencial para o login funcionar com segurança: um cookie que confirma que o link de acesso foi aberto no mesmo navegador do pedido (vale até 24 horas) e outro para entrar com o Google (vale alguns minutos). Sua sessão fica guardada só nesta aba e some quando você a fecha. Preferências como tema claro ou escuro e o Modo simples ficam no seu navegador. Não usamos cookies de publicidade nem de análise.</p>
+        <p>Usamos só o essencial para o login funcionar com segurança: um cookie que vincula o pedido de acesso ao navegador que vai receber a sessão (vale até 24 horas) e outro para entrar com o Google (vale alguns minutos). Sua sessão fica guardada só nesta aba e some quando você a fecha. Preferências como tema claro ou escuro e o Modo simples ficam no seu navegador. Não usamos cookies de publicidade nem de análise.</p>
       </section>
 
       <section id="tempo"><h2>Por quanto tempo guardamos</h2>

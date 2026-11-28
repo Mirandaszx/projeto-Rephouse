@@ -58,8 +58,8 @@ describe('Fronteira externa de e-mail e configuração', () => {
       return Response.json({ messageId: '<provider-message@relay.example.test>' }, { status: 201 })
     }, { cadastro: 1, login: 2 })
 
-    const cadastro = { linkConfirmacao: link }
-    const login = { linkConfirmacao: link, titulo: 'Entre no RepHouse', instrucao: 'Abra no mesmo navegador.', acao: 'Confirmar e entrar' }
+    const cadastro = { linkConfirmacao: link, instrucao: 'Abra o link para confirmar.' }
+    const login = { ...cadastro, titulo: 'Entre no RepHouse', acao: 'Confirmar e entrar' }
     await send({ ...message, confirmacao: { finalidade: 'cadastro', params: cadastro } })
     await send({ ...message, confirmacao: { finalidade: 'login', params: login } })
     await send(message)

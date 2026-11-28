@@ -226,11 +226,21 @@
           },
           "message": {
             "type": "string"
+          },
+          "solicitacaoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigoAprovacao": {
+            "type": "string",
+            "pattern": "^[0-9]{6}$"
           }
         },
         "required": [
           "confirmacaoPendente",
-          "message"
+          "message",
+          "solicitacaoId",
+          "codigoAprovacao"
         ]
       },
       "ConfirmacaoEmail": {
@@ -255,6 +265,44 @@
           "token",
           "usuario",
           "acaoRepublica"
+        ]
+      },
+      "ResultadoConfirmacaoEmail": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ConfirmacaoEmail"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "aprovadoEmOutroDispositivo": {
+                "const": true
+              }
+            },
+            "required": [
+              "aprovadoEmOutroDispositivo"
+            ]
+          }
+        ]
+      },
+      "ResultadoConclusaoEmail": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ConfirmacaoEmail"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "confirmacaoPendente": {
+                "const": true
+              }
+            },
+            "required": [
+              "confirmacaoPendente"
+            ]
+          }
         ]
       },
       "Republica": {
@@ -2604,7 +2652,7 @@
         "tags": [
           "Autenticação"
         ],
-        "description": "Acesso público. Não cria usuário nem sessão antes da confirmação. Sempre cria NORMAL na confirmação; campos de privilégio são rejeitados. Contas antigas continuam acessando por senha. E-mail já utilizado retorna 409. Link de dez minutos, uso único, no mesmo navegador. Origin permitido e cookie HttpOnly obrigatórios. Sem envio configurado, retorna 503. Mudança incompatível em relação ao cadastro com sessão imediata da versão 2.x. Cadastro e login compartilham limite de 20 tentativas por IP a cada 15 minutos.",
+        "description": "Acesso público. A conta NORMAL é criada ao concluir a confirmação. Campos de privilégio são rejeitados e e-mail já utilizado retorna 409. O link vale dez minutos e é de uso único. O código exibido no navegador solicitante permite aprovar em outro aparelho e continuar no primeiro. Cadastro e login compartilham limite de 20 tentativas por IP a cada 15 minutos.",
         "x-perfis": [],
         "security": [],
         "responses": {
@@ -2617,7 +2665,9 @@
                 },
                 "example": {
                   "confirmacaoPendente": true,
-                  "message": "Confira seu e-mail."
+                  "message": "Confira seu e-mail.",
+                  "solicitacaoId": "de000000-0000-4000-8000-000900000003",
+                  "codigoAprovacao": "123456"
                 }
               }
             },
@@ -3571,7 +3621,7 @@
         "tags": [
           "Autenticação"
         ],
-        "description": "Acesso público. Resposta genérica para conta desconhecida, bloqueada ou excluída e para limite por e-mail. Até três envios em 15 minutos, com intervalo mínimo de 60 segundos. Reenvio de cadastro exige o mesmo cookie. Para e-mail sem conta, a finalidade login envia um link que cria a conta somente após a confirmação com nome e senha; a resposta é idêntica à de quem tem conta. Link substitui os anteriores da mesma finalidade. Não valida a posse do e-mail até consumir o token.",
+        "description": "Acesso público. Resposta genérica para contas novas, existentes ou indisponíveis e envios limitados. Até três envios em 15 minutos, com intervalo mínimo de 60 segundos. Reenvio de cadastro exige o cookie do pedido original e substitui o link e o código. Para e-mail sem conta, o link permite concluir o cadastro com nome e senha.",
         "x-perfis": [],
         "security": [],
         "responses": {
@@ -3584,7 +3634,9 @@
                 },
                 "example": {
                   "confirmacaoPendente": true,
-                  "message": "Confira seu e-mail."
+                  "message": "Confira seu e-mail.",
+                  "solicitacaoId": "de000000-0000-4000-8000-000900000003",
+                  "codigoAprovacao": "123456"
                 }
               }
             },
@@ -3872,11 +3924,11 @@
     "/api/auth/email/confirmar": {
       "post": {
         "operationId": "post__api_auth_email_confirmar",
-        "summary": "Confirmar e-mail e emitir sessão",
+        "summary": "Confirmar ou aprovar link por e-mail",
         "tags": [
           "Autenticação"
         ],
-        "description": "Acesso público. POST explícito após abrir /confirmar-email. Revalida expiração, uso único, cookie do navegador, origem, conta ativa e versão de revogação na mesma transação. GET não consome o link. Link de conta nova responde 400 EMAIL_ACCOUNT_DETAILS_REQUIRED sem consumir o link; repetir enviando nome e senha. O segredo vai no fragmento do link e não deve ser registrado nem persistido pelo cliente.",
+        "description": "Acesso público. POST explícito depois de abrir /confirmar-email. O cookie original permite concluir o acesso diretamente. Em outro aparelho, 400 EMAIL_APPROVAL_REQUIRED solicita o código que aparece na tela original. Aprovação com código retorna aprovadoEmOutroDispositivo e a sessão é emitida pela rota de conclusão. O link expira em dez minutos e deve ser usado uma única vez.",
         "x-perfis": [],
         "security": [],
         "responses": {
@@ -3885,7 +3937,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ConfirmacaoEmail"
+                  "$ref": "#/components/schemas/ResultadoConfirmacaoEmail"
                 },
                 "example": {
                   "token": "JWT_RECEBIDO_DA_API",
@@ -4161,7 +4213,12 @@
                   "senha": {
                     "type": "string",
                     "minLength": 8,
-                    "maxLength": 128
+                    "maxLength": 128,
+                    "writeOnly": true
+                  },
+                  "codigoAprovacao": {
+                    "type": "string",
+                    "pattern": "^[0-9]{6}$"
                   }
                 },
                 "required": [
@@ -4172,6 +4229,312 @@
               "example": {
                 "id": "de000000-0000-4000-8000-000900000003",
                 "token": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        ]
+      }
+    },
+    "/api/auth/email/concluir": {
+      "post": {
+        "operationId": "post__api_auth_email_concluir",
+        "summary": "Concluir acesso no navegador solicitante",
+        "tags": [
+          "Autenticação"
+        ],
+        "description": "Acesso público. Envie solicitacaoId como id e mantenha o cookie HttpOnly do pedido. Consulte a cada cinco segundos durante a espera. A resposta permanece pendente até a aprovação. Conta nova pelo link de login requer nome e senha no navegador solicitante. A sessão é emitida uma única vez.",
+        "x-perfis": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Operação concluída.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultadoConclusaoEmail"
+                },
+                "example": {
+                  "confirmacaoPendente": true
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "description": "UUID gerado pelo servidor para correlação com os logs.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Os dados enviados são inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Os dados enviados são inválidos."
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "description": "UUID gerado pelo servidor para correlação com os logs.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Link ou origem não autorizado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "EMAIL_LINK_INVALID",
+                    "message": "Link ou origem não autorizado."
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "description": "UUID gerado pelo servidor para correlação com os logs.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Link ou origem não autorizado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "EMAIL_ORIGIN_FORBIDDEN",
+                    "message": "Link ou origem não autorizado."
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "description": "UUID gerado pelo servidor para correlação com os logs.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registro não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Registro não encontrado."
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "description": "UUID gerado pelo servidor para correlação com os logs.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Já existe um registro com estes dados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "CONFLICT",
+                    "message": "Já existe um registro com estes dados."
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "description": "UUID gerado pelo servidor para correlação com os logs.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "O corpo JSON deve ter no máximo 1 MB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "PAYLOAD_TOO_LARGE",
+                    "message": "O corpo JSON deve ter no máximo 1 MB."
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "description": "UUID gerado pelo servidor para correlação com os logs.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Aguarde antes de tentar novamente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "TOO_MANY_REQUESTS",
+                    "message": "Aguarde antes de tentar novamente."
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "description": "UUID gerado pelo servidor para correlação com os logs.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_SERVER_ERROR",
+                    "message": "Erro interno do servidor."
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "description": "UUID gerado pelo servidor para correlação com os logs.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Envio de e-mail indisponível ou não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "EMAIL_DISABLED",
+                    "message": "O envio de e-mails ainda não foi configurado."
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "description": "UUID gerado pelo servidor para correlação com os logs.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "nome": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "senha": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 128,
+                    "writeOnly": true
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              "example": {
+                "id": "de000000-0000-4000-8000-000900000003"
               }
             }
           }
@@ -24956,7 +25319,7 @@
         "tags": [
           "Frontend (compatibilidade)"
         ],
-        "description": "Acesso público. Não cria usuário nem sessão antes da confirmação. Sempre cria NORMAL na confirmação; campos de privilégio são rejeitados. Contas antigas continuam acessando por senha. E-mail já utilizado retorna 409. Link de dez minutos, uso único, no mesmo navegador. Origin permitido e cookie HttpOnly obrigatórios. Sem envio configurado, retorna 503. Mudança incompatível em relação ao cadastro com sessão imediata da versão 2.x. Cadastro e login compartilham limite de 20 tentativas por IP a cada 15 minutos. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.",
+        "description": "Acesso público. A conta NORMAL é criada ao concluir a confirmação. Campos de privilégio são rejeitados e e-mail já utilizado retorna 409. O link vale dez minutos e é de uso único. O código exibido no navegador solicitante permite aprovar em outro aparelho e continuar no primeiro. Cadastro e login compartilham limite de 20 tentativas por IP a cada 15 minutos. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.",
         "x-perfis": [],
         "security": [],
         "responses": {
@@ -24969,7 +25332,9 @@
                 },
                 "example": {
                   "confirmacaoPendente": true,
-                  "message": "Confira seu e-mail."
+                  "message": "Confira seu e-mail.",
+                  "solicitacaoId": "de000000-0000-4000-8000-000900000003",
+                  "codigoAprovacao": "123456"
                 }
               }
             },
@@ -25923,7 +26288,7 @@
         "tags": [
           "Frontend (compatibilidade)"
         ],
-        "description": "Acesso público. Resposta genérica para conta desconhecida, bloqueada ou excluída e para limite por e-mail. Até três envios em 15 minutos, com intervalo mínimo de 60 segundos. Reenvio de cadastro exige o mesmo cookie. Para e-mail sem conta, a finalidade login envia um link que cria a conta somente após a confirmação com nome e senha; a resposta é idêntica à de quem tem conta. Link substitui os anteriores da mesma finalidade. Não valida a posse do e-mail até consumir o token. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.",
+        "description": "Acesso público. Resposta genérica para contas novas, existentes ou indisponíveis e envios limitados. Até três envios em 15 minutos, com intervalo mínimo de 60 segundos. Reenvio de cadastro exige o cookie do pedido original e substitui o link e o código. Para e-mail sem conta, o link permite concluir o cadastro com nome e senha. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.",
         "x-perfis": [],
         "security": [],
         "responses": {
@@ -25936,7 +26301,9 @@
                 },
                 "example": {
                   "confirmacaoPendente": true,
-                  "message": "Confira seu e-mail."
+                  "message": "Confira seu e-mail.",
+                  "solicitacaoId": "de000000-0000-4000-8000-000900000003",
+                  "codigoAprovacao": "123456"
                 }
               }
             },
@@ -26224,11 +26591,11 @@
     "/api/front/v1/auth/email/confirmar": {
       "post": {
         "operationId": "frontV1_post__api_auth_email_confirmar",
-        "summary": "Confirmar e-mail e emitir sessão",
+        "summary": "Confirmar ou aprovar link por e-mail",
         "tags": [
           "Frontend (compatibilidade)"
         ],
-        "description": "Acesso público. POST explícito após abrir /confirmar-email. Revalida expiração, uso único, cookie do navegador, origem, conta ativa e versão de revogação na mesma transação. GET não consome o link. Link de conta nova responde 400 EMAIL_ACCOUNT_DETAILS_REQUIRED sem consumir o link; repetir enviando nome e senha. O segredo vai no fragmento do link e não deve ser registrado nem persistido pelo cliente. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.",
+        "description": "Acesso público. POST explícito depois de abrir /confirmar-email. O cookie original permite concluir o acesso diretamente. Em outro aparelho, 400 EMAIL_APPROVAL_REQUIRED solicita o código que aparece na tela original. Aprovação com código retorna aprovadoEmOutroDispositivo e a sessão é emitida pela rota de conclusão. O link expira em dez minutos e deve ser usado uma única vez. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.",
         "x-perfis": [],
         "security": [],
         "responses": {
@@ -26237,7 +26604,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ConfirmacaoEmail"
+                  "$ref": "#/components/schemas/ResultadoConfirmacaoEmail"
                 },
                 "example": {
                   "token": "JWT_RECEBIDO_DA_API",
@@ -26513,7 +26880,12 @@
                   "senha": {
                     "type": "string",
                     "minLength": 8,
-                    "maxLength": 128
+                    "maxLength": 128,
+                    "writeOnly": true
+                  },
+                  "codigoAprovacao": {
+                    "type": "string",
+                    "pattern": "^[0-9]{6}$"
                   }
                 },
                 "required": [
@@ -26524,6 +26896,312 @@
               "example": {
                 "id": "de000000-0000-4000-8000-000900000003",
                 "token": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        ]
+      }
+    },
+    "/api/front/v1/auth/email/concluir": {
+      "post": {
+        "operationId": "frontV1_post__api_auth_email_concluir",
+        "summary": "Concluir acesso no navegador solicitante",
+        "tags": [
+          "Frontend (compatibilidade)"
+        ],
+        "description": "Acesso público. Envie solicitacaoId como id e mantenha o cookie HttpOnly do pedido. Consulte a cada cinco segundos durante a espera. A resposta permanece pendente até a aprovação. Conta nova pelo link de login requer nome e senha no navegador solicitante. A sessão é emitida uma única vez. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.",
+        "x-perfis": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Operação concluída.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultadoConclusaoEmail"
+                },
+                "example": {
+                  "confirmacaoPendente": true
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "description": "UUID gerado pelo servidor para correlação com os logs.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Os dados enviados são inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Os dados enviados são inválidos."
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "description": "UUID gerado pelo servidor para correlação com os logs.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Link ou origem não autorizado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "EMAIL_LINK_INVALID",
+                    "message": "Link ou origem não autorizado."
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "description": "UUID gerado pelo servidor para correlação com os logs.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Link ou origem não autorizado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "EMAIL_ORIGIN_FORBIDDEN",
+                    "message": "Link ou origem não autorizado."
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "description": "UUID gerado pelo servidor para correlação com os logs.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registro não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Registro não encontrado."
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "description": "UUID gerado pelo servidor para correlação com os logs.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Já existe um registro com estes dados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "CONFLICT",
+                    "message": "Já existe um registro com estes dados."
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "description": "UUID gerado pelo servidor para correlação com os logs.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "O corpo JSON deve ter no máximo 1 MB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "PAYLOAD_TOO_LARGE",
+                    "message": "O corpo JSON deve ter no máximo 1 MB."
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "description": "UUID gerado pelo servidor para correlação com os logs.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Aguarde antes de tentar novamente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "TOO_MANY_REQUESTS",
+                    "message": "Aguarde antes de tentar novamente."
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "description": "UUID gerado pelo servidor para correlação com os logs.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_SERVER_ERROR",
+                    "message": "Erro interno do servidor."
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "description": "UUID gerado pelo servidor para correlação com os logs.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Envio de e-mail indisponível ou não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "EMAIL_DISABLED",
+                    "message": "O envio de e-mails ainda não foi configurado."
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "description": "UUID gerado pelo servidor para correlação com os logs.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "nome": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "senha": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 128,
+                    "writeOnly": true
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              "example": {
+                "id": "de000000-0000-4000-8000-000900000003"
               }
             }
           }
