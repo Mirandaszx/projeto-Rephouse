@@ -7,7 +7,7 @@ import { contrast } from './auxiliares/contraste'
 const testHeaders = { 'x-interface-test-run': process.env.REPHOUSE_INTERFACE_TEST_RUN ?? '', 'x-interface-suite': 'email.spec.ts' }
 test.use({ extraHTTPHeaders: testHeaders })
 
-test('login confirma o código do e-mail uma única vez na tela original', async ({ page }) => {
+test('login avisa quando o código está incorreto e permite corrigir na tela original', async ({ page }) => {
   await page.goto('/login')
   await page.getByRole('button', {name:'Entrar com código por e-mail',exact:true}).click()
   await expect(page.getByLabel('Senha',{exact:true})).toHaveCount(0)
@@ -24,10 +24,15 @@ test('login confirma o código do e-mail uma única vez na tela original', async
   await expect(field).toHaveAttribute('autocomplete', 'one-time-code')
   await expect(field).toBeEmpty()
   expect(confirmations).toBe(0)
+  await field.fill(code === '000000' ? '000001' : '000000')
+  await field.press('Enter')
+  await expect(page.getByRole('alert')).toContainText('Código incorreto.')
+  await expect(page).toHaveURL(/\/login$/)
+  expect(confirmations).toBe(1)
   await field.fill(code)
   await field.press('Enter')
   await expect(page).toHaveURL(/\/republica$/)
-  expect(confirmations).toBe(1)
+  expect(confirmations).toBe(2)
   expect(await page.evaluate(() => sessionStorage.getItem('rephouse-token'))).toBeTruthy()
 })
 

@@ -205,8 +205,8 @@ export function createEmailService(db: PrismaClient, signingSecret: string, opti
         const link = await tx.linkEmail.findFirst({ where: { id: proof.id, cookieHash: digest(cookie),
           consumidoEm: null, expiraEm: { gt: now } } })
         if (proof.codigo !== undefined) {
-          if (!link) return { codigoInvalido: true } as const
-          if (!await approve(tx, link, hashEmailCode(link.id, proof.codigo), now)) return { codigoInvalido: true } as const
+          if (!link || link.tentativasAprovacao >= 5) return { codigoInvalido: 'indisponivel' } as const
+          if (!await approve(tx, link, hashEmailCode(link.id, proof.codigo), now)) return { codigoInvalido: 'incorreto' } as const
           // Cadastro iniciado pelo acesso por e-mail ainda precisa dos dados da conta.
           // Grave a verificação agora para que a pessoa só digite o código uma vez.
           if (link.finalidade === 'cadastro' && !link.nome && (!proof.nome || !novaSenha)) return { precisaCompletarCadastro: true } as const
@@ -214,7 +214,10 @@ export function createEmailService(db: PrismaClient, signingSecret: string, opti
         return consume(tx, link, now, proof.nome, novaSenha)
       })
       if (result && 'codigoInvalido' in result) {
-        throw new AppError(400, 'EMAIL_CODE_INVALID', 'Código inválido ou expirado. Confira o e-mail ou solicite um novo código.')
+        const message = result.codigoInvalido === 'incorreto'
+          ? 'Código incorreto. Confira os seis dígitos no e-mail e tente novamente.'
+          : 'Este código não está mais disponível. Solicite um novo código.'
+        throw new AppError(400, 'EMAIL_CODE_INVALID', message)
       }
       if (result && 'precisaCompletarCadastro' in result) {
         throw new AppError(400, 'EMAIL_ACCOUNT_DETAILS_REQUIRED', 'Para criar sua conta, informe seu nome e crie uma senha.')
