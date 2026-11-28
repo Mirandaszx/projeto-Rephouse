@@ -32,7 +32,7 @@ export function createBrevoSender(apiKey: string, from: string, transport: typeo
         || ('messageIds' in result && Array.isArray(result.messageIds) && result.messageIds.length > 0))
       if (!aceito) throw new Error('provider')
     } catch {
-      throw new AppError(503, 'EMAIL_UNAVAILABLE', 'Não foi possível confirmar o envio. Aguarde um minuto e solicite outro link.')
+      throw new AppError(503, 'EMAIL_UNAVAILABLE', 'Não foi possível confirmar o envio. Aguarde um minuto e tente novamente.')
     }
   }
 }

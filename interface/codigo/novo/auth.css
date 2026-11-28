@@ -84,10 +84,10 @@
 .auth-email-note { color: var(--auth-muted); font-size: 14px; line-height: 1.65; overflow-wrap: anywhere; }
 .auth-email-note p { margin: 0 0 16px; }
 .auth-email-note strong { color: var(--auth-ink); }
-.auth-approval { margin: 20px 0 16px; }
-.auth-approval p { margin-bottom: 6px; }
-.auth-approval-code { font-size: 24px; font-variant-numeric: tabular-nums; letter-spacing: .12em; }
-.auth-email-note .auth-submit { margin-top: 8px; }
+.auth-code-help { margin: 0; }
+.auth-code-field input { font-size: 20px; font-variant-numeric: tabular-nums; letter-spacing: .24em; }
+.auth-code-actions { display: flex; flex-wrap: wrap; justify-content: center; column-gap: 16px; margin-top: 12px; }
+.auth-code-actions .auth-email-back { width: auto; margin: 0; }
 .auth-email-back { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 44px; margin: 12px 0 0; padding: 8px; border: 0; color: var(--auth-ink); background: transparent; font: inherit; font-size: 14px; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
 .auth-email-back:disabled { opacity: .65; cursor: wait; }
 .auth-email-back:focus-visible { outline: 2px solid var(--auth-ink); outline-offset: 3px; border-radius: 9px; }

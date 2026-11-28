@@ -107,7 +107,9 @@ test('cadastro bloqueia a escolha, conserva a preferência até confirmar e não
   const gate = new Promise<void>(resolve => { release = resolve })
   await page.route('**/api/auth/register', async route => {
     submissions++
-    expect(Object.keys(route.request().postDataJSON() as object).sort()).toEqual(['acaoRepublica', 'email', 'nome', 'senha'])
+    const input = route.request().postDataJSON() as Record<string, unknown>
+    expect(Object.keys(input).sort()).toEqual(['acaoRepublica', 'codigoPorEmail', 'email', 'nome', 'senha'])
+    expect(input.codigoPorEmail).toBe(true)
     await gate
     await route.continue()
   })

@@ -16,13 +16,12 @@ type EmailPending = components['schemas']['EmailPendente']
 type PendingRequest = {
   email: string
   finalidade: 'cadastro' | 'login'
-  solicitacaoId?: string
-  codigoAprovacao?: string
+  solicitacaoId: string
   expiraEm: number
 }
 
 function pendingRequest(email: string, finalidade: PendingRequest['finalidade'], result: EmailPending): PendingRequest {
-  return { email, finalidade, solicitacaoId: result.solicitacaoId, codigoAprovacao: result.codigoAprovacao, expiraEm: Date.now() + 600_000 }
+  return { email, finalidade, solicitacaoId: result.solicitacaoId, expiraEm: Date.now() + 600_000 }
 }
 
 function enter(result: components['schemas']['Sessao'] & { acaoRepublica?: 'criar' | 'entrar' | null }) {
@@ -49,6 +48,7 @@ export default function Auth({ register, confirm = false }: { register: boolean;
   const [googleClientId, setGoogleClientId] = useState<string | null>(null)
   const [pending, setPending] = useState<PendingRequest | null>(null)
   const [expiredRequest, setExpiredRequest] = useState<string | null>(null)
+  const [resending, setResending] = useState(false)
   const [cooldown, setCooldown] = useState(0)
   // Link de "entrar por e-mail" para quem ainda não tem conta: a confirmação pede nome e senha antes de criá-la.
   const [newAccount, setNewAccount] = useState(false)
@@ -76,7 +76,7 @@ export default function Auth({ register, confirm = false }: { register: boolean;
     const timer = window.setTimeout(() => setCooldown(value => Math.max(0, value - 1)), 1000)
     return () => window.clearTimeout(timer)
   }, [cooldown])
-  useEffect(() => { if ((pending && !newAccount) || approval) feedbackHeading.current?.focus() }, [pending, newAccount, approval])
+  useEffect(() => { if (approval === 'aprovado') feedbackHeading.current?.focus() }, [approval])
 
   const showFailure = useCallback((failure: unknown) => {
     const message = failure instanceof ApiError ? failure.userMessage : 'Não foi possível conectar. Verifique sua conexão e tente novamente.'
@@ -84,52 +84,30 @@ export default function Auth({ register, confirm = false }: { register: boolean;
       ? message + ' Confira os dados e tente novamente.' : message, requestId: failure instanceof ApiError ? failure.requestId : undefined })
   }, [])
   useEffect(() => {
-    if (!pending?.solicitacaoId || newAccount) return
-    const controller = new AbortController()
+    if (!pending) return
     const { solicitacaoId: id, expiraEm } = pending
-    let timer: number
-
-    async function checkApproval() {
-      if (Date.now() >= expiraEm) {
-        setExpiredRequest(id)
-        return
-      }
-      try {
-        const result = await request<components['schemas']['ResultadoConclusaoEmail']>('/auth/email/concluir', undefined, { id }, undefined, controller.signal)
-        if (controller.signal.aborted) return
-        if ('token' in result) { enter(result); return }
-      } catch (failure) {
-        if (controller.signal.aborted) return
-        if (failure instanceof ApiError && failure.code === 'EMAIL_ACCOUNT_DETAILS_REQUIRED') {
-          setError(null)
-          setNewAccount(true)
-          return
-        }
-        if (failure instanceof ApiError && failure.status < 500 && failure.status !== 429) { showFailure(failure); return }
-      }
-      timer = window.setTimeout(checkApproval, 5000)
-    }
-
-    timer = window.setTimeout(checkApproval, 5000)
-    return () => { controller.abort(); window.clearTimeout(timer) }
-  }, [pending, newAccount, showFailure])
+    const timer = window.setTimeout(() => setExpiredRequest(id), Math.max(0, expiraEm - Date.now()))
+    return () => window.clearTimeout(timer)
+  }, [pending])
+  const expired = !!pending && expiredRequest === pending.solicitacaoId
   // Sem envio de e-mail, o cadastro acontece só pelo Google: some o formulário de e-mail e senha.
   const googleOnly = register && emailEnabled === false && !!googleClientId
   async function resend() {
     if (!pending || submitting.current || cooldown > 0) return
-    submitting.current = true; setBusy(true); setError(null)
+    submitting.current = true; setBusy(true); setResending(true); setError(null)
     try {
       const { email, finalidade } = pending
-      const result = await request<EmailPending>('/auth/email/solicitar', undefined, { email, finalidade })
+      const result = await request<EmailPending>('/auth/email/solicitar', undefined, { email, finalidade, codigoPorEmail: true })
       setPending(pendingRequest(email, finalidade, result))
+      setNewAccount(false)
       setCooldown(60)
     } catch (failure) { showFailure(failure) }
-    finally { submitting.current = false; setBusy(false) }
+    finally { submitting.current = false; setBusy(false); setResending(false) }
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (submitting.current) return
+    if (submitting.current || expired) return
     if (register && emailEnabled !== true) return
     if (confirm && !proof) return
     const fields = new FormData(event.currentTarget)
@@ -139,11 +117,17 @@ export default function Auth({ register, confirm = false }: { register: boolean;
     setBusy(true)
     setError(null)
     try {
-      if (newAccount && pending?.solicitacaoId) {
-        const result = await request<components['schemas']['ResultadoConclusaoEmail']>('/auth/email/concluir', undefined,
-          { id: pending.solicitacaoId, nome: fields.get('nome'), senha: fields.get('senha') })
-        if ('token' in result) enter(result)
-        else setError({ id: crypto.randomUUID(), message: 'O link expirou ou foi substituído. Solicite um novo link para criar sua conta.' })
+      if (pending) {
+        const details = newAccount ? { nome: fields.get('nome'), senha: fields.get('senha') } : { codigo: fields.get('codigo') }
+        try {
+          const result = await request<components['schemas']['ResultadoConclusaoEmail']>('/auth/email/concluir', undefined,
+            { id: pending.solicitacaoId, ...details })
+          if ('token' in result) enter(result)
+          else setExpiredRequest(pending.solicitacaoId)
+        } catch (failure) {
+          if (!newAccount && failure instanceof ApiError && failure.code === 'EMAIL_ACCOUNT_DETAILS_REQUIRED') { setNewAccount(true); return }
+          throw failure
+        }
       } else if (confirm) {
         try {
           const details = newAccount ? { nome: fields.get('nome'), senha: fields.get('senha') }
@@ -158,7 +142,7 @@ export default function Auth({ register, confirm = false }: { register: boolean;
         }
       } else if (register || magic) {
         const result = await request<EmailPending>(register ? '/auth/register' : '/auth/email/solicitar', undefined,
-          register ? { ...input, acaoRepublica: houseAction } : { email: input.email, finalidade: 'login' })
+          register ? { ...input, acaoRepublica: houseAction, codigoPorEmail: true } : { email: input.email, finalidade: 'login', codigoPorEmail: true })
         setPending(pendingRequest(String(input.email), register ? 'cadastro' : 'login', result)); setCooldown(60)
       } else enter(await request<components['schemas']['Sessao']>('/auth/login', undefined, input))
     } catch (failure) {
@@ -167,10 +151,10 @@ export default function Auth({ register, confirm = false }: { register: boolean;
   }
 
   const title = approval === 'aprovado' ? 'Pedido aprovado.' : approval === 'codigo' ? 'Confirme o outro aparelho.'
-    : newAccount ? 'Crie sua conta.' : pending ? 'Confira seu e-mail.' : confirm ? 'Confirme seu acesso.'
+    : newAccount ? 'Crie sua conta.' : pending ? 'Digite o código.' : confirm ? 'Confirme seu acesso.'
       : magic ? 'Entre pelo seu e-mail.' : register ? 'Sinta-se em casa.' : 'Bem-vindo de volta.'
   const action = newAccount ? 'Criar conta e entrar' : approval === 'codigo' ? 'Aprovar pedido'
-    : confirm ? 'Confirmar e entrar' : magic ? 'Enviar link de acesso' : register ? 'Criar minha conta' : 'Entrar na minha conta'
+    : pending ? 'Confirmar código' : confirm ? 'Confirmar e entrar' : magic ? 'Enviar código' : register ? 'Criar minha conta' : 'Entrar na minha conta'
 
   return <main className="auth-page" data-mode={register ? 'register' : 'login'}>
     <aside className="auth-story" aria-label="Bem-vindo ao RepHouse">
@@ -193,24 +177,6 @@ export default function Auth({ register, confirm = false }: { register: boolean;
         </header>
         {approval === 'aprovado' ? <div className="auth-email-note" role="status">
           <p>Volte para a tela onde você iniciou o pedido. O RepHouse vai continuar por lá.</p>
-        </div> : pending && !newAccount ? <div className="auth-email-note">
-          {/* Entrar por link serve para quem tem conta e para quem não tem (o link cria a conta); a tela é a mesma nos
-              dois casos, então não revela quem usa o RepHouse. */}
-          {pending.finalidade === 'cadastro' ? <>
-            <p role="status">Enviamos um link de confirmação para <strong>{pending.email}</strong>.</p>
-            <p>Sua conta será criada depois que você confirmar o e-mail. O link vale por 10 minutos. Confira também a pasta de spam.</p>
-          </> : <>
-            <p role="status">Enviamos um link para <strong>{pending.email}</strong>. Ele chega em até 2 minutos.</p>
-            <p>O link vale por 10 minutos. Se ainda não tiver conta, você poderá definir seu nome e senha depois de confirmar. Confira também a pasta de spam.</p>
-          </>}
-          {pending.solicitacaoId && expiredRequest === pending.solicitacaoId ? <p role="status">O link expirou. Reenvie o link para obter um novo código.</p>
-          : pending.codigoAprovacao && <div className="auth-approval">
-            <p>Vai abrir o e-mail em outro aparelho? Digite este código lá e deixe esta tela aberta.</p>
-            <strong className="auth-approval-code" aria-label={`Código de aprovação ${pending.codigoAprovacao.split('').join(' ')}`}>{pending.codigoAprovacao}</strong>
-          </div>}
-          {error && <AuthFeedback key={error.id} failure={error} onDismiss={dismissError} />}
-          <GlisseButton className="auth-submit" tint="#d2ec9c" disabled={busy || cooldown > 0} onClick={() => void resend()}>{busy ? 'Enviando…' : cooldown > 0 ? `Reenviar em ${cooldown}s` : 'Reenviar link'}</GlisseButton>
-          <a className="auth-email-back" href={pending.finalidade === 'cadastro' ? '/cadastro' : '/login'}>Usar outro e-mail</a>
         </div> : <>
         <form className="auth-form" onSubmit={submit} aria-busy={busy}>
           {newAccount ? <>
@@ -218,6 +184,13 @@ export default function Auth({ register, confirm = false }: { register: boolean;
             <fieldset disabled={busy} className="auth-fields">
               <LabelInput labelPlacement="outside" containerClassName="auth-field" label="Nome" name="nome" placeholder="Como você se chama?" autoComplete="name" required maxLength={120} autoFocus />
               <LabelInput labelPlacement="outside" containerClassName="auth-field" label="Senha" name="senha" type="password" placeholder="Pelo menos 8 caracteres" autoComplete="new-password" minLength={8} maxLength={128} required />
+            </fieldset>
+          </> : pending ? <>
+            <p className="auth-email-note auth-code-help">Veja o código de 6 dígitos enviado para <strong>{pending.email}</strong>. Ele vale por 10 minutos.</p>
+            <fieldset disabled={busy || expired} className="auth-fields">
+              <LabelInput key={pending.solicitacaoId} labelPlacement="outside" containerClassName="auth-field auth-code-field"
+                label="Código do e-mail" name="codigo" inputMode="numeric" pattern="[0-9]{6}" maxLength={6}
+                autoComplete="one-time-code" autoFocus required />
             </fieldset>
           </> : approval === 'codigo' ? <>
             <p className="auth-email-note">Digite o código que aparece no aparelho em que você pediu o link. Aprove apenas se você fez esse pedido.</p>
@@ -242,22 +215,28 @@ export default function Auth({ register, confirm = false }: { register: boolean;
             <p id="auth-house-help">{houseAction === 'criar' ? 'Depois do cadastro, dê um nome à sua república e receba um código para convidar moradores.' : 'Depois do cadastro, informe o código compartilhado por alguém da sua república.'}</p>
           </fieldset>}
           </>}
+          {expired && <p className="auth-email-note" role="status">O código expirou ou foi substituído. Peça um novo código.</p>}
           {error && <AuthFeedback key={error.id} failure={error} onDismiss={dismissError} />}
           {register && emailEnabled === false && !googleClientId && <p className="auth-email-note" role="status">O cadastro está temporariamente indisponível. Contas existentes podem entrar com senha.</p>}
           {register && emailEnabled === null && <p className="auth-email-note" role="status">Verificando disponibilidade do cadastro…</p>}
           {googleOnly && <p className="auth-email-note auth-google-intro">Crie sua conta com o Google: leva poucos segundos e você não precisa inventar outra senha.</p>}
-          {!googleOnly && <GlisseButton className="auth-submit" tint="#d2ec9c" type="submit" disabled={busy || (confirm && !proof) || (register && emailEnabled !== true)} aria-busy={busy}>
+          {!googleOnly && <GlisseButton className="auth-submit" tint="#d2ec9c" type="submit" disabled={busy || expired || (confirm && !proof) || (register && emailEnabled !== true)} aria-busy={busy}>
             {busy && <LoaderCircle className="auth-spinner" size={18} aria-hidden="true" />}
             {busy ? 'Aguarde…' : action}
           </GlisseButton>}
         </form>
-        {!confirm && !newAccount && !magic && googleClientId && <>
+        {!pending && !confirm && !newAccount && !magic && googleClientId && <>
           {!googleOnly && <p className="auth-divider"><span>ou</span></p>}
           <GoogleAccess clientId={googleClientId} register={register} disabled={busy}
             onSession={session => enter(register ? { ...session, acaoRepublica: houseAction } : session)} onFailure={showFailure} />
         </>}
-        {confirm || newAccount ? <a className="auth-email-back" href="/login">Voltar ao login</a>
-          : !register && emailEnabled && <button type="button" className="auth-email-back" disabled={busy} onClick={() => { setMagic(value => !value); setError(null) }}>{magic ? 'Usar minha senha' : 'Entrar por link no e-mail'}</button>}
+        {pending ? <div className="auth-code-actions">
+          <button type="button" className="auth-email-back" disabled={busy || cooldown > 0} onClick={() => void resend()}>
+            {resending ? 'Enviando…' : cooldown > 0 ? `Reenviar em ${cooldown}s` : 'Reenviar código'}
+          </button>
+          <a className="auth-email-back" href={pending.finalidade === 'cadastro' ? '/cadastro' : '/login'}>Usar outro e-mail</a>
+        </div> : confirm || newAccount ? <a className="auth-email-back" href="/login">Voltar ao login</a>
+          : !register && emailEnabled && <button type="button" className="auth-email-back" disabled={busy} onClick={() => { setMagic(value => !value); setError(null) }}>{magic ? 'Usar minha senha' : 'Entrar com código por e-mail'}</button>}
         </>}
         {/* No cadastro, o aviso dos termos ocupa o lugar da frase decorativa, sem aumentar a tela (LGPD, 26/11/2026). */}
         {register || newAccount

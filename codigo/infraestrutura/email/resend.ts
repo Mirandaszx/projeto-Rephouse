@@ -1,6 +1,7 @@
 import { AppError } from '../../compartilhado/http/app-error.js'
 
 type ConfirmacaoEmail =
+  | { finalidade: 'cadastro' | 'login'; params: { codigoConfirmacao: string; titulo: string; instrucao: string } }
   | { finalidade: 'cadastro'; params: { linkConfirmacao: string; instrucao: string } }
   | { finalidade: 'login'; params: { linkConfirmacao: string; titulo: string; instrucao: string; acao: string } }
 
@@ -29,7 +30,7 @@ export function createResendSender(apiKey: string, from: string, transport: type
       const result: unknown = await response.json()
       if (!result || typeof result !== 'object' || !('id' in result) || typeof result.id !== 'string') throw new Error('provider')
     } catch {
-      throw new AppError(503, 'EMAIL_UNAVAILABLE', 'Não foi possível confirmar o envio. Aguarde um minuto e solicite outro link.')
+      throw new AppError(503, 'EMAIL_UNAVAILABLE', 'Não foi possível confirmar o envio. Aguarde um minuto e tente novamente.')
     }
   }
 }

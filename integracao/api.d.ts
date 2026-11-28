@@ -10,7 +10,7 @@ export type paths = {
         put?: never;
         /**
          * Concluir acesso no navegador solicitante
-         * @description Acesso público. Envie solicitacaoId como id e mantenha o cookie HttpOnly do pedido. Consulte a cada cinco segundos durante a espera. A resposta permanece pendente até a aprovação. Conta nova pelo link de login requer nome e senha no navegador solicitante. A sessão é emitida uma única vez.
+         * @description Acesso público. Envie solicitacaoId como id e mantenha o cookie HttpOnly do pedido. Para código recebido por e-mail, envie codigo com os seis dígitos. Há limite de cinco tentativas inválidas. Se faltarem nome e senha, complete na mesma tela após verificar o código. Clientes que usam link podem consultar esta rota após a aprovação em outro aparelho. A sessão é emitida uma única vez.
          */
         post: operations["post__api_auth_email_concluir"];
         delete?: never;
@@ -50,7 +50,7 @@ export type paths = {
         put?: never;
         /**
          * Solicitar link mágico ou reenviar confirmação
-         * @description Acesso público. Resposta genérica para contas novas, existentes ou indisponíveis e envios limitados. Até três envios em 15 minutos, com intervalo mínimo de 60 segundos. Reenvio de cadastro exige o cookie do pedido original e substitui o link e o código. Para e-mail sem conta, o link permite concluir o cadastro com nome e senha.
+         * @description Acesso público. Resposta genérica para contas novas, existentes ou indisponíveis e envios limitados. Até três envios em 15 minutos, com intervalo mínimo de 60 segundos. Reenvio de cadastro exige o cookie do pedido original. Use codigoPorEmail: true para receber o código por e-mail e confirmá-lo pela rota de conclusão. Para e-mail sem conta, a confirmação permite concluir o cadastro com nome e senha.
          */
         post: operations["post__api_auth_email_solicitar"];
         delete?: never;
@@ -170,7 +170,7 @@ export type paths = {
         put?: never;
         /**
          * Solicitar cadastro com confirmação obrigatória
-         * @description Acesso público. A conta NORMAL é criada ao concluir a confirmação. Campos de privilégio são rejeitados e e-mail já utilizado retorna 409. O link vale dez minutos e é de uso único. O código exibido no navegador solicitante permite aprovar em outro aparelho e continuar no primeiro. Cadastro e login compartilham limite de 20 tentativas por IP a cada 15 minutos.
+         * @description Acesso público. A conta NORMAL é criada ao concluir a confirmação. Campos de privilégio são rejeitados e e-mail já utilizado retorna 409. Com codigoPorEmail: true, o código de uso único vale dez minutos e só é enviado ao e-mail. Use /api/auth/email/concluir no navegador solicitante. Por padrão, clientes existentes recebem o link de confirmação. Cadastro e login compartilham limite de 20 tentativas por IP a cada 15 minutos.
          */
         post: operations["post__api_auth_register"];
         delete?: never;
@@ -258,7 +258,7 @@ export type paths = {
         put?: never;
         /**
          * Concluir acesso no navegador solicitante
-         * @description Acesso público. Envie solicitacaoId como id e mantenha o cookie HttpOnly do pedido. Consulte a cada cinco segundos durante a espera. A resposta permanece pendente até a aprovação. Conta nova pelo link de login requer nome e senha no navegador solicitante. A sessão é emitida uma única vez. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         * @description Acesso público. Envie solicitacaoId como id e mantenha o cookie HttpOnly do pedido. Para código recebido por e-mail, envie codigo com os seis dígitos. Há limite de cinco tentativas inválidas. Se faltarem nome e senha, complete na mesma tela após verificar o código. Clientes que usam link podem consultar esta rota após a aprovação em outro aparelho. A sessão é emitida uma única vez. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
          */
         post: operations["frontV1_post__api_auth_email_concluir"];
         delete?: never;
@@ -298,7 +298,7 @@ export type paths = {
         put?: never;
         /**
          * Solicitar link mágico ou reenviar confirmação
-         * @description Acesso público. Resposta genérica para contas novas, existentes ou indisponíveis e envios limitados. Até três envios em 15 minutos, com intervalo mínimo de 60 segundos. Reenvio de cadastro exige o cookie do pedido original e substitui o link e o código. Para e-mail sem conta, o link permite concluir o cadastro com nome e senha. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         * @description Acesso público. Resposta genérica para contas novas, existentes ou indisponíveis e envios limitados. Até três envios em 15 minutos, com intervalo mínimo de 60 segundos. Reenvio de cadastro exige o cookie do pedido original. Use codigoPorEmail: true para receber o código por e-mail e confirmá-lo pela rota de conclusão. Para e-mail sem conta, a confirmação permite concluir o cadastro com nome e senha. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
          */
         post: operations["frontV1_post__api_auth_email_solicitar"];
         delete?: never;
@@ -418,7 +418,7 @@ export type paths = {
         put?: never;
         /**
          * Solicitar cadastro com confirmação obrigatória
-         * @description Acesso público. A conta NORMAL é criada ao concluir a confirmação. Campos de privilégio são rejeitados e e-mail já utilizado retorna 409. O link vale dez minutos e é de uso único. O código exibido no navegador solicitante permite aprovar em outro aparelho e continuar no primeiro. Cadastro e login compartilham limite de 20 tentativas por IP a cada 15 minutos. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
+         * @description Acesso público. A conta NORMAL é criada ao concluir a confirmação. Campos de privilégio são rejeitados e e-mail já utilizado retorna 409. Com codigoPorEmail: true, o código de uso único vale dez minutos e só é enviado ao e-mail. Use /api/auth/email/concluir no navegador solicitante. Por padrão, clientes existentes recebem o link de confirmação. Cadastro e login compartilham limite de 20 tentativas por IP a cada 15 minutos. Adaptador do frontend PR #2. Mesmas permissões e transações da API principal.
          */
         post: operations["frontV1_post__api_auth_register"];
         delete?: never;
@@ -2725,6 +2725,7 @@ export type components = {
              * @enum {unknown}
              */
             acaoRepublica: "criar" | "entrar";
+            codigoPorEmail?: boolean;
             /** Format: email */
             email: string;
             nome: string;
@@ -2910,7 +2911,7 @@ export type components = {
             titulo?: string;
         };
         EmailPendente: {
-            codigoAprovacao: string;
+            codigoAprovacao?: string;
             /** @constant */
             confirmacaoPendente: true;
             message: string;
@@ -3273,6 +3274,7 @@ export interface operations {
                  *     }
                  */
                 "application/json": {
+                    codigo?: string;
                     /** Format: uuid */
                     id: string;
                     nome?: string;
@@ -3714,6 +3716,7 @@ export interface operations {
                  *     }
                  */
                 "application/json": {
+                    codigoPorEmail?: boolean;
                     /** Format: email */
                     email: string;
                     /**
@@ -6228,6 +6231,7 @@ export interface operations {
                  *     }
                  */
                 "application/json": {
+                    codigo?: string;
                     /** Format: uuid */
                     id: string;
                     nome?: string;
@@ -6669,6 +6673,7 @@ export interface operations {
                  *     }
                  */
                 "application/json": {
+                    codigoPorEmail?: boolean;
                     /** Format: email */
                     email: string;
                     /**

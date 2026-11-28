@@ -30,7 +30,7 @@ function publicUser(user: Usuario) {
 export function createAuthService(db: PrismaClient, secret: string, googleOptions?: GoogleOptions, emailOptions?: EmailOptions) {
   const repository = new AuthRepository()
   const google = createGoogleService(db, googleOptions)
-  const email = createEmailService(db, emailOptions)
+  const email = createEmailService(db, secret, emailOptions)
   const key = new TextEncoder().encode(secret)
   async function token(user: Usuario) {
     return new SignJWT({ ver: user.versaoToken }).setProtectedHeader({ alg: 'HS256' })

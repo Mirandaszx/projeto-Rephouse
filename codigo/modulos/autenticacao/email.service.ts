@@ -1,4 +1,4 @@
-import { createHash, randomBytes, randomInt, randomUUID } from 'node:crypto'
+import { createHash, createHmac, randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto'
 import { hash, argon2id } from 'argon2'
 import type { LinkEmail, Prisma, PrismaClient } from '../../gerado/prisma/client.js'
 import type { EmailOptions } from '../../infraestrutura/email/resend.js'
@@ -10,19 +10,24 @@ const digest = (value: string) => createHash('sha256').update(value).digest('hex
 const secretPattern = /^[A-Za-z0-9_-]{43}$/
 const invalid = () => new AppError(401, 'EMAIL_LINK_INVALID', 'Este link é inválido, expirou ou já foi utilizado. Solicite outro link.')
 export const emailPending = { confirmacaoPendente: true, message: 'Se o endereço estiver elegível, enviaremos um link. Confira seu e-mail e a pasta de spam.' } as const
-export interface EmailConclusao { id: string; nome?: string; senha?: string }
-export interface EmailProof extends EmailConclusao { token: string; codigoAprovacao?: string }
+type AccountDetails = { id: string; nome?: string; senha?: string }
+export interface EmailConclusao extends AccountDetails { codigo?: string }
+export interface EmailProof extends AccountDetails { token: string; codigoAprovacao?: string }
 type Purpose = 'cadastro' | 'login'
 const codigoHash = (id: string, codigo: string) => digest(`${id}:${codigo}`)
 
-function emailChallenge() {
-  const id = randomUUID(), token = randomBytes(32).toString('base64url')
-  const codigoAprovacao = String(randomInt(1_000_000)).padStart(6, '0')
-  return { id, token, codigoAprovacaoHash: codigoHash(id, codigoAprovacao), response: { ...emailPending, solicitacaoId: id, codigoAprovacao } }
-}
-
 /** Solicitações pendentes não são contas: somente a confirmação cria um usuário NORMAL. */
-export function createEmailService(db: PrismaClient, options?: EmailOptions) {
+export function createEmailService(db: PrismaClient, signingSecret: string, options?: EmailOptions) {
+  const hashEmailCode = (id: string, codigo: string) => createHmac('sha256', signingSecret).update(`rephouse:email-code:${id}:${codigo}`).digest('hex')
+  function emailChallenge(codigoPorEmail: boolean) {
+    const id = randomUUID(), token = randomBytes(32).toString('base64url')
+    const codigo = String(randomInt(1_000_000)).padStart(6, '0')
+    const codigoAprovacaoHash = codigoPorEmail ? hashEmailCode(id, codigo) : codigoHash(id, codigo)
+    const response = codigoPorEmail
+      ? { ...emailPending, solicitacaoId: id, message: 'Se o endereço estiver elegível, enviaremos um código. Confira seu e-mail e a pasta de spam.' }
+      : { ...emailPending, solicitacaoId: id, codigoAprovacao: codigo }
+    return { id, token, codigo, codigoAprovacaoHash, response }
+  }
   function configured(): EmailOptions {
     if (!options) throw new AppError(503, 'EMAIL_DISABLED', 'O envio de e-mails ainda não foi configurado. Contas existentes podem entrar com senha.')
     return options
@@ -41,8 +46,22 @@ export function createEmailService(db: PrismaClient, options?: EmailOptions) {
       RETURNING email_hash`
     return rows.length === 1
   }
-  async function deliver(to: string, id: string, token: string, purpose: Purpose | 'novaConta') {
-    const config = configured(), url = new URL('/confirmar-email', config.publicUrl)
+  async function deliver(to: string, id: string, token: string, purpose: Purpose | 'novaConta', codigo?: string) {
+    const config = configured()
+    if (codigo !== undefined) {
+      const titulo = purpose === 'cadastro' ? 'Confirme seu e-mail' : purpose === 'novaConta' ? 'Crie sua conta' : 'Entre no RepHouse'
+      const subject = purpose === 'cadastro' ? 'Seu código de cadastro no RepHouse' : 'Seu código de acesso ao RepHouse'
+      const instrucao = 'Digite este código na tela do RepHouse em que você iniciou o pedido.'
+      const validade = 'O código vale por 10 minutos e pode ser usado uma única vez. Se você não fez o pedido, ignore esta mensagem.'
+      const params = { codigoConfirmacao: codigo, instrucao, titulo }
+      await config.send({ id, to, subject,
+        text: `${titulo}\n\n${instrucao}\n\n${codigo}\n\n${validade}`,
+        html: `<html lang="pt-BR"><body><h1>${titulo}</h1><p>${instrucao}</p><p style="font-size:32px"><strong>${codigo}</strong></p><p>${validade}</p></body></html>`,
+        confirmacao: { finalidade: purpose === 'cadastro' ? 'cadastro' : 'login', params },
+      })
+      return
+    }
+    const url = new URL('/confirmar-email', config.publicUrl)
     url.hash = new URLSearchParams({ id, token }).toString()
     const title = purpose === 'cadastro' ? 'Confirme seu e-mail no RepHouse' : purpose === 'novaConta' ? 'Crie sua conta no RepHouse' : 'Seu link para entrar no RepHouse'
     const instrucao = `${purpose === 'novaConta' ? 'Ainda não existe uma conta RepHouse com este e-mail. ' : ''}Abra o link para confirmar. Se estiver em outro aparelho, use o código exibido na tela em que iniciou o pedido.`
@@ -82,26 +101,27 @@ export function createEmailService(db: PrismaClient, options?: EmailOptions) {
     return { user, acaoRepublica: link.finalidade === 'cadastro' ? link.acaoRepublica : null }
   }
 
-  async function approve(tx: Prisma.TransactionClient, link: LinkEmail, codigo: string, now: Date) {
-    if (!link.codigoAprovacaoHash || link.tentativasAprovacao >= 5) return { codigoInvalido: true } as const
-    if (link.codigoAprovacaoHash !== codigoHash(link.id, codigo)) {
+  async function approve(tx: Prisma.TransactionClient, link: LinkEmail, expectedHash: string, now: Date) {
+    if (!link.codigoAprovacaoHash || link.tentativasAprovacao >= 5) return false
+    if (!timingSafeEqual(Buffer.from(link.codigoAprovacaoHash, 'hex'), Buffer.from(expectedHash, 'hex'))) {
       if (!link.aprovadoEm) await tx.linkEmail.update({ where: { id: link.id }, data: { tentativasAprovacao: { increment: 1 } } })
-      return { codigoInvalido: true } as const
+      return false
     }
     if (!link.aprovadoEm) await tx.linkEmail.update({ where: { id: link.id }, data: { aprovadoEm: now } })
-    return { aprovadoEmOutroDispositivo: true } as const
+    return true
   }
 
   return {
     enabled: () => !!options,
-    async register(input: CadastroInput & { acaoRepublica?: 'criar' | 'entrar' }, cookie?: string) {
+    async register(input: CadastroInput & { acaoRepublica?: 'criar' | 'entrar'; codigoPorEmail?: boolean }, cookie?: string) {
       configured()
       const senhaHash = await hash(input.senha, { type: argon2id })
       const secret = browserSecret(cookie)
-      const { id, token, codigoAprovacaoHash, response } = emailChallenge()
+      const codigoPorEmail = input.codigoPorEmail === true
+      const { id, token, codigo, codigoAprovacaoHash, response } = emailChallenge(codigoPorEmail)
       const sent = await executarTransacaoAcid(db, async tx => {
         if (await tx.usuario.findUnique({ where: { email: input.email }, select: { id: true } })) {
-          throw new AppError(409, 'CONFLICT', 'Já existe uma conta com este e-mail. Entre na conta ou solicite um link de acesso.')
+          throw new AppError(409, 'CONFLICT', 'Já existe uma conta com este e-mail. Entre com sua senha ou solicite um código de acesso.')
         }
         if (!await admit(tx, input.email)) return false
         // Outra pessoa não substitui nome/senha de uma solicitação pendente pelo mesmo e-mail.
@@ -113,13 +133,13 @@ export function createEmailService(db: PrismaClient, options?: EmailOptions) {
           nome: input.nome, senhaHash, acaoRepublica: input.acaoRepublica ?? 'criar', criadoEm: now, expiraEm: new Date(now.getTime() + 600_000) } })
         return true
       })
-      if (sent) await deliver(input.email, id, token, 'cadastro')
+      if (sent) await deliver(input.email, id, token, 'cadastro', codigoPorEmail ? codigo : undefined)
       return { secret, response }
     },
-    async request(email: string, finalidade: Purpose, cookie?: string) {
+    async request(email: string, finalidade: Purpose, cookie?: string, codigoPorEmail = false) {
       configured()
       const secret = browserSecret(cookie)
-      const { id, token, codigoAprovacaoHash, response } = emailChallenge()
+      const { id, token, codigo, codigoAprovacaoHash, response } = emailChallenge(codigoPorEmail)
       const sent = await executarTransacaoAcid(db, async tx => {
         if (!await admit(tx, email)) return false
         const now = new Date(), cookieHash = digest(secret)
@@ -149,7 +169,7 @@ export function createEmailService(db: PrismaClient, options?: EmailOptions) {
         await tx.linkEmail.create({ data })
         return finalidade
       })
-      if (sent) await deliver(email, id, token, sent === 'cadastro' && finalidade === 'login' ? 'novaConta' : sent)
+      if (sent) await deliver(email, id, token, sent === 'cadastro' && finalidade === 'login' ? 'novaConta' : sent, codigoPorEmail ? codigo : undefined)
       return { secret, response }
     },
     async confirm(proof: EmailProof, cookie?: string) {
@@ -162,7 +182,10 @@ export function createEmailService(db: PrismaClient, options?: EmailOptions) {
         const link = await tx.linkEmail.findFirst({ where: { id: proof.id, tokenHash: digest(proof.token),
           consumidoEm: null, expiraEm: { gt: now } } })
         if (!link) throw invalid()
-        if (proof.codigoAprovacao !== undefined) return approve(tx, link, proof.codigoAprovacao, now)
+        if (proof.codigoAprovacao !== undefined) {
+          return await approve(tx, link, codigoHash(link.id, proof.codigoAprovacao), now)
+            ? { aprovadoEmOutroDispositivo: true } as const : { codigoInvalido: true } as const
+        }
         if (link.cookieHash !== cookieHash) {
           if (!link.codigoAprovacaoHash) throw invalid()
           throw new AppError(400, 'EMAIL_APPROVAL_REQUIRED', 'Digite o código exibido no aparelho que iniciou o pedido.')
@@ -177,13 +200,26 @@ export function createEmailService(db: PrismaClient, options?: EmailOptions) {
       configured()
       if (!cookie || !secretPattern.test(cookie)) throw invalid()
       const novaSenha = proof.senha ? await hash(proof.senha, { type: argon2id }) : undefined
-      return executarTransacaoAcid(db, async tx => {
+      const result = await executarTransacaoAcid(db, async tx => {
         const now = new Date()
-        const link = await tx.linkEmail.findFirst({ where: { id: proof.id, cookieHash: digest(cookie), aprovadoEm: { not: null },
+        const link = await tx.linkEmail.findFirst({ where: { id: proof.id, cookieHash: digest(cookie),
           consumidoEm: null, expiraEm: { gt: now } } })
-        if (!link) return null
+        if (proof.codigo !== undefined) {
+          if (!link) return { codigoInvalido: true } as const
+          if (!await approve(tx, link, hashEmailCode(link.id, proof.codigo), now)) return { codigoInvalido: true } as const
+          // Cadastro iniciado pelo acesso por e-mail ainda precisa dos dados da conta.
+          // Grave a verificação agora para que a pessoa só digite o código uma vez.
+          if (link.finalidade === 'cadastro' && !link.nome && (!proof.nome || !novaSenha)) return { precisaCompletarCadastro: true } as const
+        } else if (!link?.aprovadoEm) return null
         return consume(tx, link, now, proof.nome, novaSenha)
       })
+      if (result && 'codigoInvalido' in result) {
+        throw new AppError(400, 'EMAIL_CODE_INVALID', 'Código inválido ou expirado. Confira o e-mail ou solicite um novo código.')
+      }
+      if (result && 'precisaCompletarCadastro' in result) {
+        throw new AppError(400, 'EMAIL_ACCOUNT_DETAILS_REQUIRED', 'Para criar sua conta, informe seu nome e crie uma senha.')
+      }
+      return result
     },
   }
 }

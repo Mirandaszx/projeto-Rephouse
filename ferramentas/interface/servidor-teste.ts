@@ -55,11 +55,11 @@ const createTestApp = (suite?: string) => createApp({
   privacyContact: "privacidade@integracao.rephouse.test",
   ...(suite === 'google.spec.ts' ? { google: googleOptions } : { email: { publicUrl: 'http://127.0.0.1:5174', send: async message => {
     // Caixa de e-mail do harness, fora do produto e acessível somente com o identificador da execução.
-    const proof = new URL(message.text.match(/http:\/\/[^\s]+/)![0]);
-    emails.set(message.to, proof.href);
+    const params = message.confirmacao!.params;
+    emails.set(message.to, 'codigoConfirmacao' in params ? { codigo: params.codigoConfirmacao } : { link: params.linkConfirmacao });
   } } }),
 });
-const emails = new Map<string, string>();
+const emails = new Map<string, { link: string } | { codigo: string }>();
 const app = createTestApp();
 const suiteApps = new Map<string, ReturnType<typeof createApp>>();
 let finish: () => void = () => {};
@@ -70,7 +70,7 @@ const ended = new Promise<void>((resolve) => {
 const server = createServer((req, res) => {
   if (req.method === 'GET' && req.url?.startsWith('/__interface_email?') && req.headers['x-interface-test-run'] === runId) {
     const email = new URL(req.url, 'http://127.0.0.1').searchParams.get('email')!;
-    res.writeHead(emails.has(email) ? 200 : 404, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }).end(JSON.stringify({ link: emails.get(email) ?? null }));
+    res.writeHead(emails.has(email) ? 200 : 404, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }).end(JSON.stringify(emails.get(email) ?? null));
     return;
   }
   if (req.method === 'GET' && req.url?.startsWith('/__interface_google?') && req.headers['x-interface-test-run'] === runId) {

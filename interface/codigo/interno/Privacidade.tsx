@@ -75,7 +75,7 @@ export default function Privacidade() {
         <p>Para funcionar, o RepHouse usa empresas que tratam dados em nosso nome e seguindo nossas instruções (os "operadores", na LGPD):</p>
         <ul>
           <li><strong>Hospedagem e banco de dados</strong> (Render): onde o sistema e os dados ficam guardados.</li>
-          <li><strong>Envio de e-mails</strong> (Brevo): para mandar os links de acesso. Recebe seu e-mail e o conteúdo da mensagem.</li>
+          <li><strong>Envio de e-mails</strong> (Brevo): para enviar confirmações de cadastro e acesso. Recebe seu e-mail e o conteúdo da mensagem.</li>
           <li><strong>Google</strong>, apenas se você escolher entrar com o Google.</li>
         </ul>
         <p>Esses serviços podem guardar dados fora do Brasil. Usamos apenas provedores que se comprometem com garantias de proteção compatíveis com a LGPD (art. 33).</p>

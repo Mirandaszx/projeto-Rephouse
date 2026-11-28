@@ -50,7 +50,7 @@ describe('Fronteira externa de e-mail e configuração', () => {
     await send(message); assert.equal(calls, 1)
     await createBrevoSender('xkeysib-ficticia', 'remetente@example.test', async () => Response.json({ messageIds: ['<a@relay.example.test>'] }, { status: 201 }))(message)
   })
-  it('seleciona o modelo do Brevo por finalidade e preserva o link completo', async () => {
+  it('seleciona o modelo do Brevo por finalidade e envia o link ou o código intacto', async () => {
     const link = 'https://app.example.test/confirmar-email#id=cadastro-ficticio&token=segredo-ficticio'
     const bodies: unknown[] = []
     const send = createBrevoSender('xkeysib-ficticia', 'remetente@example.test', async (_url, options) => {
@@ -62,12 +62,17 @@ describe('Fronteira externa de e-mail e configuração', () => {
     const login = { ...cadastro, titulo: 'Entre no RepHouse', acao: 'Confirmar e entrar' }
     await send({ ...message, confirmacao: { finalidade: 'cadastro', params: cadastro } })
     await send({ ...message, confirmacao: { finalidade: 'login', params: login } })
+    const codigo = { codigoConfirmacao: '012345', titulo: 'Confirme seu e-mail', instrucao: 'Digite o código na tela em que iniciou o pedido.' }
+    await send({ ...message, confirmacao: { finalidade: 'cadastro', params: codigo } })
+    await send({ ...message, confirmacao: { finalidade: 'login', params: codigo } })
     await send(message)
 
     const common = { sender: { email: 'remetente@example.test', name: 'RepHouse' }, to: [{ email: message.to }], subject: message.subject }
     assert.deepEqual(bodies, [
       { ...common, templateId: 1, params: cadastro },
       { ...common, templateId: 2, params: login },
+      { ...common, templateId: 1, params: codigo },
+      { ...common, templateId: 2, params: codigo },
       { ...common, htmlContent: message.html, textContent: message.text },
     ])
   })

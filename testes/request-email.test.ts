@@ -15,6 +15,66 @@ async function release(c: Awaited<ReturnType<typeof abrirRequestSpec>>) {
 }
 
 describe('Cadastro confirmado e link mágico por HTTP e PostgreSQL reais', () => {
+  it('envia o código apenas ao e-mail e conclui cadastro em uma única chamada no navegador original', async () => {
+    const c = await abrirRequestSpec()
+    try {
+      const data = input()
+      const request = await c.request<Omit<PendingEmail, 'codigoAprovacao'>>('POST', '/api/auth/register', undefined, { ...data, acaoRepublica: 'entrar', codigoPorEmail: true })
+      assert.equal(request.status, 202)
+      assert.deepEqual(Object.keys(request.body).sort(), ['confirmacaoPendente', 'message', 'solicitacaoId'])
+      const message = c.mailbox.messages.at(-1)!
+      assert.equal(message.to, data.email)
+      const params = message.confirmacao!.params
+      assert.ok('codigoConfirmacao' in params)
+      assert.match(params.codigoConfirmacao, /^\d{6}$/)
+      assert.ok(message.text.includes(params.codigoConfirmacao))
+      assert.ok(!message.html.includes('/confirmar-email'))
+
+      const body = { id: request.body.solicitacaoId, codigo: params.codigoConfirmacao }
+      const conclua = (codigo: string, headers?: Record<string, string>) =>
+        c.request<Session & { acaoRepublica: string }>('POST', '/api/auth/email/concluir', undefined, { ...body, codigo }, undefined, headers)
+      const fakeCookie = 'rephouse_email=' + randomBytes(32).toString('base64url')
+      assert.equal((await conclua(body.codigo, { Cookie: fakeCookie })).status, 400)
+      assert.equal((await conclua(body.codigo, { Origin: 'https://outra-origem.example.test' })).status, 403)
+      const wrong = body.codigo === '000000' ? '000001' : '000000'
+      assert.equal((await conclua(wrong)).status, 400)
+      assert.equal((await c.db.linkEmail.findUniqueOrThrow({ where: { id: body.id } })).tentativasAprovacao, 1)
+      assert.equal(await c.db.usuario.count({ where: { email: data.email } }), 0)
+      const results = await Promise.all([conclua(body.codigo), conclua(body.codigo)])
+      assert.deepEqual(results.map(result => result.status).sort(), [200, 400])
+      const session = results.find(result => result.status === 200)!.body
+      assert.equal(session.acaoRepublica, 'entrar')
+      assert.equal(session.usuario.email, data.email)
+      assert.equal((await c.request('GET', '/api/me', session.token)).status, 200)
+      assert.equal((await conclua(body.codigo)).status, 400)
+    } finally { await c.close() }
+  })
+
+  it('limita as tentativas do código e invalida o pedido anterior ao reenviar', async () => {
+    const c = await abrirRequestSpec()
+    try {
+      const data = { email: 'ana@integracao.rephouse.test', codigoPorEmail: true }
+      const pedir = async () => {
+        const response = await c.request<PendingEmail>('POST', '/api/auth/email/solicitar', undefined, data)
+        assert.equal(response.status, 202)
+        const params = c.mailbox.messages.at(-1)!.confirmacao!.params
+        assert.ok('codigoConfirmacao' in params)
+        return { id: response.body.solicitacaoId, codigo: params.codigoConfirmacao }
+      }
+      const old = await pedir()
+      const confirm = (body: typeof old) => c.request('POST', '/api/auth/email/concluir', undefined, body)
+      const wrong = old.codigo === '000000' ? '000001' : '000000'
+      for (let i = 0; i < 5; i++) assert.equal((await confirm({ ...old, codigo: wrong })).status, 400)
+      assert.equal((await confirm(old)).status, 400)
+      assert.equal((await c.db.linkEmail.findUniqueOrThrow({ where: { id: old.id } })).tentativasAprovacao, 5)
+      await release(c)
+      const latest = await pedir()
+      assert.notEqual(latest.id, old.id)
+      assert.equal((await confirm(old)).status, 400)
+      assert.equal((await confirm(latest)).status, 200)
+    } finally { await c.close() }
+  })
+
   it('quando o envio não está configurado, então preserva senha antiga e recusa cadastro sem confirmação', async () => {
     const c = await abrirRequestSpec()
     const server = createApp({ database: c.db, jwtSecret: secret, corsOrigins: [origin], log: () => {} }).listen(0, '127.0.0.1')

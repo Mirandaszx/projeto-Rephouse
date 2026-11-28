@@ -10,8 +10,10 @@ const googleProof = z.object({ credential: z.string().min(1).max(16000), desafio
 const confirmation = z.union([z.object({ senha: password }).strict(), googleProof.omit({ senha: true })])
 const cookieName = 'rephouse_google'
 const emailCookieName = 'rephouse_email'
-const emailConclusion = z.object({ id: z.uuid(), nome: name.optional(), senha: password.optional() }).strict()
-const emailConfirmation = emailConclusion.extend({ token: z.string().regex(/^[A-Za-z0-9_-]{43}$/), codigoAprovacao: z.string().regex(/^\d{6}$/).optional() })
+const emailDetails = z.object({ id: z.uuid(), nome: name.optional(), senha: password.optional() }).strict()
+const emailCode = z.string().regex(/^\d{6}$/).optional()
+const emailConclusion = emailDetails.extend({ codigo: emailCode })
+const emailConfirmation = emailDetails.extend({ token: z.string().regex(/^[A-Za-z0-9_-]{43}$/), codigoAprovacao: emailCode })
 export function createAuthController(service: AuthService, origins: string[] = [], options?: GoogleOptions) {
   const cookie = (req: Parameters<RequestHandler>[0]) => req.get('Cookie')?.split(';').map(value => value.trim()).find(value => value.startsWith(cookieName + '='))?.slice(cookieName.length + 1)
   const origin = (req: Parameters<RequestHandler>[0]) => {
@@ -54,10 +56,10 @@ export function createAuthController(service: AuthService, origins: string[] = [
     googleLogin: endpoint(req => { origin(req); return service.googleLogin(googleProof.parse(req.body), cookie(req)) }),
     authenticate,
     activeSession: (async (_req,res,next)=>{await service.activeSession(res.locals.actor);next()}) as RequestHandler,
-    register: pending((req, cookie) => service.register(z.object({ nome: name, email, senha: password, acaoRepublica: z.enum(['criar','entrar']).optional() }).strict().parse(req.body), cookie)),
+    register: pending((req, cookie) => service.register(z.object({ nome: name, email, senha: password, acaoRepublica: z.enum(['criar','entrar']).optional(), codigoPorEmail: z.boolean().optional() }).strict().parse(req.body), cookie)),
     requestEmail: pending((req, cookie) => {
-      const input = z.object({ email, finalidade: z.enum(['cadastro','login']).default('login') }).strict().parse(req.body)
-      return service.requestEmail(input.email, input.finalidade, cookie)
+      const input = z.object({ email, finalidade: z.enum(['cadastro','login']).default('login'), codigoPorEmail: z.boolean().optional() }).strict().parse(req.body)
+      return service.requestEmail(input.email, input.finalidade, cookie, input.codigoPorEmail)
     }),
     confirmEmail: endpoint(req => {
       emailOrigin(req)
